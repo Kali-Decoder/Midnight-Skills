@@ -1,0 +1,28 @@
+{
+  "routes": [
+    { "src": "/SKILL.md", "dest": "/api/skill?name=zamaskill" },
+    { "src": "/(scaffold|addresses|decryption|private-token|vesting-wallet|erc20-wrapper|erc7984-standard|confidential-payroll)/SKILL.md", "dest": "/api/skill?name=$1" },
+    { "src": "/(scaffold|addresses|decryption|private-token|vesting-wallet|erc20-wrapper|erc7984-standard|confidential-payroll)", "dest": "/api/skill?name=$1" }
+  ],
+  "functions": {
+    "api/skill.js": {
+      "includeFiles": "{SKILL.md,*/SKILL.md,*/references/*.md}"
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)\\.md",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Content-Type", "value": "text/markdown; charset=utf-8" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.sh",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "zamaskills",
+  "version": "1.0.0",
+  "description": "Skills for building confidential apps on Zama FHEVM. Guides LLMs through contracts, tests, and private token workflows.",
+  "author": {
+    "name": "Kali-Decoder",
+    "url": "https://github.com/Kali-Decoder"
+  },
+  "homepage": "https://zamaskills.dev",
+  "repository": "https://github.com/Kali-Decoder/Zamaskills",
+  "license": "MIT",
+  "keywords": ["zama", "fhevm", "solidity", "web3", "blockchain", "confidential", "fhe"],
+  "skills": [
+    "./addresses",
+    "./scaffold",
+    "./decryption",
+    "./private-token",
+    "./vesting-wallet",
+    "./erc20-wrapper",
+    "./erc7984-standard",
+    "./confidential-payroll"
+  ],
+  "private": true,
+  "dependencies": {
+    "mongodb": "^6.13.0"
+  }
+}

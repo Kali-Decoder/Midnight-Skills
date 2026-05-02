@@ -1,0 +1,21 @@
+{
+  "name": "zamaskills",
+  "owner": {
+    "name": "Kali-Decoder"
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Skills for building confidential apps on Zama FHEVM. Guides LLMs through contracts, tests, and private token workflows."
+  },
+  "plugins": [
+    {
+      "name": "zamaskills",
+      "source": "./",
+      "version": "1.0.0",
+      "description": "Skills for building confidential apps on Zama FHEVM. Guides LLMs through contracts, tests, and private token workflows.",
+      "author": {
+        "name": "Kali-Decoder"
+      }
+    }
+  ]
+}

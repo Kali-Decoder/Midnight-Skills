@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MID🌜SKILLS — Knowledge Skills for AI Agents</title>
+<meta name="description" content="Skills for understanding and building privacy-preserving apps on Midnight.">
+<meta property="og:title" content="MID🌜SKILLS — Knowledge Skills for AI Agents Building on Midnight">
+<meta property="og:description" content="Skills for understanding and building privacy-preserving apps on Midnight.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root {
+  --bg: #0b0b0b;
+  --fg: #fff6bf;
+  --dim: #cbbf76;
+  --accent: #ffd400;
+  --border: #3a2f00;
+  --hover: #151200;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 1rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.ascii {
+  color: var(--accent);
+  font-size: 12px;
+  line-height: 1.15;
+  white-space: pre;
+  margin-bottom: 1rem;
+  letter-spacing: 0.3px;
+}
+.ascii .ch {
+  display: inline;
+}
+
+.tagline {
+  color: var(--fg);
+  font-size: 14px;
+  margin-bottom: 1.5rem;
+}
+.cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  background: var(--accent);
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+h2 {
+  color: var(--accent);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin: 1.25rem 0 0.75rem 0;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+  width: 100%;
+}
+
+/* How to use — compact tabs */
+.how-to-tabs { margin-top: 0; width: 100%; margin-bottom: 1.5rem; }
+.how-to-tab-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.how-to-tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.35rem 0.75rem;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.how-to-tab-btn:hover { color: var(--fg); }
+.how-to-tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.how-to-tab-panel {
+  display: none;
+}
+.how-to-tab-panel.active { display: block; }
+.how-to-tab-panel .tab-desc {
+  font-size: 12px;
+  color: var(--dim);
+  margin-bottom: 0.35rem;
+  line-height: 1.4;
+}
+.how-to-tab-panel code {
+  display: block;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--fg);
+  background: var(--hover);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.6rem 1rem;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.how-to-tab-panel code:hover {
+  border-color: var(--accent);
+  background: rgba(255, 212, 0, 0.06);
+}
+.how-to-tab-panel code.copied {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.footer {
+  color: var(--dim);
+  font-size: 11px;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.copy-btn svg, .hero-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Disclaimer modal */
+.disclaimer-backdrop {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.disclaimer-backdrop.hidden { display: none; }
+.disclaimer-box {
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  max-width: 520px;
+  width: 100%;
+  padding: 2rem;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.disclaimer-title {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+}
+.disclaimer-text {
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+}
+.disclaimer-btn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 0.6rem 1rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.disclaimer-btn:hover { background: var(--hover); }
+
+/* Providers row */
+.providers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+}
+.providers-label {
+  color: var(--dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  flex-shrink: 0;
+}
+.provider-logo {
+  width: 20px;
+  height: 20px;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.provider-logo:hover {
+  opacity: 1;
+}
+
+/* Small screens — allow scroll as fallback */
+@media (max-height: 620px) {
+  html, body { overflow: auto; }
+}
+@media (max-width: 600px) {
+  html, body { overflow: auto; }
+  .ascii { font-size: 8px; }
+  .skills-grid { grid-template-columns: 1fr; }
+  .providers { gap: 0.4rem; }
+  .providers-label { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!--
+  MIDSKILLS — Knowledge Skills for AI Agents
+
+  Bot-readable. Each skill lives at /<topic>/SKILL.md
+  Fetch any URL and read it into your context.
+
+  All skills:  /SKILL.md
+-->
+
+<div class="ascii">
+  MID🌜SKILLS
+  ███╗   ███╗██╗██████╗ ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+  ████╗ ████║██║██╔══██╗██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
+  ██╔████╔██║██║██║  ██║███████╗█████╔╝ ██║██║     ██║     ███████╗
+  ██║╚██╔╝██║██║██║  ██║╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
+  ██║ ╚═╝ ██║██║██████╔╝███████║██║  ██╗██║███████╗███████╗███████║
+  ╚═╝     ╚═╝╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
+</div>
+
+<p class="tagline">Skills for understanding and building privacy-preserving apps on Midnight. Learn selective disclosure, public/private state, and zero-knowledge proofs.<span class="cursor"></span></p>
+
+<div class="how-to-tabs">
+  <div class="how-to-tab-nav">
+    <button class="how-to-tab-btn active" data-tab="skills">All Agents</button>
+    <button class="how-to-tab-btn" data-tab="agent">Tell your Agent</button>
+  </div>
+  <div class="how-to-tab-panel active" data-tab="skills">
+    <code>npx skills add &lt;your-github-org&gt;/midnight-skills</code>
+  </div>
+  <div class="how-to-tab-panel" data-tab="agent">
+    <code>"Read this site and summarize what Midnight is and why it exists (use the why-midnight skill)."</code>
+  </div>
+</div>
+
+<div class="providers">
+  <span class="providers-label">Works with</span>
+  <img class="provider-logo" src="logos/cursor.png" alt="Cursor" title="Cursor">
+  <img class="provider-logo" src="logos/claude.png" alt="Claude Code" title="Claude Code">
+  <img class="provider-logo" src="logos/openai.png" alt="Codex CLI" title="Codex CLI">
+  <img class="provider-logo" src="logos/gemini.png" alt="Gemini CLI" title="Gemini CLI">
+  <img class="provider-logo" src="logos/github.png" alt="VS Code Copilot" title="VS Code Copilot">
+  <img class="provider-logo" src="logos/kiro.png" alt="Kiro" title="Kiro">
+  <img class="provider-logo" src="logos/opencode.png" alt="OpenCode" title="OpenCode">
+</div>
+
+<div class="footer">MIT License · <a href="skill.html?name=why-midnight" target="_blank" rel="noopener">Browse Skills</a> · <a href="howto.html" target="_blank" rel="noopener">How To Use</a><br>Anonymous download tracking (no personal data)</div>
+
+<div id="disclaimer" class="disclaimer-backdrop" aria-hidden="false">
+  <div class="disclaimer-box" role="alertdialog" aria-modal="true">
+    <div class="disclaimer-title">Warning</div>
+    <p class="disclaimer-text">Do not use the code generated by the AI coding assistant in a production environment without completing your own audits and application of best practices.</p>
+    <button type="button" class="disclaimer-btn" id="disclaimer-accept">I understand</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+<script>
+// ASCII hero animation — CRT flicker-on effect
+(function() {
+  const ascii = document.querySelector('.ascii');
+  const raw = ascii.textContent;
+  const lines = raw.split('\n').filter(l => l.length > 0);
+  const maxLen = Math.max(...lines.map(l => l.length));
+  const padded = lines.map(l => l.padEnd(maxLen));
+
+  // Wrap each non-space character in a span using safe DOM APIs
+  ascii.textContent = '';
+  for (let row = 0; row < padded.length; row++) {
+    for (let col = 0; col < maxLen; col++) {
+      const ch = padded[row][col] || ' ';
+      if (ch === ' ') {
+        ascii.appendChild(document.createTextNode(' '));
+      } else {
+        const span = document.createElement('span');
+        span.className = 'ch';
+        span.textContent = ch;
+        ascii.appendChild(span);
+      }
+    }
+    if (row < padded.length - 1) ascii.appendChild(document.createTextNode('\n'));
+  }
+
+  const chars = ascii.querySelectorAll('.ch');
+  gsap.set(chars, { autoAlpha: 0 });
+
+  // Random staggered appear — chunks pop in across the art
+  gsap.to(chars, {
+    autoAlpha: 1,
+    duration: 0.05,
+    ease: "none",
+    stagger: { each: 0.002, from: "random" },
+    delay: 0.3,
+    onComplete: function() {
+      // Apply gradient-on-text for shine
+      ascii.style.background = "linear-gradient(110deg, #ffd400 40%, #fff1a6 50%, #ffd400 60%)";
+      ascii.style.backgroundSize = "300% 100%";
+      ascii.style.backgroundPosition = "100% 0";
+      ascii.style.webkitBackgroundClip = "text";
+      ascii.style.backgroundClip = "text";
+      ascii.style.webkitTextFillColor = "transparent";
+      ascii.style.color = "transparent";
+
+      // Looping shine sweep — full pass from right to left
+      gsap.fromTo(ascii,
+        { backgroundPosition: "100% 0" },
+        { backgroundPosition: "0% 0", duration: 2, ease: "power1.inOut", repeat: -1, repeatDelay: 3 }
+      );
+    }
+  });
+})();
+
+// Disclaimer
+const disclaimer = document.getElementById('disclaimer');
+const disclaimerAccept = document.getElementById('disclaimer-accept');
+if (sessionStorage.getItem('disclaimer-accepted')) {
+  disclaimer.classList.add('hidden');
+  disclaimer.setAttribute('aria-hidden', 'true');
+}
+disclaimerAccept.addEventListener('click', () => {
+  disclaimer.classList.add('hidden');
+  disclaimer.setAttribute('aria-hidden', 'true');
+  sessionStorage.setItem('disclaimer-accepted', '1');
+});
+
+// Tabs
+document.querySelectorAll('.how-to-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.how-to-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.how-to-tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector('.how-to-tab-panel[data-tab="' + tab + '"]').classList.add('active');
+  });
+});
+
+// Click to copy tab content
+document.querySelectorAll('.how-to-tab-panel code').forEach(code => {
+  const orig = code.textContent;
+  let timer;
+  code.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(orig); } catch(err) {
+      const t = document.createElement('textarea'); t.value = orig; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+    }
+    clearTimeout(timer);
+    code.textContent = 'Copied!';
+    code.classList.add('copied');
+    timer = setTimeout(() => { code.textContent = orig; code.classList.remove('copied'); }, 1500);
+  });
+});
+
+
+</script>
+</body>
+</html>

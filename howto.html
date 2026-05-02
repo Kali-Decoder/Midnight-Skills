@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MIDSKILLS — How To Use</title>
+<meta name="description" content="How to use MIDSKILLS with npx skills, agents, and direct URLs.">
+<style>
+:root {
+  --bg: #0b0b0b;
+  --fg: #fff6bf;
+  --dim: #cbbf76;
+  --accent: #ffd400;
+  --border: #3a2f00;
+  --hover: #151200;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.back-link {
+  color: var(--dim);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: color 0.15s;
+}
+.back-link:hover { color: var(--fg); text-decoration: none; }
+.back-link svg { width: 14px; height: 14px; }
+.title {
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 2.5rem;
+  width: 100%;
+}
+
+.section {
+  border: 1px solid var(--border);
+  background: var(--hover);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.section h2 {
+  color: var(--accent);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.6rem;
+  font-weight: 600;
+}
+.section p { color: var(--fg); margin: 0.3rem 0; }
+.section .muted { color: var(--dim); }
+
+.code {
+  display: block;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--fg);
+  background: #0e0b00;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-top: 0.6rem;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.copy-wrap {
+  position: relative;
+}
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.copy-btn:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+.copy-btn.copied {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.how-to-tab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.how-to-tab-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.how-to-tab-btn:hover { color: var(--fg); }
+.how-to-tab-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.how-to-tab-panel { display: none; }
+.how-to-tab-panel.active { display: block; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 760px) {
+  .grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <a href="/" class="back-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Back</a>
+    <span class="title">MIDSKILLS — How To Use</span>
+  </div>
+</div>
+
+<div class="content">
+  <div class="section">
+    <h2>Install (npx)</h2>
+    <p>Add MIDSKILLS to your local skills index:</p>
+    <div class="copy-wrap">
+      <button class="copy-btn" data-copy>Copy</button>
+      <code class="code">npx skills add &lt;your-github-org&gt;/midnight-skills</code>
+    </div>
+    <p class="muted">This lets tools pull skills by URL from your repo.</p>
+  </div>
+
+  <div class="section">
+    <h2>Direct Skill URLs</h2>
+    <p>Fetch a specific skill directly:</p>
+    <div class="copy-wrap">
+      <button class="copy-btn" data-copy>Copy</button>
+      <code class="code">https://&lt;your-domain&gt;/why-midnight</code>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Use In Scripts (curl)</h2>
+    <p>Pull markdown into a local file:</p>
+    <div class="copy-wrap">
+      <button class="copy-btn" data-copy>Copy</button>
+      <code class="code">curl -fsSL https://&lt;your-domain&gt;/why-midnight -o why-midnight.SKILL.md</code>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>AI Tools — How To Use</h2>
+    <div class="how-to-tab-nav" role="tablist" aria-label="AI tools">
+      <button class="how-to-tab-btn active" data-tab="chatgpt">ChatGPT/Codex</button>
+      <button class="how-to-tab-btn" data-tab="claude">Claude</button>
+      <button class="how-to-tab-btn" data-tab="cursor">Cursor</button>
+      <button class="how-to-tab-btn" data-tab="gemini">Gemini</button>
+      <button class="how-to-tab-btn" data-tab="copilot">GitHub Copilot</button>
+    </div>
+
+    <div class="how-to-tab-panel active" data-tab="chatgpt">
+      <p class="muted">Requires web access or URL reading.</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">Read https://&lt;your-domain&gt; and use the why-midnight skill to explain Midnight and its core privacy concepts.</code>
+      </div>
+      <p class="muted">Ask follow-ups like “summarize the transaction flow” or “explain selective disclosure.”</p>
+    </div>
+
+    <div class="how-to-tab-panel" data-tab="claude">
+      <p class="muted">Claude Code can fetch URLs directly.</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">Read https://&lt;your-domain&gt; and apply the why-midnight skill.</code>
+      </div>
+      <p class="muted">Claude will load the root skill, then the specific skills.</p>
+    </div>
+
+    <div class="how-to-tab-panel" data-tab="cursor">
+      <p class="muted">Paste in Cursor chat.</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">Read https://&lt;your-domain&gt; and use the why-midnight skill to generate a short explainer for a product page.</code>
+      </div>
+      <p class="muted">Cursor will fetch the markdown if network access is enabled.</p>
+    </div>
+
+    <div class="how-to-tab-panel" data-tab="gemini">
+      <p class="muted">Works in AI Studio / Vertex with web access.</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">Read https://&lt;your-domain&gt; and explain how Midnight combines public and private state with ZK proofs.</code>
+      </div>
+      <p class="muted">Gemini will use the skill URLs as context.</p>
+    </div>
+
+    <div class="how-to-tab-panel" data-tab="copilot">
+      <p class="muted">Use Copilot Chat with web browsing enabled.</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">Read https://&lt;your-domain&gt;/why-midnight and summarize it in 5 bullet points.</code>
+      </div>
+      <p class="muted">If browsing is disabled, paste the skill contents manually.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Available Skills</h2>
+    <div class="copy-wrap">
+      <button class="copy-btn" data-copy>Copy</button>
+      <code class="code">https://&lt;your-domain&gt;/why-midnight</code>
+    </div>
+  </div>
+</div>
+
+<script>
+const tabButtons = document.querySelectorAll('.how-to-tab-btn');
+const tabPanels = document.querySelectorAll('.how-to-tab-panel');
+
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    tabButtons.forEach(b => b.classList.toggle('active', b === btn));
+    tabPanels.forEach(p => p.classList.toggle('active', p.dataset.tab === tab));
+  });
+});
+
+const copyButtons = document.querySelectorAll('[data-copy]');
+copyButtons.forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const code = btn.parentElement.querySelector('.code');
+    if (!code) return;
+    const text = code.textContent.trim();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      const t = document.createElement('textarea');
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand('copy');
+      document.body.removeChild(t);
+    }
+    btn.classList.add('copied');
+    const prev = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => {
+      btn.textContent = prev;
+      btn.classList.remove('copied');
+    }, 1200);
+  });
+});
+</script>
+
+</body>
+</html>
