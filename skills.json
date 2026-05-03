@@ -30,6 +30,11 @@
       "name": "multinetwork",
       "path": "multinetwork/SKILL.md",
       "description": "Build a single dApp that deploys across all networks (localnet, preview, preprod, mainnet) from one codebase."
+    },
+    {
+      "name": "midnight-indexer",
+      "path": "indexer/SKILL.md",
+      "description": "Query and subscribe to Midnight blockchain data via Indexer GraphQL API v4. Contract state, subscriptions, event watching."
     }
   ]
 }

@@ -39,7 +39,8 @@
     "./1am-wallet",
     "./compact",
     "./testing",
-    "./multinetwork"
+    "./multinetwork",
+    "./indexer"
   ],
   "private": true,
   "dependencies": {
