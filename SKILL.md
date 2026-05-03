@@ -13,12 +13,17 @@ This file will guide to the right skill with the latest knowledge about Midnight
 
 | I'm doing... | Fetch these skills |
 |--------------|-------------------|
+| Understand Midnight's architecture, privacy model, and ZK approach | `why-midnight/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Write Compact smart contracts | `compact/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
 
 
 ## Skills
+
+### [Why Midnight](/why-midnight/SKILL.md)
+- Data protection blockchain with public/private state, selective disclosure, and zk-SNARKs.
+- Why it exists, how it works, and the privacy guarantees it provides.
 
 ### [1AM Wallet](/1am-wallet/SKILL.md)
 - Detect, connect, and wire 1AM browser extension into frontend.

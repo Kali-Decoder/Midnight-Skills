@@ -7,6 +7,11 @@
       "description": "Root router skill for Midnight Network. Use this to select the right sub-skill."
     },
     {
+      "name": "why-midnight",
+      "path": "why-midnight/SKILL.md",
+      "description": "What Midnight is, why it exists, and how it works — public/private state, selective disclosure, and ZK proofs."
+    },
+    {
       "name": "1am-wallet",
       "path": "1am-wallet/SKILL.md",
       "description": "Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network."
