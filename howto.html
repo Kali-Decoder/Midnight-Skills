@@ -189,8 +189,100 @@ a:hover { text-decoration: underline; }
     <p>Fetch a specific skill directly:</p>
     <div class="copy-wrap">
       <button class="copy-btn" data-copy>Copy</button>
+      <code class="code">https://&lt;your-domain&gt;/1am-wallet</code>
+    </div>
+    <div class="copy-wrap">
+      <button class="copy-btn" data-copy>Copy</button>
+      <code class="code">https://&lt;your-domain&gt;/compact</code>
+    </div>
+    <div class="copy-wrap">
+      <button class="copy-btn" data-copy>Copy</button>
+      <code class="code">https://&lt;your-domain&gt;/midnight-js</code>
+    </div>
+    <div class="copy-wrap">
+      <button class="copy-btn" data-copy>Copy</button>
       <code class="code">https://&lt;your-domain&gt;/why-midnight</code>
     </div>
+  </div>
+
+  <div class="section">
+    <h2>Use In Scripts (curl)</h2>
+    <p>Pull markdown into a local file:</p>
+    <div class="copy-wrap">
+      <button class="copy-btn" data-copy>Copy</button>
+      <code class="code">curl -fsSL https://&lt;your-domain&gt;/compact -o compact.SKILL.md</code>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>AI Tools — How To Use</h2>
+    <div class="how-to-tab-nav" role="tablist" aria-label="AI tools">
+      <button class="how-to-tab-btn active" data-tab="chatgpt">ChatGPT/Codex</button>
+      <button class="how-to-tab-btn" data-tab="claude">Claude</button>
+      <button class="how-to-tab-btn" data-tab="cursor">Cursor</button>
+      <button class="how-to-tab-btn" data-tab="gemini">Gemini</button>
+      <button class="how-to-tab-btn" data-tab="copilot">GitHub Copilot</button>
+    </div>
+
+    <div class="how-to-tab-panel active" data-tab="chatgpt">
+      <p class="muted">Requires web access or URL reading.</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">Read https://&lt;your-domain&gt; and use the 1am-wallet and compact skills to explain how to integrate a wallet and deploy a contract on Midnight.</code>
+      </div>
+      <p class="muted">Ask follow-ups like "explain the dust-free flow" or "show me how witnesses work."</p>
+    </div>
+
+    <div class="how-to-tab-panel" data-tab="claude">
+      <p class="muted">Claude Code can fetch URLs directly.</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">Read https://&lt;your-domain&gt; and apply the midnight-js and compact skills.</code>
+      </div>
+      <p class="muted">Claude will load the root skill, then the specific skills.</p>
+    </div>
+
+    <div class="how-to-tab-panel" data-tab="cursor">
+      <p class="muted">Paste in Cursor chat.</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">Read https://&lt;your-domain&gt; and use the compact skill to write a bulletin board contract on Midnight.</code>
+      </div>
+      <p class="muted">Cursor will fetch the markdown if network access is enabled.</p>
+    </div>
+
+    <div class="how-to-tab-panel" data-tab="gemini">
+      <p class="muted">Works in AI Studio / Vertex with web access.</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">Read https://&lt;your-domain&gt; and explain how Midnight combines public and private state with ZK proofs.</code>
+      </div>
+      <p class="muted">Gemini will use the skill URLs as context.</p>
+    </div>
+
+    <div class="how-to-tab-panel" data-tab="copilot">
+      <p class="muted">Use Copilot Chat with web browsing enabled.</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">Read https://&lt;your-domain&gt;/midnight-js and summarize the wallet setup and provider wiring in 5 bullet points.</code>
+      </div>
+      <p class="muted">If browsing is disabled, paste the skill contents manually.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Available Skills</h2>
+    <div class="grid">
+      <div>
+        <p><a href="skill.html?name=1am-wallet">1AM Wallet</a> — Wallet integration, dust-free tx flow</p>
+        <p><a href="skill.html?name=compact">Compact</a> — Smart contract language (ZK circuits)</p>
+      </div>
+      <div>
+        <p><a href="skill.html?name=midnight-js">Midnight.js</a> — TypeScript SDK, providers, wallets</p>
+        <p><a href="skill.html?name=why-midnight">Why Midnight</a> — Architecture &amp; privacy model</p>
+      </div>
+    </div>
+  </div>
   </div>
 
   <div class="section">
