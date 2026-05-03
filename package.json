@@ -1,15 +1,22 @@
 {
-  "name": "zamaskills",
+  "name": "midnight-skills",
   "version": "1.0.0",
-  "description": "Skills for building confidential apps on Zama FHEVM. Guides LLMs through contracts, tests, and private token workflows.",
+  "description": "Skills for building confidential apps on Midnight Network. Guides LLMs through contracts, tests, and private token workflows.",
   "author": {
-    "name": "Kali-Decoder",
-    "url": "https://github.com/Kali-Decoder"
+    "name": "Tusharpamnani, Kali-Decoder",
+    "url": "https://github.com/tusharpamnani, https://github.com/Kali-Decoder"
   },
-  "homepage": "https://zamaskills.dev",
-  "repository": "https://github.com/Kali-Decoder/Zamaskills",
+  "homepage": "https://midnightskills.dev",
+  "repository": "https://github.com/Kali-Decoder/Midnight-skills",
   "license": "MIT",
-  "keywords": ["zama", "fhevm", "solidity", "web3", "blockchain", "confidential", "fhe"],
+  "keywords": [
+    "midnight",
+    "compact",
+    "web3",
+    "blockchain",
+    "confidential",
+    "privacy"
+  ],
   "skills": [
     "./addresses",
     "./scaffold",
@@ -18,7 +25,8 @@
     "./vesting-wallet",
     "./erc20-wrapper",
     "./erc7984-standard",
-    "./confidential-payroll"
+    "./confidential-payroll",
+    "./1am-wallet"
   ],
   "private": true,
   "dependencies": {

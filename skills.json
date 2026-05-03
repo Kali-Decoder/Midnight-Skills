@@ -45,6 +45,11 @@
       "name": "confidential-payroll",
       "path": "confidential-payroll/SKILL.md",
       "description": "Full Hardhat project for confidential payroll with ERC7984 token."
+    },
+    {
+      "name": "1am-wallet",
+      "path": "1am-wallet/SKILL.md",
+      "description": "Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network."
     }
   ]
 }
