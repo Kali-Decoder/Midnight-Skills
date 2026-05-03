@@ -12,6 +12,7 @@ Knowledge skills for AI agents building on Midnight Network. Each skill is a sta
 | [Testing](testing/SKILL.md) | Debug Compact contracts, read compiler errors, manage versions, avoid common traps |
 | [Multinetwork](multinetwork/SKILL.md) | Deploy a single dApp across all networks (localnet, preview, preprod, mainnet) from one codebase |
 | [Indexer](indexer/SKILL.md) | Query blockchain data via GraphQL, watch contract state, subscribe to real-time events |
+| [Security](security/SKILL.md) | Privacy audit checklist, data leak patterns, defensive Compact patterns |
 | [Why Midnight](why-midnight/SKILL.md) | Midnight's architecture, privacy model, selective disclosure, and ZK proofs |
 
 ## Architecture

@@ -35,6 +35,11 @@
       "name": "midnight-indexer",
       "path": "indexer/SKILL.md",
       "description": "Query and subscribe to Midnight blockchain data via Indexer GraphQL API v4. Contract state, subscriptions, event watching."
+    },
+    {
+      "name": "midnight-security",
+      "path": "security/SKILL.md",
+      "description": "Privacy audit checklist, data leak patterns, defensive Compact patterns, commitment/nullifier design."
     }
   ]
 }

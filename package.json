@@ -40,7 +40,8 @@
     "./compact",
     "./testing",
     "./multinetwork",
-    "./indexer"
+    "./indexer",
+    "./security"
   ],
   "private": true,
   "dependencies": {
