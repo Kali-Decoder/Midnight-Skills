@@ -27,9 +27,9 @@
       "description": "Debug Compact contracts and manage toolchain versions. Static vs dynamic errors, version sync, common traps."
     },
     {
-      "name": "midnight-js",
-      "path": "midnight-js/SKILL.md",
-      "description": "The Midnight.js TypeScript SDK for building DApps. Provider wiring, wallet SDK, contract deployment, DUST flow, testkit."
+      "name": "multinetwork",
+      "path": "multinetwork/SKILL.md",
+      "description": "Build a single dApp that deploys across all networks (localnet, preview, preprod, mainnet) from one codebase."
     }
   ]
 }

@@ -38,7 +38,8 @@
     "./confidential-payroll",
     "./1am-wallet",
     "./compact",
-    "./testing"
+    "./testing",
+    "./multinetwork"
   ],
   "private": true,
   "dependencies": {
