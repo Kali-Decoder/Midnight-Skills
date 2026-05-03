@@ -1,6 +1,6 @@
 import { getCollection } from "./_lib/db.js";
 
-const PROJECT = "ZAMASKILLS";
+const PROJECT = "MIDNIGHT SKILLS";
 
 export default async function handler(req, res) {
   if (!process.env.STATS_SECRET || req.query.key !== process.env.STATS_SECRET) {

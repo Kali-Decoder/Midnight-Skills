@@ -13,7 +13,7 @@ export async function getDb() {
     cachedClient = client.connect();
   }
   const client = await cachedClient;
-  const dbName = process.env.MONGODB_DB || "zamaskills";
+  const dbName = process.env.MONGODB_DB || "midnightskills";
   return client.db(dbName);
 }
 

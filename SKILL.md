@@ -14,6 +14,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | I'm doing... | Fetch these skills |
 |--------------|-------------------|
 | Understand Midnight's architecture, privacy model, and ZK approach | `why-midnight/` |
+| Debug Compact contracts, read errors, manage versions | `testing/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Write Compact smart contracts | `compact/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
@@ -32,6 +33,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Compact](/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.
 - Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns.
+
+### [Testing](/testing/SKILL.md)
+- Static vs dynamic errors, reading compiler messages, `--skip-zk` dev loop.
+- Version management across 6 components, common debugging patterns.
 
 ### [Midnight.js](/midnight-js/SKILL.md)
 - TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).

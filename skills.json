@@ -22,6 +22,11 @@
       "description": "The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits."
     },
     {
+      "name": "testing",
+      "path": "testing/SKILL.md",
+      "description": "Debug Compact contracts and manage toolchain versions. Static vs dynamic errors, version sync, common traps."
+    },
+    {
       "name": "midnight-js",
       "path": "midnight-js/SKILL.md",
       "description": "The Midnight.js TypeScript SDK for building DApps. Provider wiring, wallet SDK, contract deployment, DUST flow, testkit."

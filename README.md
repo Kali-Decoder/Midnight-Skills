@@ -9,6 +9,7 @@ Knowledge skills for AI agents building on Midnight Network. Each skill is a sta
 | [1AM Wallet](1am-wallet/SKILL.md) | Integrate the 1AM browser wallet for dust-free contract deployment and transaction flow |
 | [Compact](compact/SKILL.md) | The Compact smart contract language — TypeScript-like DSL that compiles to ZK circuits |
 | [Midnight.js](midnight-js/SKILL.md) | TypeScript SDK — provider wiring, wallet SDK, contract deployment, DUST flow, testkit |
+| [Testing](testing/SKILL.md) | Debug Compact contracts, read compiler errors, manage versions, avoid common traps |
 | [Why Midnight](why-midnight/SKILL.md) | Midnight's architecture, privacy model, selective disclosure, and ZK proofs |
 
 ## Architecture

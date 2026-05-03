@@ -1,24 +1,20 @@
 {
-  "name": "monskills",
+  "name": "midnight-skills",
   "version": "1.0.0",
-  "description": "Skills for developing apps on Monad. Assists LLM with frontend, smart contract deployment, and deploying to production",
+  "description": "Skills for developing apps on Midnight. Assists LLM with frontend, smart contract deployment, and deploying to production",
   "author": {
-    "name": "Harpalsinh Jadeja",
-    "url": "https://github.com/Kali-Decoder"
+    "name": "Tusharpamnani, Kali-Decoder",
+    "url": "https://github.com/tusharpamnani, https://github.com/Kali-Decoder"
   },
-  "homepage": "https://skills.devnads.com",
-  "repository": "https://github.com/harpalsinh/monskills",
+  "homepage": "https://midnightskills.dev",
+  "repository": "https://github.com/Kali-Decoder/Midnight-Skills",
   "license": "MIT",
-  "keywords": ["monad", "ethereum", "solidity", "web3", "blockchain", "dapp"],
+  "keywords": ["midnight", "compact", "privacy", "web3", "blockchain", "dapp"],
   "skills": [
-    "./addresses",
-    "./wallet",
-    "./wallet-integration",
-    "./why-monad",
-    "./concepts",
-    "./scaffold",
-    "./vercel-deploy",
-    "./gas",
-    "./tooling-and-infra"
+    "./why-midnight",
+    "./midnight-js",
+    "./1am-wallet",
+    "./compact",
+    "./testing"
   ]
 }
