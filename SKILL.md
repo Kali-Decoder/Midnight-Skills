@@ -14,9 +14,14 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | I'm doing... | Fetch these skills |
 |--------------|-------------------|
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
+| Write Compact smart contracts | `compact/` |
 
 ## Skills
 
 ### [1AM Wallet](/1am-wallet/SKILL.md)
 - Detect, connect, and wire 1AM browser extension into frontend.
 - Provider setup, contract deployment, and dust-free transaction flow.
+
+### [Compact](/compact/SKILL.md)
+- The four mandatory pieces of every contract, type system, circuits as constraints.
+- Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns.

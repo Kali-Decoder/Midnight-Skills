@@ -50,6 +50,11 @@
       "name": "1am-wallet",
       "path": "1am-wallet/SKILL.md",
       "description": "Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network."
+    },
+    {
+      "name": "compact",
+      "path": "compact/SKILL.md",
+      "description": "The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits."
     }
   ]
 }

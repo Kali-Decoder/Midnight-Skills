@@ -3,9 +3,19 @@
   "version": "1.0.0",
   "description": "Skills for building confidential apps on Midnight Network. Guides LLMs through contracts, tests, and private token workflows.",
   "author": {
-    "name": "Tusharpamnani, Kali-Decoder",
-    "url": "https://github.com/tusharpamnani, https://github.com/Kali-Decoder"
+    "name": "Tusharpamnani",
+    "url": "https://github.com/tusharpamnani"
   },
+  "contributors": [
+    {
+      "name": "Tusharpamnani",
+      "url": "https://github.com/tusharpamnani"
+    },
+    {
+      "name": "Kali-Decoder",
+      "url": "https://github.com/Kali-Decoder"
+    }
+  ],
   "homepage": "https://midnightskills.dev",
   "repository": "https://github.com/Kali-Decoder/Midnight-skills",
   "license": "MIT",
@@ -26,7 +36,8 @@
     "./erc20-wrapper",
     "./erc7984-standard",
     "./confidential-payroll",
-    "./1am-wallet"
+    "./1am-wallet",
+    "./compact"
   ],
   "private": true,
   "dependencies": {
