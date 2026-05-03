@@ -1,20 +1,20 @@
 {
-  "name": "zamaskills",
+  "name": "midnight-skills",
   "owner": {
-    "name": "Kali-Decoder"
+    "name": "Tusharpamnani, Kali-Decoder"
   },
   "metadata": {
     "version": "1.0.0",
-    "description": "Skills for building confidential apps on Zama FHEVM. Guides LLMs through contracts, tests, and private token workflows."
+    "description": "Skills for building confidential apps on Midnight Network. Guides LLMs through contracts, tests, and private token workflows."
   },
   "plugins": [
     {
-      "name": "zamaskills",
+      "name": "midnight-skills",
       "source": "./",
       "version": "1.0.0",
-      "description": "Skills for building confidential apps on Zama FHEVM. Guides LLMs through contracts, tests, and private token workflows.",
+      "description": "Skills for building confidential apps on Midnight Network. Guides LLMs through contracts, tests, and private token workflows.",
       "author": {
-        "name": "Kali-Decoder"
+        "name": "Tusharpamnani, Kali-Decoder"
       }
     }
   ]

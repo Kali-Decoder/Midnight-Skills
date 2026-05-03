@@ -37,7 +37,11 @@
     "./erc7984-standard",
     "./confidential-payroll",
     "./1am-wallet",
-    "./compact"
+    "./compact",
+    "./testing",
+    "./multinetwork",
+    "./indexer",
+    "./security"
   ],
   "private": true,
   "dependencies": {

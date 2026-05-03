@@ -3,18 +3,11 @@ import { join } from "path";
 import { getCollection, hashIp } from "./_lib/db.js";
 
 const VALID_SKILLS = [
-  "scaffold",
-  "addresses",
-  "wallet",
-  "wallet-integration",
-  "vercel-deploy",
-  "tooling-and-infra",
-  "decryption",
-  "private-token",
-  "vesting-wallet",
-  "erc20-wrapper",
-  "erc7984-standard",
-  "confidential-payroll",
+  "why-midnight",
+  "1am-wallet",
+  "compact",
+  "testing",
+  "midnight-js"
 ];
 
 export default async function handler(req, res) {
@@ -26,7 +19,7 @@ export default async function handler(req, res) {
 
   let content;
   try {
-    const filePath = skill === "monskill"
+    const filePath = skill === "midnight-skills"
       ? join(process.cwd(), "SKILL.md")
       : join(process.cwd(), skill, "SKILL.md");
     content = readFileSync(filePath, "utf-8");

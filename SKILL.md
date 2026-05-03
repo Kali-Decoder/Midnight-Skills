@@ -14,6 +14,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | I'm doing... | Fetch these skills |
 |--------------|-------------------|
 | Understand Midnight's architecture, privacy model, and ZK approach | `why-midnight/` |
+| Debug Compact contracts, read errors, manage versions | `testing/` |
+| Build a single dApp targeting all networks from one codebase | `multinetwork/` |
+| Query blockchain data, watch contract state, subscribe to events | `indexer/` |
+| Privacy audit checklist, prevent data leaks, defensive Compact patterns | `security/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Write Compact smart contracts | `compact/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
@@ -32,6 +36,22 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Compact](/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.
 - Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns.
+
+### [Testing](/testing/SKILL.md)
+- Static vs dynamic errors, reading compiler messages, `--skip-zk` dev loop.
+- Version management across 6 components, common debugging patterns.
+
+### [Multinetwork](/multinetwork/SKILL.md)
+- Unified provider builder, wallet abstraction, proof server routing.
+- Contract registry, deploy scripts, DUST flow per network.
+
+### [Indexer](/indexer/SKILL.md)
+- GraphQL queries and subscriptions, contract state reads, transaction lookups.
+- Real-time event watching, offset/null bug workaround, TypeScript helpers.
+
+### [Security](/security/SKILL.md)
+- Privacy audit checklist, data leak patterns, commitment/nullifier design.
+- Witness trust, front-running resistance, transaction semantics.
 
 ### [Midnight.js](/midnight-js/SKILL.md)
 - TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).
