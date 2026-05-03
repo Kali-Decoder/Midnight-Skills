@@ -2,49 +2,9 @@
   "version": 1,
   "skills": [
     {
-      "name": "zamaskill",
+      "name": "midnightskill",
       "path": "SKILL.md",
-      "description": "Root router skill for Zama FHEVM. Use this to select the right sub-skill."
-    },
-    {
-      "name": "scaffold",
-      "path": "scaffold/SKILL.md",
-      "description": "Build a Zama FHEVM counter app with Hardhat."
-    },
-    {
-      "name": "addresses",
-      "path": "addresses/SKILL.md",
-      "description": "Canonical Zama FHEVM Sepolia addresses and services."
-    },
-    {
-      "name": "decryption",
-      "path": "decryption/SKILL.md",
-      "description": "Public decryption flow for Zama FHEVM."
-    },
-    {
-      "name": "private-token",
-      "path": "private-token/SKILL.md",
-      "description": "Template for a confidential ERC7984 token with Hardhat."
-    },
-    {
-      "name": "vesting-wallet",
-      "path": "vesting-wallet/SKILL.md",
-      "description": "Confidential vesting wallet example using ERC7984."
-    },
-    {
-      "name": "erc20-wrapper",
-      "path": "erc20-wrapper/SKILL.md",
-      "description": "Wrap a standard ERC-20 into a confidential ERC-7984."
-    },
-    {
-      "name": "erc7984-standard",
-      "path": "erc7984-standard/SKILL.md",
-      "description": "Full Hardhat project template for a confidential ERC-7984 token."
-    },
-    {
-      "name": "confidential-payroll",
-      "path": "confidential-payroll/SKILL.md",
-      "description": "Full Hardhat project for confidential payroll with ERC7984 token."
+      "description": "Root router skill for Midnight Network. Use this to select the right sub-skill."
     },
     {
       "name": "1am-wallet",
@@ -55,6 +15,11 @@
       "name": "compact",
       "path": "compact/SKILL.md",
       "description": "The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits."
+    },
+    {
+      "name": "midnight-js",
+      "path": "midnight-js/SKILL.md",
+      "description": "The Midnight.js TypeScript SDK for building DApps. Provider wiring, wallet SDK, contract deployment, DUST flow, testkit."
     }
   ]
 }

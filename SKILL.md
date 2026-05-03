@@ -15,6 +15,8 @@ This file will guide to the right skill with the latest knowledge about Midnight
 |--------------|-------------------|
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Write Compact smart contracts | `compact/` |
+| Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
+
 
 ## Skills
 
@@ -25,3 +27,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Compact](/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.
 - Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns.
+
+### [Midnight.js](/midnight-js/SKILL.md)
+- TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).
+- Contract deployment, circuit calls, DUST generation, private state, testkit.
