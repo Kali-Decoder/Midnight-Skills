@@ -18,6 +18,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Build a single dApp targeting all networks from one codebase | `multinetwork/` |
 | Query blockchain data, watch contract state, subscribe to events | `indexer/` |
 | Privacy audit checklist, prevent data leaks, defensive Compact patterns | `security/` |
+| Complete DApp reference: wallet, deploy, interact (use as template) | `example-counter/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Write Compact smart contracts | `compact/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
@@ -52,6 +53,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Security](/security/SKILL.md)
 - Privacy audit checklist, data leak patterns, commitment/nullifier design.
 - Witness trust, front-running resistance, transaction semantics.
+
+### [Example Counter](/example-counter/SKILL.md)
+- Complete DApp reference: headless wallet, CLI, counter contract.
+- DUST generation, deploy, interaction, standalone mode.
 
 ### [Midnight.js](/midnight-js/SKILL.md)
 - TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).

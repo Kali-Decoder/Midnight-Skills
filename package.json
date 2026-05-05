@@ -41,7 +41,8 @@
     "./testing",
     "./multinetwork",
     "./indexer",
-    "./security"
+    "./security",
+    "./example-counter"
   ],
   "private": true,
   "dependencies": {
