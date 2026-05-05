@@ -40,6 +40,11 @@
       "name": "midnight-security",
       "path": "security/SKILL.md",
       "description": "Privacy audit checklist, data leak patterns, defensive Compact patterns, commitment/nullifier design."
+    },
+    {
+      "name": "example-counter",
+      "path": "example-counter/SKILL.md",
+      "description": "Complete Midnight DApp reference — headless wallet, CLI, counter contract, DUST generation, deploy, interaction."
     }
   ]
 }
