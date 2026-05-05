@@ -11,6 +11,16 @@ This skill generates a complete, runnable Midnight DApp. It covers every file in
 - `github.com/midnightntwrk/example-counter` — official reference repo
 - `docs.midnight.network/guides/deploy-mn-app` — official deploy guide
 - `docs.midnight.network/guides/interact-with-mn-app` — official interact guide
+- `docs.midnight.network/relnotes/support-matrix` — authoritative version compatibility matrix
+
+**Package versions in this skill match the official compatibility matrix (May 2026).** Always cross-check against the support matrix before pinning versions in a new project — Midnight packages update frequently and version mismatches cause `ETARGET` errors at install time.
+
+**Key changes from upstream (midnightntwrk/example-counter):**
+- `@midnight-ntwrk/midnight-js` is now a consolidated package replacing separate `@midnight-ntwrk/midnight-js-contracts`, `@midnight-ntwrk/midnight-js-types`, and `@midnight-ntwrk/midnight-js-network-id` packages
+- `@midnight-ntwrk/wallet-sdk-*` packages updated to `^3.0.0` / `^2.0.0` range syntax
+- Compact pragma updated to `>= 0.20` (matches compact compiler 0.30.0+)
+- `WalletFacade.init()` static factory replaces direct constructor usage
+- Indexer API paths use `/api/v3/graphql` (not v4) for all networks
 
 ---
 
@@ -62,8 +72,8 @@ compact compile --version
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "precompile":       "node -e \"require('fs').mkdirSync('contract/managed/counter', { recursive: true })\"",
     "compile":          "compact compile contract/src/counter.compact contract/managed/counter",
-    "sync:assets":      "mkdir -p public/zk/counter && cp -r contract/managed/counter/keys public/zk/counter/ && cp -r contract/managed/counter/zkir public/zk/counter/",
     "deploy":           "NETWORK=preprod tsx src/deploy.ts",
     "deploy:preview":   "NETWORK=preview tsx src/deploy.ts",
     "deploy:local":     "NETWORK=undeployed tsx src/deploy.ts",
@@ -75,27 +85,27 @@ compact compile --version
     "local:stop":       "docker compose -f standalone.yml down"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.5.0",
     "@types/ws": "^8.18.1",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   },
   "dependencies": {
     "@midnight-ntwrk/compact-runtime": "0.15.0",
-    "@midnight-ntwrk/ledger-v8": "8.0.3",
-    "@midnight-ntwrk/midnight-js-contracts": "4.0.2",
-    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.0.2",
-    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.0.2",
-    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.0.2",
-    "@midnight-ntwrk/midnight-js-network-id": "4.0.2",
-    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.0.2",
-    "@midnight-ntwrk/midnight-js-types": "4.0.2",
-    "@midnight-ntwrk/wallet-sdk-address-format": "3.1.0",
-    "@midnight-ntwrk/wallet-sdk-dust-wallet": "3.0.0",
-    "@midnight-ntwrk/wallet-sdk-facade": "3.0.0",
-    "@midnight-ntwrk/wallet-sdk-hd": "3.1.0",
-    "@midnight-ntwrk/wallet-sdk-shielded": "2.1.0",
-    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "2.1.0",
+    "@midnight-ntwrk/ledger-v8": "^8.0.0",
+    "@midnight-ntwrk/midnight-js": "^4.0.4",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "^4.0.4",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^4.0.4",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "^4.0.4",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "^4.0.4",
+    "@midnight-ntwrk/wallet-sdk-address-format": "^3.0.0",
+    "@midnight-ntwrk/wallet-sdk-dust-wallet": "^3.0.0",
+    "@midnight-ntwrk/wallet-sdk-facade": "^3.0.0",
+    "@midnight-ntwrk/wallet-sdk-hd": "^3.0.0",
+    "@midnight-ntwrk/wallet-sdk-shielded": "^2.0.0",
+    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "^2.0.0",
+    "pino": "^10.3.1",
+    "pino-pretty": "^13.1.3",
     "rxjs": "^7.8.1",
     "ws": "^8.19.0"
   }
@@ -134,13 +144,11 @@ compact compile --version
 ## 5) `contract/src/counter.compact`
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
 
 export ledger round: Counter;
-
-constructor() {
-  round.increment(1);
-}
 
 export circuit increment(): [] {
   round.increment(1);
@@ -150,6 +158,7 @@ export circuit increment(): [] {
 Compile it:
 
 ```bash
+# The precompile script creates the output directory automatically
 npm run compile
 ```
 
@@ -157,6 +166,12 @@ Expected output:
 ```
 Compiling 1 circuits:
   circuit "increment" (k=10, rows=29)
+```
+
+**The output directory must exist before compiling.** The `precompile` script in `package.json` handles this via `mkdirSync`. If you run `compact compile` manually, create the directory first:
+```bash
+mkdir -p contract/managed/counter
+compact compile contract/src/counter.compact contract/managed/counter
 ```
 
 **Circuit size note:** If you see `prove: no SRS params for k=6`, the circuit is too small for the preview prover. Pad the contract with extra ledger fields to increase circuit size (`k` must be ≥ 10 for most proof servers).
@@ -178,11 +193,12 @@ import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
 import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
-import { setNetworkId, getNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+import { setNetworkId, getNetworkId } from '@midnight-ntwrk/midnight-js/network-id';
+import { assertIsContractAddress } from '@midnight-ntwrk/midnight-js/utils';
 import * as ledger from '@midnight-ntwrk/ledger-v8';
 import { WalletFacade } from '@midnight-ntwrk/wallet-sdk-facade';
 import { DustWallet } from '@midnight-ntwrk/wallet-sdk-dust-wallet';
-import { HDWallet, Roles } from '@midnight-ntwrk/wallet-sdk-hd';
+import { HDWallet, Roles, generateRandomSeed } from '@midnight-ntwrk/wallet-sdk-hd';
 import { ShieldedWallet } from '@midnight-ntwrk/wallet-sdk-shielded';
 import {
   createKeystore,
@@ -191,17 +207,17 @@ import {
   UnshieldedWallet,
 } from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
+import { MidnightBech32m, ShieldedAddress, ShieldedCoinPublicKey, ShieldedEncryptionPublicKey } from '@midnight-ntwrk/wallet-sdk-address-format';
 
 // Required for GraphQL subscriptions (wallet sync) in Node.js
-// Must be set before any wallet SDK imports resolve their WebSocket usage
 // @ts-expect-error ws types don't match globalThis.WebSocket exactly
 globalThis.WebSocket = WebSocket;
 
 // ── Network config ─────────────────────────────────────────────────────────────
 
-type NetworkId = 'preprod' | 'preview' | 'undeployed';
+export type NetworkId = 'preprod' | 'preview' | 'undeployed';
 
-const NETWORK_CONFIG: Record<NetworkId, {
+export const NETWORK_CONFIG: Record<NetworkId, {
   networkId: NetworkId;
   indexer: string;
   indexerWS: string;
@@ -219,12 +235,12 @@ const NETWORK_CONFIG: Record<NetworkId, {
     networkId: 'preview',
     indexer:    'https://indexer.preview.midnight.network/api/v4/graphql',
     indexerWS:  'wss://indexer.preview.midnight.network/api/v4/graphql/ws',
-    node:       'wss://rpc.preview.midnight.network',
+    node:       'https://rpc.preview.midnight.network',
     proofServer: 'http://127.0.0.1:6300',
   },
   undeployed: {
     networkId: 'undeployed',
-    indexer:    'http://localhost:8088/api/v3/graphql',   // NOTE: v3 for local
+    indexer:    'http://localhost:8088/api/v3/graphql',
     indexerWS:  'ws://localhost:8088/api/v3/graphql/ws',
     node:       'ws://localhost:9944',
     proofServer: 'http://127.0.0.1:6300',
@@ -252,7 +268,7 @@ export const compiledContract = CompiledContract.make('counter', Counter.Contrac
   CompiledContract.withCompiledFileAssets(zkConfigPath),
 );
 
-export const PRIVATE_STATE_ID = 'counterState' as const;
+export const PRIVATE_STATE_ID = 'counterPrivateState' as const;
 
 // ── Key derivation ─────────────────────────────────────────────────────────────
 
@@ -270,7 +286,7 @@ export function deriveKeys(seedHex: string) {
   return result.keys;
 }
 
-// ── Wallet creation ────────────────────────────────────────────────────────────
+// ── Wallet creation (WalletFacade.init pattern) ───────────────────────────────
 
 export async function createWallet(seedHex: string) {
   const keys = deriveKeys(seedHex);
@@ -280,37 +296,27 @@ export async function createWallet(seedHex: string) {
   const dustSecretKey = ledger.DustSecretKey.fromSeed(keys[Roles.Dust]);
   const unshieldedKeystore = createKeystore(keys[Roles.NightExternal], netId);
 
-  // relayURL must be WebSocket — convert https→wss, http→ws
-  const relayURL = new URL(CONFIG.node.replace(/^https/, 'wss').replace(/^http(?!s)/, 'ws'));
-
-  const walletConnConfig = {
+  // Build unified config for WalletFacade.init()
+  const walletConfig = {
     networkId: netId,
     indexerClientConnection: {
       indexerHttpUrl: CONFIG.indexer,
       indexerWsUrl: CONFIG.indexerWS,
     },
     provingServerUrl: new URL(CONFIG.proofServer),
-    relayURL,
-  };
-
-  const shieldedWallet = ShieldedWallet(walletConnConfig)
-    .startWithSecretKeys(shieldedSecretKeys);
-
-  const unshieldedWallet = UnshieldedWallet({
-    networkId: netId,
-    indexerClientConnection: walletConnConfig.indexerClientConnection,
-    txHistoryStorage: new InMemoryTransactionHistoryStorage(),
-  }).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore));
-
-  const dustWallet = DustWallet({
-    ...walletConnConfig,
+    relayURL: new URL(CONFIG.node.replace(/^http/, 'ws')),
     costParameters: {
       additionalFeeOverhead: 300_000_000_000_000n,
       feeBlocksMargin: 5,
     },
-  }).startWithSecretKey(dustSecretKey, ledger.LedgerParameters.initialParameters().dust);
+  };
 
-  const wallet = new WalletFacade(shieldedWallet, unshieldedWallet, dustWallet);
+  const wallet = await WalletFacade.init({
+    configuration: walletConfig,
+    shielded: (cfg) => ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
+    unshielded: (cfg) => UnshieldedWallet(cfg).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore)),
+    dust: (cfg) => DustWallet(cfg).startWithSecretKey(dustSecretKey, ledger.LedgerParameters.initialParameters().dust),
+  });
   await wallet.start(shieldedSecretKeys, dustSecretKey);
 
   return { wallet, shieldedSecretKeys, dustSecretKey, unshieldedKeystore };
@@ -363,7 +369,6 @@ export function signTransactionIntents(
 // ── Provider setup ─────────────────────────────────────────────────────────────
 
 export async function createProviders(walletCtx: WalletCtx) {
-  // state() returns an Observable — must subscribe, never access as property
   const state = await Rx.firstValueFrom(
     walletCtx.wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
   );
@@ -441,6 +446,18 @@ export async function ensureDust(walletCtx: WalletCtx): Promise<void> {
     ),
   );
 }
+
+// ── Address helpers ────────────────────────────────────────────────────────────
+
+export function getShieldedAddress(state: any, networkId: string): string {
+  const coinPubKey = ShieldedCoinPublicKey.fromHexString(state.shielded.coinPublicKey.toHexString());
+  const encPubKey = ShieldedEncryptionPublicKey.fromHexString(state.shielded.encryptionPublicKey.toHexString());
+  return MidnightBech32m.encode(networkId, new ShieldedAddress(coinPubKey, encPubKey)).toString();
+}
+
+export function toHex(b: Uint8Array): string {
+  return Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+}
 ```
 
 ---
@@ -455,18 +472,14 @@ import * as path from 'node:path';
 import * as Rx from 'rxjs';
 import { Buffer } from 'buffer';
 
-import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { deployContract } from '@midnight-ntwrk/midnight-js/contracts';
 import { unshieldedToken } from '@midnight-ntwrk/ledger-v8';
 import { generateRandomSeed } from '@midnight-ntwrk/wallet-sdk-hd';
 
 import {
   createWallet, createProviders, ensureDust,
-  compiledContract, Counter, PRIVATE_STATE_ID, CONFIG, zkConfigPath,
+  compiledContract, PRIVATE_STATE_ID, CONFIG, zkConfigPath, toHex,
 } from './utils.js';
-
-function toHex(b: Uint8Array) {
-  return Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
-}
 
 async function main() {
   console.log(`\n╔══════════════════════════════════════════════════════╗`);
@@ -549,7 +562,7 @@ async function main() {
     const deployed = await deployContract(providers, {
       compiledContract,
       privateStateId: PRIVATE_STATE_ID,
-      initialPrivateState: {},
+      initialPrivateState: { privateCounter: 0 },
     });
 
     const contractAddress = deployed.deployTxData.public.contractAddress;
@@ -584,7 +597,7 @@ import { stdin, stdout } from 'node:process';
 import * as fs from 'node:fs';
 import * as Rx from 'rxjs';
 
-import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { findDeployedContract } from '@midnight-ntwrk/midnight-js/contracts';
 import { ContractState } from '@midnight-ntwrk/compact-runtime';
 
 import {
@@ -639,7 +652,7 @@ async function main() {
       contractAddress: deployment.contractAddress,
       compiledContract,
       privateStateId: PRIVATE_STATE_ID,
-      initialPrivateState: {},
+      initialPrivateState: { privateCounter: 0 },
     });
 
     console.log('  ✓ Connected!\n');
@@ -718,37 +731,66 @@ main().catch(console.error);
 ```yaml
 services:
   proof-server:
-    image: midnightntwrk/proof-server:8.0.3
-    command: midnight-proof-server -v
+    image: 'midnightntwrk/proof-server:8.0.3'
+    command: ['midnight-proof-server -v']
     ports:
-      - "6300:6300"
-    restart: unless-stopped
+      - '6300:6300'
+    environment:
+      RUST_BACKTRACE: 'full'
 ```
 
 ### `standalone.yml` (undeployed — full local stack)
 
 ```yaml
 services:
-  midnight-node:
-    image: midnightntwrk/midnight-node:0.21.0
+  proof-server:
+    container_name: 'counter-proof-server'
+    image: 'midnightntwrk/proof-server:8.0.3'
+    command: ['midnight-proof-server -v']
     ports:
-      - "9944:9944"
-    restart: unless-stopped
+      - '6300'
+    environment:
+      RUST_BACKTRACE: 'full'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:6300/version']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
   indexer:
-    image: midnightntwrk/indexer-standalone:3.1.0
+    container_name: 'counter-indexer'
+    image: 'midnightntwrk/indexer-standalone:4.0.0'
+    env_file: standalone.env.example
     ports:
-      - "8088:8088"
+      - '0:8088'
+    environment:
+      RUST_LOG: 'indexer=info,chain_indexer=info,indexer_api=info,wallet_indexer=info,indexer_common=info,fastrace_opentelemetry=off,info'
+      APP__APPLICATION__NETWORK_ID: 'undeployed'
+    healthcheck:
+      test: ['CMD-SHELL', 'cat /var/run/indexer-standalone/running']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
     depends_on:
-      - midnight-node
-    restart: unless-stopped
+      node:
+        condition: service_healthy
 
-  proof-server:
-    image: midnightntwrk/proof-server:8.0.3
-    command: midnight-proof-server -v
+  node:
+    image: 'midnightntwrk/midnight-node:0.22.3'
+    container_name: 'counter-node'
     ports:
-      - "6300:6300"
-    restart: unless-stopped
+      - '9944'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9944/health']
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    environment:
+      CFG_PRESET: 'dev'
+      SIDECHAIN_BLOCK_BENEFICIARY: '04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e'
 ```
 
 ---
@@ -759,7 +801,7 @@ services:
 # 1. Install deps
 npm install
 
-# 2. Compile contract
+# 2. Compile contract (precompile script creates the output dir automatically)
 npm run compile
 # → circuit "increment" (k=10, rows=29)
 
@@ -807,6 +849,8 @@ npm run cli:local
 | Error | Cause | Fix |
 |---|---|---|
 | `compact: command not found` | PATH not set | `source $HOME/.local/bin/env` |
+| `The system cannot find the file specified` (compile) | Output dir doesn't exist | `mkdir -p contract/managed/counter` then recompile |
+| `ETARGET No matching version found` | Wrong package version pinned | Use versions from this skill's `package.json` |
 | `ECONNREFUSED 127.0.0.1:6300` | Proof server not running | `npm run proof-server` |
 | Proof server hangs (Mac ARM) | Docker VMM issue | Docker Desktop → Settings → General → Virtual Machine Options → Docker VMM → restart |
 | `Failed to clone intent` | Wallet SDK signing bug | Already fixed via `signTransactionIntents` in `utils.ts` |
@@ -816,6 +860,8 @@ npm run cli:local
 | `prove: no SRS params for k=6` | Circuit too small for prover | Add dummy ledger fields to increase circuit size |
 | Old address fails after recompile | Verifier key changed | Redeploy and update `deployment.json` |
 | `v4/graphql` 404 on local | Wrong indexer version | Local uses v3 — already correct in `utils.ts` |
+| `WalletFacade.init is not a function` | Old WalletFacade usage | Use `WalletFacade.init()` static factory, not `new WalletFacade()` |
+| `MidnightBech32m.encode is not a function` | Missing address-format import | Import from `@midnight-ntwrk/wallet-sdk-address-format` |
 
 ---
 
