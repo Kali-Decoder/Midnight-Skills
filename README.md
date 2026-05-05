@@ -14,6 +14,8 @@ Knowledge skills for AI agents building on Midnight Network. Each skill is a sta
 | [Indexer](indexer/SKILL.md) | Query blockchain data via GraphQL, watch contract state, subscribe to real-time events |
 | [Security](security/SKILL.md) | Privacy audit checklist, data leak patterns, defensive Compact patterns |
 | [Example Counter](example-counter/SKILL.md) | Complete DApp reference — headless wallet, CLI, counter contract, DUST, deploy |
+| [NFT](nft/SKILL.md) | Build NFTs (shielded + unshielded) with OpenZeppelin and native Midnight functions |
+| [Token Transfers](token-transfers/SKILL.md) | Shielded and unshielded token transfers, balance flows, multi-party transactions |
 | [Why Midnight](why-midnight/SKILL.md) | Midnight's architecture, privacy model, selective disclosure, and ZK proofs |
 
 ## Architecture

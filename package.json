@@ -42,7 +42,9 @@
     "./multinetwork",
     "./indexer",
     "./security",
-    "./example-counter"
+    "./example-counter",
+    "./nft",
+    "./token-transfers"
   ],
   "private": true,
   "dependencies": {

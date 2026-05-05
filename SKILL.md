@@ -19,6 +19,8 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Query blockchain data, watch contract state, subscribe to events | `indexer/` |
 | Privacy audit checklist, prevent data leaks, defensive Compact patterns | `security/` |
 | Complete DApp reference: wallet, deploy, interact (use as template) | `example-counter/` |
+| Build NFTs (shielded + unshielded) with OpenZeppelin | `nft/` |
+| Token transfers, balance flows, multi-party txs | `token-transfers/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Write Compact smart contracts | `compact/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
@@ -57,6 +59,14 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Example Counter](/example-counter/SKILL.md)
 - Complete DApp reference: headless wallet, CLI, counter contract.
 - DUST generation, deploy, interaction, standalone mode.
+
+### [NFT](/nft/SKILL.md)
+- Build shielded and unshielded NFTs on Midnight.
+- OpenZeppelin NonFungibleToken, mint, transfer, metadata, privacy patterns.
+
+### [Token Transfers](/token-transfers/SKILL.md)
+- Shielded and unshielded token transfers.
+- Balance queries, multi-party flows, transaction semantics.
 
 ### [Midnight.js](/midnight-js/SKILL.md)
 - TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).
