@@ -45,6 +45,16 @@
       "name": "example-counter",
       "path": "example-counter/SKILL.md",
       "description": "Complete Midnight DApp reference — headless wallet, CLI, counter contract, DUST generation, deploy, interaction."
+    },
+    {
+      "name": "nft",
+      "path": "nft/SKILL.md",
+      "description": "Build shielded and unshielded NFTs on Midnight using OpenZeppelin Compact contracts and native token functions."
+    },
+    {
+      "name": "token-transfers",
+      "path": "token-transfers/SKILL.md",
+      "description": "Shielded and unshielded token transfers, balance queries, multi-party flows on Midnight."
     }
   ]
 }

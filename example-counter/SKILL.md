@@ -1,508 +1,835 @@
 ---
-name: token-transfers
-description: Shielded and unshielded NIGHT token transfers, contract token (FungibleToken) design, balance queries, DUST mechanics, multi-party Zswap transactions, and the Either<ZswapCoinPublicKey, ContractAddress> recipient pattern for Midnight Network. Use when a user asks about sending NIGHT tokens, reading balances, building a token contract, the difference between shielded and unshielded transfers, how DUST is generated and consumed, or how to implement ERC-20-style transfers in Compact.
+name: example-counter
+description: Generate a complete Midnight Network counter DApp from scratch — Compact smart contract, headless Node.js CLI, wallet setup, DUST generation, deploy script, contract interaction, and all supporting config. Use when a user wants to build a full Midnight DApp, bootstrap a new project, understand the end-to-end lifecycle, or needs working boilerplate for wallet + contract + CLI. This skill produces all files needed to run on preprod, preview, or undeployed (local Docker stack).
 ---
 
-# Token Transfers Skill
+# Example Counter DApp Skill
 
-Midnight has two distinct token systems that operate independently: **ledger tokens** (NIGHT, UTXO-based, native to the chain) and **contract tokens** (account-based, ERC-20-style, implemented in Compact). They work differently, transfer differently, and serve different purposes.
+This skill generates a complete, runnable Midnight DApp. It covers every file in the project: the Compact contract, TypeScript utilities, deploy script, CLI, Docker configs, and package setup. All code is production-quality and matches the official `midnightntwrk/example-counter` reference implementation.
 
 **Primary references:**
-- `docs.midnight.network/concepts/ledgers` — ledger vs contract token model
-- `docs.midnight.network/concepts/utxo` — UTXO mechanics and nullifier set
-- `docs.midnight.network/concepts/dust-architecture` — DUST generation lifecycle
-- `docs.midnight.network/concepts/zswap` — atomic swap and shielded transfer protocol
-- `github.com/OpenZeppelin/compact-contracts` — reference FungibleToken implementation
+- `github.com/midnightntwrk/example-counter` — official reference repo
+- `docs.midnight.network/guides/deploy-mn-app` — official deploy guide
+- `docs.midnight.network/guides/interact-with-mn-app` — official interact guide
 
 ---
 
-## 1) Two Token Systems — Which One You Need
+## 1) Project Structure
 
-| | Ledger Tokens (NIGHT) | Contract Tokens |
-|---|---|---|
-| Where they live | Chain ledger, UTXO-based | Inside a Compact contract, account-based |
-| Transfer mechanism | Zswap (ZK atomic swap) | Circuit call (`transfer`, `mint`, `burn`) |
-| Privacy | Shielded or unshielded at UTXO level | Private state (balances can be private) |
-| Fee resource | NIGHT generates DUST (transaction fees) | No fee role — just application logic |
-| Wallet SDK method | `wallet.makeTransfer(outputs)` | `contract.callTx.transfer(to, amount)` |
-| Who manages it | Protocol + wallet SDK | Your Compact contract |
-| Analogy | Native ETH / BTC | ERC-20 |
+Generate this exact layout:
 
-**Decision rule:** If you are moving NIGHT tokens (the chain's native token), use the wallet SDK transfer. If you are building an application token (governance, game currency, stablecoin, NFT), implement it in Compact using the account/map model.
-
----
-
-## 2) NIGHT Token — Shielded vs Unshielded
-
-Every NIGHT UTXO is either **shielded** (private, hidden from observers) or **unshielded** (public, visible on-chain).
-
-| | Shielded | Unshielded |
-|---|---|---|
-| Address prefix | `mn_shield1...` | `mn_addr_preprod1...` / `mn_addr1...` |
-| Amount visible | No | Yes |
-| Sender/receiver visible | No | Yes |
-| DUST generation | Yes (via Zswap registration) | Yes (via registration table) |
-| Faucet/bridge sends to | No | Yes — always unshielded first |
-| Required for | Privacy-sensitive transfers | Interop, faucet, bridge, contracts |
-
-**Critical:** Faucets and bridges always send to the **unshielded address**. Never give a shielded address to a faucet.
-
-### Address Types from Wallet SDK
-
-```typescript
-import * as Rx from 'rxjs';
-
-const state = await Rx.firstValueFrom(
-  wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
-);
-
-// Unshielded address — use for faucets, bridges, contract interactions
-const unshieldedAddress = state.unshielded.address;
-// → "mn_addr_preprod1qxy..."
-
-// Shielded coin public key — used as recipient in Zswap transfers
-const shieldedCoinPublicKey = state.shielded.coinPublicKey.toHexString();
-// → "0x3a7f..."
-
-// DUST address — for DUST registration queries
-const dustAddress = state.dust.address;
+```
+my-dapp/
+├── contract/
+│   └── src/
+│       └── counter.compact          # Compact smart contract
+├── src/
+│   ├── utils.ts                     # Wallet + provider shared utilities
+│   ├── deploy.ts                    # Deploy script
+│   └── cli.ts                       # Interactive CLI
+├── proof-server.yml                 # Docker: proof server only (preprod/preview)
+├── standalone.yml                   # Docker: full local stack (node + indexer + proof server)
+├── package.json
+└── tsconfig.json
 ```
 
 ---
 
-## 3) Sending NIGHT Tokens (Wallet SDK)
-
-Use `wallet.makeTransfer(outputs)` to transfer NIGHT. The wallet handles UTXO selection, Zswap proving, and DUST fee payment.
-
-```typescript
-import * as Rx from 'rxjs';
-import { unshieldedToken } from '@midnight-ntwrk/ledger-v8';
-
-// Get current state
-const state = await Rx.firstValueFrom(
-  wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
-);
-
-// Check unshielded NIGHT balance before sending
-const nightTokenType = unshieldedToken().raw; // hex token type identifier
-const nightBalance = state.unshielded.balances[nightTokenType] ?? 0n;
-console.log('NIGHT balance (Stars):', nightBalance);
-// 1 NIGHT = 1_000_000 Stars
-
-// Send unshielded NIGHT to an unshielded address
-const transferRecipe = await wallet.makeTransfer([
-  {
-    value: 1_000_000n,                    // 1 NIGHT in Stars
-    tokenType: nightTokenType,
-    receiverAddress: 'mn_addr_preprod1...', // recipient's unshielded address
-  },
-]);
-
-const finalized = await wallet.finalizeRecipe(transferRecipe);
-const txId = await wallet.submitTransaction(finalized);
-console.log('Transfer submitted:', txId);
-```
-
-### Multi-Output Transfer (Batch)
-
-```typescript
-// Send to multiple recipients in one atomic transaction
-const transferRecipe = await wallet.makeTransfer([
-  {
-    value: 500_000n,
-    tokenType: nightTokenType,
-    receiverAddress: 'mn_addr_preprod1_alice...',
-  },
-  {
-    value: 250_000n,
-    tokenType: nightTokenType,
-    receiverAddress: 'mn_addr_preprod1_bob...',
-  },
-]);
-```
-
-### Querying Unshielded NIGHT Balance (Without Wallet)
-
-You can also query the indexer directly for unshielded balances at a contract or address:
-
-```typescript
-async function getUnshieldedBalance(
-  indexerUrl: string,
-  contractAddress: string,
-): Promise<Map<string, bigint>> {
-  const res = await fetch(indexerUrl, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      query: `
-        query($address: HexEncoded!) {
-          contractAction(address: $address) {
-            ... on ContractCall   { unshieldedBalances { tokenType amount } }
-            ... on ContractUpdate { unshieldedBalances { tokenType amount } }
-          }
-        }
-      `,
-      variables: { address: contractAddress },
-    }),
-  });
-  const payload = await res.json();
-  const balances: Array<{ tokenType: string; amount: string }> =
-    payload.data?.contractAction?.unshieldedBalances ?? [];
-  return new Map(balances.map(b => [b.tokenType, BigInt(b.amount)]));
-}
-```
-
----
-
-## 4) DUST — Mechanics and Developer Implications
-
-DUST is the non-transferable fee resource generated by holding NIGHT. It is not a token you send — it is a capacity resource consumed automatically when you submit transactions.
-
-### Mental model
-
-```
-NIGHT  →  generates  →  DUST  →  consumed by  →  transactions
-(Solar Panel)          (Electricity)              (Appliances)
-```
-
-### Key properties
-
-- **1 NIGHT = 5 DUST maximum capacity** (at full generation: `night_dust_ratio = 5_000_000_000`)
-- **1 DUST = 10^15 Specks** (unit used internally)
-- Generation time to capacity: ~1 week (`generation_decay_rate = 8267`)
-- Grace period: 3 hours (timestamp window for proof acceptance)
-- DUST is **shielded and non-transferable** — you cannot send DUST to another user
-- DUST starts decaying immediately when its backing NIGHT UTXO is spent
-
-### DUST lifecycle
-
-```
-NIGHT UTXO created
-        ↓
-Registration: DustRegistration links NIGHT public key → DUST public key
-        ↓
-DUST UTXO starts generating value (grows toward cap over ~1 week)
-        ↓
-Transaction submitted: DUST UTXO consumed → new DUST UTXO created (value - fees)
-        ↓
-NIGHT UTXO spent → DUST UTXO immediately begins decaying to zero
-```
-
-### Registering NIGHT for DUST generation
-
-```typescript
-const state = await Rx.firstValueFrom(
-  wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
-);
-
-// Find unregistered NIGHT UTXOs
-const unregistered = state.unshielded.availableCoins.filter(
-  (coin: any) => coin.meta?.registeredForDustGeneration !== true,
-);
-
-if (unregistered.length > 0) {
-  const recipe = await wallet.registerNightUtxosForDustGeneration(
-    unregistered,
-    unshieldedKeystore.getPublicKey(),
-    (payload: Uint8Array) => unshieldedKeystore.signData(payload),
-  );
-  const finalized = await wallet.finalizeRecipe(recipe);
-  await wallet.submitTransaction(finalized);
-}
-
-// Wait for DUST to become available
-await Rx.firstValueFrom(
-  wallet.state().pipe(
-    Rx.throttleTime(5_000),
-    Rx.filter((s: any) => s.isSynced),
-    Rx.filter((s: any) => s.dust.walletBalance(new Date()) > 0n),
-  ),
-);
-```
-
-### Reading DUST balance
-
-```typescript
-const state = await Rx.firstValueFrom(
-  wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
-);
-
-const dustBalance = state.dust.walletBalance(new Date()); // Specks
-const dustCoins = state.dust.availableCoins.length;
-const dustPending = state.dust.pendingCoins.length;
-
-console.log(`DUST: ${dustBalance.toLocaleString()} Specks`);
-console.log(`Coins: ${dustCoins} available, ${dustPending} pending`);
-```
-
-**`pendingCoins > 0 && availableCoins === 0`** → DUST is locked by a pending or failed transaction. Restart the wallet process to release it. This is a known wallet SDK issue.
-
-### DUST on sponsored networks (preview, mainnet)
-
-On `preview` and `mainnet`, 1AM ProofStation sponsors all fees. Users need zero NIGHT and zero DUST. The `balanceUnsealedTransaction` call to the 1AM wallet handles fee payment server-side. Do not attempt DUST registration flows on these networks — they are unnecessary.
-
----
-
-## 5) Contract Tokens (FungibleToken Pattern)
-
-For application tokens, implement them in Compact. The standard pattern follows the OpenZeppelin Contracts for Compact library.
-
-### Minimal FungibleToken Contract
-
-```compact
-pragma language_version >= 0.22;
-
-import CompactStandardLibrary;
-
-// Either<ZswapCoinPublicKey, ContractAddress> = shielded wallet OR another contract
-// This is the standard recipient type for contract tokens
-
-export ledger name: Opaque<"string">;
-export ledger symbol: Opaque<"string">;
-export ledger decimals: Uint<8>;
-export ledger totalSupply: Uint<128>;
-export ledger balances: Map<Bytes<32>, Uint<128>>;
-
-witness callerAddress(): Bytes<32>;
-
-constructor(
-  _name: Opaque<"string">,
-  _symbol: Opaque<"string">,
-  _decimals: Uint<8>,
-) {
-  name = disclose(_name);
-  symbol = disclose(_symbol);
-  decimals = disclose(_decimals);
-  totalSupply = 0;
-}
-
-export circuit mint(to: Bytes<32>, amount: Uint<128>): [] {
-  const recipient = disclose(to);
-  const current = balances.member(recipient)
-    ? balances.lookup(recipient)
-    : 0;
-  balances.insert(recipient, disclose((current + amount) as Uint<128>));
-  totalSupply = disclose((totalSupply + amount) as Uint<128>);
-}
-
-export circuit transfer(to: Bytes<32>, amount: Uint<128>): Boolean {
-  const sender = disclose(callerAddress());
-  assert(balances.member(sender), "sender has no balance");
-  const senderBal = balances.lookup(sender);
-  assert(senderBal >= amount, "insufficient balance");
-
-  balances.insert(sender, disclose((senderBal - amount) as Uint<128>));
-
-  const recipientBal = balances.member(disclose(to))
-    ? balances.lookup(disclose(to))
-    : 0;
-  balances.insert(disclose(to), disclose((recipientBal + amount) as Uint<128>));
-
-  return true;
-}
-
-export circuit balanceOf(account: Bytes<32>): Uint<128> {
-  if (!balances.member(account)) { return 0; }
-  return balances.lookup(account);
-}
-```
-
-### OpenZeppelin FungibleToken (Full-Featured)
-
-The OpenZeppelin library provides a production-grade implementation with `Ownable`, `Pausable`, and `FungibleToken` modules:
+## 2) Prerequisites
 
 ```bash
-# Install as a git submodule
-git init && git submodule add https://github.com/OpenZeppelin/compact-contracts.git
-cd compact-contracts && nvm install && yarn && SKIP_ZK=true yarn compact
+# Node.js 22.15+ required
+node --version
+
+# Docker required (proof server + optional local stack)
+docker --version
+
+# Install Compact compiler
+curl --proto '=https' --tlsv1.2 -sSf \
+  https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+source $HOME/.local/bin/env
+compact update 0.30.0
+compact compile --version
 ```
+
+---
+
+## 3) `package.json`
+
+```json
+{
+  "name": "my-midnight-counter",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "compile":          "compact compile contract/src/counter.compact contract/managed/counter",
+    "sync:assets":      "mkdir -p public/zk/counter && cp -r contract/managed/counter/keys public/zk/counter/ && cp -r contract/managed/counter/zkir public/zk/counter/",
+    "deploy":           "NETWORK=preprod tsx src/deploy.ts",
+    "deploy:preview":   "NETWORK=preview tsx src/deploy.ts",
+    "deploy:local":     "NETWORK=undeployed tsx src/deploy.ts",
+    "cli":              "NETWORK=preprod tsx src/cli.ts",
+    "cli:preview":      "NETWORK=preview tsx src/cli.ts",
+    "cli:local":        "NETWORK=undeployed tsx src/cli.ts",
+    "proof-server":     "docker compose -f proof-server.yml up",
+    "local:start":      "docker compose -f standalone.yml up -d",
+    "local:stop":       "docker compose -f standalone.yml down"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.15.0",
+    "@midnight-ntwrk/ledger-v8": "8.0.3",
+    "@midnight-ntwrk/midnight-js-contracts": "4.0.2",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.0.2",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.0.2",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.0.2",
+    "@midnight-ntwrk/midnight-js-network-id": "4.0.2",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.0.2",
+    "@midnight-ntwrk/midnight-js-types": "4.0.2",
+    "@midnight-ntwrk/wallet-sdk-address-format": "3.1.0",
+    "@midnight-ntwrk/wallet-sdk-dust-wallet": "3.0.0",
+    "@midnight-ntwrk/wallet-sdk-facade": "3.0.0",
+    "@midnight-ntwrk/wallet-sdk-hd": "3.1.0",
+    "@midnight-ntwrk/wallet-sdk-shielded": "2.1.0",
+    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "2.1.0",
+    "rxjs": "^7.8.1",
+    "ws": "^8.19.0"
+  }
+}
+```
+
+---
+
+## 4) `tsconfig.json`
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
+}
+```
+
+---
+
+## 5) `contract/src/counter.compact`
 
 ```compact
 pragma language_version >= 0.22;
 
-import CompactStandardLibrary;
-import "./compact-contracts/node_modules/@openzeppelin/compact-contracts/src/access/Ownable"
-  prefix Ownable_;
-import "./compact-contracts/node_modules/@openzeppelin/compact-contracts/src/security/Pausable"
-  prefix Pausable_;
-import "./compact-contracts/node_modules/@openzeppelin/compact-contracts/src/token/FungibleToken"
-  prefix FungibleToken_;
+export ledger round: Counter;
 
-constructor(
-  _name: Opaque<"string">,
-  _symbol: Opaque<"string">,
-  _decimals: Uint<8>,
-  _recipient: Either<ZswapCoinPublicKey, ContractAddress>,
-  _amount: Uint<128>,
-  _initOwner: Either<ZswapCoinPublicKey, ContractAddress>,
-) {
-  Ownable_initialize(_initOwner);
-  FungibleToken_initialize(_name, _symbol, _decimals);
-  FungibleToken__mint(_recipient, _amount);
+constructor() {
+  round.increment(1);
 }
 
-export circuit transfer(
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
-  value: Uint<128>,
-): Boolean {
-  Pausable_assertNotPaused();
-  return FungibleToken_transfer(to, value);
-}
-
-export circuit pause(): [] {
-  Ownable_assertOnlyOwner();
-  Pausable__pause();
-}
-
-export circuit unpause(): [] {
-  Ownable_assertOnlyOwner();
-  Pausable__unpause();
+export circuit increment(): [] {
+  round.increment(1);
 }
 ```
 
-Compile output example:
+Compile it:
+
+```bash
+npm run compile
 ```
-circuit "pause"    (k=10, rows=125)
-circuit "transfer" (k=11, rows=1180)
-circuit "unpause"  (k=10, rows=121)
+
+Expected output:
 ```
+Compiling 1 circuits:
+  circuit "increment" (k=10, rows=29)
+```
+
+**Circuit size note:** If you see `prove: no SRS params for k=6`, the circuit is too small for the preview prover. Pad the contract with extra ledger fields to increase circuit size (`k` must be ≥ 10 for most proof servers).
 
 ---
 
-## 6) Calling Token Circuits from TypeScript
+## 6) `src/utils.ts`
+
+Shared wallet creation, key derivation, transaction signing, and provider setup. Used by both `deploy.ts` and `cli.ts`.
 
 ```typescript
-import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import * as path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { WebSocket } from 'ws';
+import * as Rx from 'rxjs';
+import { Buffer } from 'buffer';
 
-const contract = await findDeployedContract(providers, {
-  contractAddress: '09dbe05f...',
-  compiledContract,
-  privateStateId: 'tokenState',
-  initialPrivateState: {},
-});
+import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
+import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
+import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
+import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
+import { setNetworkId, getNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+import * as ledger from '@midnight-ntwrk/ledger-v8';
+import { WalletFacade } from '@midnight-ntwrk/wallet-sdk-facade';
+import { DustWallet } from '@midnight-ntwrk/wallet-sdk-dust-wallet';
+import { HDWallet, Roles } from '@midnight-ntwrk/wallet-sdk-hd';
+import { ShieldedWallet } from '@midnight-ntwrk/wallet-sdk-shielded';
+import {
+  createKeystore,
+  InMemoryTransactionHistoryStorage,
+  PublicKey,
+  UnshieldedWallet,
+} from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
+import { CompiledContract } from '@midnight-ntwrk/compact-js';
 
-// Transfer tokens
-const result = await contract.callTx.transfer(recipientAddressBytes, 100n);
-console.log('txId:', result.public.txId);
-console.log('blockHeight:', result.public.blockHeight);
+// Required for GraphQL subscriptions (wallet sync) in Node.js
+// Must be set before any wallet SDK imports resolve their WebSocket usage
+// @ts-expect-error ws types don't match globalThis.WebSocket exactly
+globalThis.WebSocket = WebSocket;
 
-// Read balance (no transaction — direct state query)
-import { ContractState } from '@midnight-ntwrk/compact-runtime';
-import { YourToken } from './managed/your-token';
+// ── Network config ─────────────────────────────────────────────────────────────
 
-const stateRaw = await providers.publicDataProvider.queryContractState(contractAddress);
-if (stateRaw) {
-  const ledgerState = YourToken.ledger(stateRaw.data);
-  const balance = ledgerState.balances.lookup(callerAddressBytes);
-  console.log('Balance:', balance);
+type NetworkId = 'preprod' | 'preview' | 'undeployed';
+
+const NETWORK_CONFIG: Record<NetworkId, {
+  networkId: NetworkId;
+  indexer: string;
+  indexerWS: string;
+  node: string;
+  proofServer: string;
+}> = {
+  preprod: {
+    networkId: 'preprod',
+    indexer:    'https://indexer.preprod.midnight.network/api/v4/graphql',
+    indexerWS:  'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
+    node:       'https://rpc.preprod.midnight.network',
+    proofServer: 'http://127.0.0.1:6300',
+  },
+  preview: {
+    networkId: 'preview',
+    indexer:    'https://indexer.preview.midnight.network/api/v4/graphql',
+    indexerWS:  'wss://indexer.preview.midnight.network/api/v4/graphql/ws',
+    node:       'wss://rpc.preview.midnight.network',
+    proofServer: 'http://127.0.0.1:6300',
+  },
+  undeployed: {
+    networkId: 'undeployed',
+    indexer:    'http://localhost:8088/api/v3/graphql',   // NOTE: v3 for local
+    indexerWS:  'ws://localhost:8088/api/v3/graphql/ws',
+    node:       'ws://localhost:9944',
+    proofServer: 'http://127.0.0.1:6300',
+  },
+};
+
+const networkId = (process.env.NETWORK ?? 'preprod') as NetworkId;
+if (!NETWORK_CONFIG[networkId]) {
+  throw new Error(`Unknown NETWORK="${networkId}". Valid: preprod | preview | undeployed`);
 }
-```
 
----
+export const CONFIG = NETWORK_CONFIG[networkId];
+setNetworkId(CONFIG.networkId);
 
-## 7) Reading Token Balances via Indexer
+// ── Contract setup ─────────────────────────────────────────────────────────────
 
-Contract token balances live in `export ledger` — readable from the indexer like any other contract state:
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const zkConfigPath = path.resolve(__dirname, '..', 'contract', 'managed', 'counter');
 
-```typescript
-import { ContractState } from '@midnight-ntwrk/compact-runtime';
+const contractPath = path.join(zkConfigPath, 'contract', 'index.js');
+export const Counter = await import(pathToFileURL(contractPath).href);
 
-async function getTokenBalance(
-  indexerUrl: string,
-  contractAddress: string,
-  holderAddress: Uint8Array,
-  ledgerFn: (data: any) => any,
-): Promise<bigint> {
-  const res = await fetch(indexerUrl, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      query: `
-        query($address: HexEncoded!) {
-          contractAction(address: $address) { state }
-        }
-      `,
-      variables: { address: contractAddress },
+export const compiledContract = CompiledContract.make('counter', Counter.Contract).pipe(
+  CompiledContract.withVacantWitnesses,
+  CompiledContract.withCompiledFileAssets(zkConfigPath),
+);
+
+export const PRIVATE_STATE_ID = 'counterState' as const;
+
+// ── Key derivation ─────────────────────────────────────────────────────────────
+
+export function deriveKeys(seedHex: string) {
+  const hdWallet = HDWallet.fromSeed(Buffer.from(seedHex, 'hex'));
+  if (hdWallet.type !== 'seedOk') throw new Error('Invalid seed');
+
+  const result = hdWallet.hdWallet
+    .selectAccount(0)
+    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust])
+    .deriveKeysAt(0);
+
+  if (result.type !== 'keysDerived') throw new Error('Key derivation failed');
+  hdWallet.hdWallet.clear(); // wipe secret material from memory
+  return result.keys;
+}
+
+// ── Wallet creation ────────────────────────────────────────────────────────────
+
+export async function createWallet(seedHex: string) {
+  const keys = deriveKeys(seedHex);
+  const netId = getNetworkId();
+
+  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(keys[Roles.Zswap]);
+  const dustSecretKey = ledger.DustSecretKey.fromSeed(keys[Roles.Dust]);
+  const unshieldedKeystore = createKeystore(keys[Roles.NightExternal], netId);
+
+  // relayURL must be WebSocket — convert https→wss, http→ws
+  const relayURL = new URL(CONFIG.node.replace(/^https/, 'wss').replace(/^http(?!s)/, 'ws'));
+
+  const walletConnConfig = {
+    networkId: netId,
+    indexerClientConnection: {
+      indexerHttpUrl: CONFIG.indexer,
+      indexerWsUrl: CONFIG.indexerWS,
+    },
+    provingServerUrl: new URL(CONFIG.proofServer),
+    relayURL,
+  };
+
+  const shieldedWallet = ShieldedWallet(walletConnConfig)
+    .startWithSecretKeys(shieldedSecretKeys);
+
+  const unshieldedWallet = UnshieldedWallet({
+    networkId: netId,
+    indexerClientConnection: walletConnConfig.indexerClientConnection,
+    txHistoryStorage: new InMemoryTransactionHistoryStorage(),
+  }).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore));
+
+  const dustWallet = DustWallet({
+    ...walletConnConfig,
+    costParameters: {
+      additionalFeeOverhead: 300_000_000_000_000n,
+      feeBlocksMargin: 5,
+    },
+  }).startWithSecretKey(dustSecretKey, ledger.LedgerParameters.initialParameters().dust);
+
+  const wallet = new WalletFacade(shieldedWallet, unshieldedWallet, dustWallet);
+  await wallet.start(shieldedSecretKeys, dustSecretKey);
+
+  return { wallet, shieldedSecretKeys, dustSecretKey, unshieldedKeystore };
+}
+
+export type WalletCtx = Awaited<ReturnType<typeof createWallet>>;
+
+// ── Transaction signing workaround ────────────────────────────────────────────
+//
+// Wallet SDK bug: signRecipe hardcodes 'pre-proof' marker, but proven
+// (UnboundTransaction) intents contain 'proof' data → "Failed to clone intent"
+// Fix: sign intents manually with the correct proofMarker.
+
+export function signTransactionIntents(
+  tx: { intents?: Map<number, any> },
+  signFn: (payload: Uint8Array) => ledger.Signature,
+  proofMarker: 'proof' | 'pre-proof',
+): void {
+  if (!tx.intents || tx.intents.size === 0) return;
+
+  for (const segment of tx.intents.keys()) {
+    const intent = tx.intents.get(segment);
+    if (!intent) continue;
+
+    const cloned = ledger.Intent.deserialize<
+      ledger.SignatureEnabled,
+      ledger.Proofish,
+      ledger.PreBinding
+    >('signature', proofMarker, 'pre-binding', intent.serialize());
+
+    const signature = signFn(cloned.signatureData(segment));
+
+    if (cloned.fallibleUnshieldedOffer) {
+      const sigs = cloned.fallibleUnshieldedOffer.inputs.map(
+        (_: any, i: number) => cloned.fallibleUnshieldedOffer!.signatures.at(i) ?? signature,
+      );
+      cloned.fallibleUnshieldedOffer = cloned.fallibleUnshieldedOffer.addSignatures(sigs);
+    }
+    if (cloned.guaranteedUnshieldedOffer) {
+      const sigs = cloned.guaranteedUnshieldedOffer.inputs.map(
+        (_: any, i: number) => cloned.guaranteedUnshieldedOffer!.signatures.at(i) ?? signature,
+      );
+      cloned.guaranteedUnshieldedOffer = cloned.guaranteedUnshieldedOffer.addSignatures(sigs);
+    }
+
+    tx.intents.set(segment, cloned);
+  }
+}
+
+// ── Provider setup ─────────────────────────────────────────────────────────────
+
+export async function createProviders(walletCtx: WalletCtx) {
+  // state() returns an Observable — must subscribe, never access as property
+  const state = await Rx.firstValueFrom(
+    walletCtx.wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
+  );
+
+  const signFn = (payload: Uint8Array) => walletCtx.unshieldedKeystore.signData(payload);
+
+  const walletProvider = {
+    getCoinPublicKey: () => state.shielded.coinPublicKey.toHexString(),
+    getEncryptionPublicKey: () => state.shielded.encryptionPublicKey.toHexString(),
+
+    async balanceTx(tx: any, ttl?: Date) {
+      const recipe = await walletCtx.wallet.balanceUnboundTransaction(
+        tx,
+        { shieldedSecretKeys: walletCtx.shieldedSecretKeys, dustSecretKey: walletCtx.dustSecretKey },
+        { ttl: ttl ?? new Date(Date.now() + 30 * 60 * 1000) },
+      );
+
+      // Apply signTransactionIntents workaround (wallet SDK bug)
+      signTransactionIntents(recipe.baseTransaction, signFn, 'proof');
+      if (recipe.balancingTransaction) {
+        signTransactionIntents(recipe.balancingTransaction, signFn, 'pre-proof');
+      }
+
+      return walletCtx.wallet.finalizeRecipe(recipe);
+    },
+
+    submitTx: (tx: any) => walletCtx.wallet.submitTransaction(tx) as any,
+  };
+
+  const zkConfigProvider = new NodeZkConfigProvider(zkConfigPath);
+
+  return {
+    privateStateProvider: levelPrivateStateProvider({
+      privateStateStoreName: `counter-state-${CONFIG.networkId}`,
+      walletProvider,
     }),
-  });
-  const payload = await res.json();
-  const stateHex = payload.data?.contractAction?.state;
-  if (!stateHex) return 0n;
+    publicDataProvider: indexerPublicDataProvider(CONFIG.indexer, CONFIG.indexerWS),
+    zkConfigProvider,
+    proofProvider: httpClientProofProvider(new URL(CONFIG.proofServer), zkConfigProvider),
+    walletProvider,
+    midnightProvider: walletProvider,
+  };
+}
 
-  const normalized = stateHex.startsWith('0x') ? stateHex.slice(2) : stateHex;
-  const bytes = new Uint8Array(normalized.length / 2);
-  for (let i = 0; i < normalized.length; i += 2) {
-    bytes[i / 2] = parseInt(normalized.slice(i, i + 2), 16);
+// ── DUST helpers ───────────────────────────────────────────────────────────────
+
+export async function ensureDust(walletCtx: WalletCtx): Promise<void> {
+  const state = await Rx.firstValueFrom(
+    walletCtx.wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
+  );
+
+  if (state.dust.availableCoins.length > 0) return;
+
+  const unregistered = state.unshielded.availableCoins.filter(
+    (c: any) => c.meta?.registeredForDustGeneration !== true,
+  );
+
+  if (unregistered.length > 0) {
+    console.log(`  Registering ${unregistered.length} NIGHT UTXO(s) for DUST generation...`);
+    const recipe = await walletCtx.wallet.registerNightUtxosForDustGeneration(
+      unregistered,
+      walletCtx.unshieldedKeystore.getPublicKey(),
+      (payload: Uint8Array) => walletCtx.unshieldedKeystore.signData(payload),
+    );
+    const finalized = await walletCtx.wallet.finalizeRecipe(recipe);
+    await walletCtx.wallet.submitTransaction(finalized);
   }
 
-  const contractState = ContractState.deserialize(bytes);
-  const ledgerState = ledgerFn(contractState.data);
-  return ledgerState.balances.member(holderAddress)
-    ? ledgerState.balances.lookup(holderAddress)
-    : 0n;
+  console.log('  Waiting for DUST to generate...');
+  await Rx.firstValueFrom(
+    walletCtx.wallet.state().pipe(
+      Rx.throttleTime(5_000),
+      Rx.filter((s: any) => s.isSynced),
+      Rx.filter((s: any) => s.dust.walletBalance(new Date()) > 0n),
+    ),
+  );
 }
 ```
 
 ---
 
-## 8) Zswap — Atomic Swaps Between Parties
-
-Zswap is Midnight's multi-asset atomic swap protocol built on ZK-SNARK proofs. It enables non-interactive atomic swaps with transaction merging.
-
-### What Zswap enables
-
-- **Atomic exchange**: Alice's NIGHT ↔ Bob's contract token in one transaction
-- **Shielded swaps**: Neither sender, receiver, nor amounts need to be publicly visible
-- **Non-interactive merging**: Parties can merge offers off-chain before on-chain submission
-- **Front-running resistance**: Shielded asset transfers hide pre-trade information
-
-### Developer-facing Zswap surface
-
-As a DApp developer, you interact with Zswap indirectly:
-
-- `wallet.makeTransfer(outputs)` — triggers a Zswap transaction for NIGHT
-- `walletProvider.balanceTx(tx)` — the balancing step uses Zswap internally to add DUST fees and change outputs
-- `ZswapChainState` — returned by indexer queries, needed by some SDK provider methods
-- `ZswapSecretKeys` — derived from HD wallet seed (`Roles.Zswap`), used by `ShieldedWallet`
-
-Zswap does not expose a direct "swap two contracts" API at the DApp layer yet — that is exchange infrastructure. At the current SDK level, Zswap is primarily surfaced as the mechanism for NIGHT transfers and DUST fee payment.
-
----
-
-## 9) Token Units Reference
-
-| Token | Unit | Conversion |
-|---|---|---|
-| NIGHT | Star | 1 NIGHT = 1,000,000 Stars |
-| DUST | Speck | 1 DUST = 10^15 Specks |
-| Contract tokens | Defined by `decimals` | Typically 18 decimals (1 token = 10^18 base units) |
-
-Always use `BigInt` for amounts — NIGHT Stars and DUST Specks overflow JavaScript's `number` type at realistic balances.
+## 7) `src/deploy.ts`
 
 ```typescript
-const ONE_NIGHT = 1_000_000n;          // Stars
-const ONE_DUST  = 1_000_000_000_000_000n; // Specks
-const DUST_PER_NIGHT_MAX = 5_000_000_000n; // Specks per Star at full cap
+import { createInterface } from 'node:readline/promises';
+import { stdin, stdout } from 'node:process';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as Rx from 'rxjs';
+import { Buffer } from 'buffer';
+
+import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { unshieldedToken } from '@midnight-ntwrk/ledger-v8';
+import { generateRandomSeed } from '@midnight-ntwrk/wallet-sdk-hd';
+
+import {
+  createWallet, createProviders, ensureDust,
+  compiledContract, Counter, PRIVATE_STATE_ID, CONFIG, zkConfigPath,
+} from './utils.js';
+
+function toHex(b: Uint8Array) {
+  return Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+}
+
+async function main() {
+  console.log(`\n╔══════════════════════════════════════════════════════╗`);
+  console.log(`║   Midnight Counter — Deploy (${CONFIG.networkId.padEnd(10)})           ║`);
+  console.log(`╚══════════════════════════════════════════════════════╝\n`);
+
+  // Check contract compiled
+  if (!fs.existsSync(path.join(zkConfigPath, 'contract', 'index.js'))) {
+    console.error('❌ Contract not compiled. Run: npm run compile');
+    process.exit(1);
+  }
+
+  const rl = createInterface({ input: stdin, output: stdout });
+
+  try {
+    // ── Step 1: Wallet ──────────────────────────────────────────────────────────
+    console.log('── Step 1: Wallet ──────────────────────────────────────────\n');
+
+    const choice = await rl.question('  [1] New wallet\n  [2] Restore from seed\n  > ');
+    const seedHex = choice.trim() === '2'
+      ? (await rl.question('\n  Enter your 64-character hex seed: ')).trim()
+      : toHex(Buffer.from(generateRandomSeed()));
+
+    if (choice.trim() !== '2') {
+      console.log(`\n  ⚠️  SAVE THIS SEED — you will need it to restore your wallet:\n  ${seedHex}\n`);
+    }
+
+    console.log('  Creating wallet...');
+    const walletCtx = await createWallet(seedHex);
+
+    console.log('  Syncing...');
+    await Rx.firstValueFrom(
+      walletCtx.wallet.state().pipe(
+        Rx.throttleTime(5_000),
+        Rx.filter((s: any) => s.isSynced),
+      ),
+    );
+
+    const address = walletCtx.unshieldedKeystore.getBech32Address();
+    const state = await Rx.firstValueFrom(
+      walletCtx.wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
+    );
+    const balance = state.unshielded.balances[unshieldedToken().raw] ?? 0n;
+
+    console.log(`\n  Address: ${address}`);
+    console.log(`  Balance: ${balance.toLocaleString()} tNight\n`);
+
+    // ── Step 2: Fund if empty ───────────────────────────────────────────────────
+    if (balance === 0n) {
+      console.log('── Step 2: Fund Your Wallet ────────────────────────────────\n');
+      console.log(`  Faucet: https://faucet.preprod.midnight.network/`);
+      console.log(`  Send to: ${address}\n`);
+      console.log('  Waiting for funds...');
+
+      await Rx.firstValueFrom(
+        walletCtx.wallet.state().pipe(
+          Rx.throttleTime(10_000),
+          Rx.filter((s: any) => s.isSynced),
+          Rx.map((s: any) => s.unshielded.balances[unshieldedToken().raw] ?? 0n),
+          Rx.filter((b: bigint) => b > 0n),
+        ),
+      );
+      console.log('  ✓ Funds received!\n');
+    }
+
+    // ── Step 3: DUST ────────────────────────────────────────────────────────────
+    console.log('── Step 3: DUST ────────────────────────────────────────────\n');
+    await ensureDust(walletCtx);
+    const dustBalance = (await Rx.firstValueFrom(
+      walletCtx.wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
+    )).dust.walletBalance(new Date());
+    console.log(`  ✓ DUST ready: ${dustBalance.toLocaleString()} Specks\n`);
+
+    // ── Step 4: Deploy ──────────────────────────────────────────────────────────
+    console.log('── Step 4: Deploy ──────────────────────────────────────────\n');
+    console.log('  Setting up providers...');
+    const providers = await createProviders(walletCtx);
+
+    console.log('  Deploying contract (30–60 seconds)...\n');
+    const deployed = await deployContract(providers, {
+      compiledContract,
+      privateStateId: PRIVATE_STATE_ID,
+      initialPrivateState: {},
+    });
+
+    const contractAddress = deployed.deployTxData.public.contractAddress;
+    console.log(`  ✅ Deployed!\n  Address: ${contractAddress}\n`);
+
+    // ── Save ────────────────────────────────────────────────────────────────────
+    const info = {
+      contractAddress,
+      seedHex,
+      network: CONFIG.networkId,
+      deployedAt: new Date().toISOString(),
+    };
+    fs.writeFileSync('deployment.json', JSON.stringify(info, null, 2));
+    console.log('  Saved to deployment.json\n');
+
+    await walletCtx.wallet.stop();
+  } finally {
+    rl.close();
+  }
+}
+
+main().catch(console.error);
 ```
 
 ---
 
-## 10) Common Pitfalls
+## 8) `src/cli.ts`
 
-**Sending to shielded address from faucet** — faucets only support unshielded (`mn_addr_preprod1...`) addresses. Giving a shielded address gets zero tokens.
+```typescript
+import { createInterface } from 'node:readline/promises';
+import { stdin, stdout } from 'node:process';
+import * as fs from 'node:fs';
+import * as Rx from 'rxjs';
 
-**Spending NIGHT before DUST is available** — spending a NIGHT UTXO causes its associated DUST to start decaying immediately. If you spend NIGHT before DUST reaches useful levels, you lose the generation time invested. Wait until DUST is available before spending NIGHT.
+import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { ContractState } from '@midnight-ntwrk/compact-runtime';
 
-**DUST locked after failed transaction** — known wallet SDK issue. `pendingCoins > 0 && availableCoins === 0` means DUST is stuck. Restart the wallet/DApp process to release the lock.
+import {
+  createWallet, createProviders, ensureDust,
+  compiledContract, Counter, PRIVATE_STATE_ID, CONFIG,
+} from './utils.js';
 
-**`amount` as JS `number` instead of `BigInt`** — 1 NIGHT = 1,000,000 Stars. Realistic balances exceed `Number.MAX_SAFE_INTEGER`. Always use `BigInt` literals (`1_000_000n`).
+function fromHex(hex: string): Uint8Array {
+  const h = hex.startsWith('0x') ? hex.slice(2) : hex;
+  const b = new Uint8Array(h.length / 2);
+  for (let i = 0; i < h.length; i += 2) b[i / 2] = parseInt(h.slice(i, i + 2), 16);
+  return b;
+}
 
-**`balances.lookup(k)` without `balances.member(k)` check** — calling `lookup` on a key that doesn't exist in the Map is a runtime error in Compact. Always check `member` first.
+async function main() {
+  console.log(`\n╔══════════════════════════════════════════════════════╗`);
+  console.log(`║   Midnight Counter — CLI (${CONFIG.networkId.padEnd(13)})           ║`);
+  console.log(`╚══════════════════════════════════════════════════════╝\n`);
 
-**Overflow on `Uint<128>` arithmetic** — addition that exceeds `2^128 - 1` wraps silently or errors depending on context. Cast explicitly: `(a + b) as Uint<128>` and add `assert` guards.
+  if (!fs.existsSync('deployment.json')) {
+    console.error('❌ No deployment.json found. Run `npm run deploy` first.');
+    process.exit(1);
+  }
 
-**`unshieldedToken().raw` varies by network** — the hex token type identifier for NIGHT is network-specific. Always call `unshieldedToken()` at runtime; never hardcode the hex string.
+  const deployment = JSON.parse(fs.readFileSync('deployment.json', 'utf-8'));
+  console.log(`  Contract: ${deployment.contractAddress}\n`);
 
-**OZ contract import path changed between versions** — the import path changed from `@openzeppelin-compact/contracts` to `@openzeppelin/compact-contracts` between library versions. Check the README of the exact version you are using.
+  const rl = createInterface({ input: stdin, output: stdout });
 
-**Contract tokens do not generate DUST** — only NIGHT (the native ledger token) generates DUST. Your custom `FungibleToken` has no fee role.
+  try {
+    const seedInput = await rl.question('  Enter wallet seed (or press Enter to use deployment.json seed): ');
+    const seedHex = seedInput.trim() || deployment.seedHex;
+
+    console.log('\n  Creating wallet...');
+    const walletCtx = await createWallet(seedHex);
+
+    console.log('  Syncing...');
+    await Rx.firstValueFrom(
+      walletCtx.wallet.state().pipe(
+        Rx.throttleTime(5_000),
+        Rx.filter((s: any) => s.isSynced),
+      ),
+    );
+
+    await ensureDust(walletCtx);
+
+    console.log('  Setting up providers...');
+    const providers = await createProviders(walletCtx);
+
+    console.log('  Joining contract...');
+    const contract = await findDeployedContract(providers, {
+      contractAddress: deployment.contractAddress,
+      compiledContract,
+      privateStateId: PRIVATE_STATE_ID,
+      initialPrivateState: {},
+    });
+
+    console.log('  ✓ Connected!\n');
+
+    // ── Main loop ───────────────────────────────────────────────────────────────
+    let running = true;
+    while (running) {
+      const state = await Rx.firstValueFrom(
+        walletCtx.wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
+      );
+      const dust = state.dust.walletBalance(new Date());
+
+      console.log('─────────────────────────────────────────────────────────');
+      console.log(`  DUST: ${dust.toLocaleString()} Specks`);
+      console.log('─────────────────────────────────────────────────────────');
+
+      const choice = await rl.question(
+        '  [1] Increment counter\n  [2] Read current value\n  [3] Exit\n  > ',
+      );
+
+      switch (choice.trim()) {
+        case '1':
+          try {
+            console.log('\n  Submitting increment (20–30 seconds)...\n');
+            const result = await contract.callTx.increment();
+            console.log(`  ✅ Incremented!`);
+            console.log(`  txId:   ${result.public.txId}`);
+            console.log(`  Block:  ${result.public.blockHeight}\n`);
+          } catch (e) {
+            console.error(`  ❌ Error: ${e instanceof Error ? e.message : e}\n`);
+          }
+          break;
+
+        case '2':
+          try {
+            console.log('\n  Reading state...');
+            const raw = await providers.publicDataProvider.queryContractState(
+              deployment.contractAddress,
+            );
+            if (raw) {
+              const ledgerState = Counter.ledger(raw.data);
+              console.log(`  Counter value: ${ledgerState.round}\n`);
+            } else {
+              console.log('  Contract state not found.\n');
+            }
+          } catch (e) {
+            console.error(`  ❌ Error: ${e instanceof Error ? e.message : e}\n`);
+          }
+          break;
+
+        case '3':
+          running = false;
+          break;
+
+        default:
+          console.log('  Invalid choice.\n');
+      }
+    }
+
+    await walletCtx.wallet.stop();
+    console.log('\n  Goodbye!\n');
+  } finally {
+    rl.close();
+  }
+}
+
+main().catch(console.error);
+```
+
+---
+
+## 9) Docker Config Files
+
+### `proof-server.yml` (preprod/preview — proof server only)
+
+```yaml
+services:
+  proof-server:
+    image: midnightntwrk/proof-server:8.0.3
+    command: midnight-proof-server -v
+    ports:
+      - "6300:6300"
+    restart: unless-stopped
+```
+
+### `standalone.yml` (undeployed — full local stack)
+
+```yaml
+services:
+  midnight-node:
+    image: midnightntwrk/midnight-node:0.21.0
+    ports:
+      - "9944:9944"
+    restart: unless-stopped
+
+  indexer:
+    image: midnightntwrk/indexer-standalone:3.1.0
+    ports:
+      - "8088:8088"
+    depends_on:
+      - midnight-node
+    restart: unless-stopped
+
+  proof-server:
+    image: midnightntwrk/proof-server:8.0.3
+    command: midnight-proof-server -v
+    ports:
+      - "6300:6300"
+    restart: unless-stopped
+```
+
+---
+
+## 10) First Run — Preprod
+
+```bash
+# 1. Install deps
+npm install
+
+# 2. Compile contract
+npm run compile
+# → circuit "increment" (k=10, rows=29)
+
+# 3. Start proof server (keep this terminal open)
+npm run proof-server
+# → listening on: 0.0.0.0:6300
+
+# 4. Deploy (new terminal)
+npm run deploy
+# → choose [1] new wallet → save seed → faucet → wait for DUST → deploy
+# → saves deployment.json
+
+# 5. Interact
+npm run cli
+# → restore wallet → increment → read value
+```
+
+**Faucet:** `https://faucet.preprod.midnight.network/`
+
+---
+
+## 11) First Run — Local (`undeployed`)
+
+```bash
+# 1. Start full local stack
+npm run local:start
+# wait ~30 seconds for all services to be healthy
+
+# 2. Compile
+npm run compile
+
+# 3. Deploy (no faucet needed — use genesis wallet or midnight-local-dev funding CLI)
+npm run deploy:local
+
+# 4. Interact
+npm run cli:local
+```
+
+**Note:** Local indexer uses `/api/v3/graphql` — this is already handled in `utils.ts`. Do not change it to v4.
+
+---
+
+## 12) Troubleshooting
+
+| Error | Cause | Fix |
+|---|---|---|
+| `compact: command not found` | PATH not set | `source $HOME/.local/bin/env` |
+| `ECONNREFUSED 127.0.0.1:6300` | Proof server not running | `npm run proof-server` |
+| Proof server hangs (Mac ARM) | Docker VMM issue | Docker Desktop → Settings → General → Virtual Machine Options → Docker VMM → restart |
+| `Failed to clone intent` | Wallet SDK signing bug | Already fixed via `signTransactionIntents` in `utils.ts` |
+| DUST = 0 after failed deploy | DUST coins locked | Restart the process — `wallet.stop()` then rerun |
+| 0 balance after faucet | Wallet not synced yet | Wait for sync; check unshielded address was used |
+| `Cannot find module` | Contract not compiled | `npm run compile` first |
+| `prove: no SRS params for k=6` | Circuit too small for prover | Add dummy ledger fields to increase circuit size |
+| Old address fails after recompile | Verifier key changed | Redeploy and update `deployment.json` |
+| `v4/graphql` 404 on local | Wrong indexer version | Local uses v3 — already correct in `utils.ts` |
+
+---
+
+## 13) Adapting This Template
+
+To replace the counter with your own contract:
+
+1. Replace `contract/src/counter.compact` with your contract
+2. Run `npm run compile`
+3. In `utils.ts`:
+   - Update `zkConfigPath` to point at your managed output folder
+   - Update the `import(...)` path to match your contract name
+   - Update `PRIVATE_STATE_ID` and initial private state shape
+4. In `cli.ts`:
+   - Replace `contract.callTx.increment()` with your circuit calls
+   - Replace `Counter.ledger(raw.data)` with your contract's `ledger()` function
+5. Rename the `privateStateStoreName` in `createProviders` to avoid LevelDB collisions across projects

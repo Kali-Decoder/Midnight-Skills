@@ -1,5 +1,5 @@
 ---
-name: midnight-indexer
+name: indexer
 description: Query and subscribe to Midnight blockchain data via the Indexer GraphQL API v4. Covers contract state reads, transaction lookups, block queries, real-time subscriptions (contractActions, blocks, unshielded/shielded transactions), state deserialization, the offset/null bug workaround, and TypeScript helper patterns. Use when a user needs to read on-chain state after a transaction, watch contract events in real time, look up blocks or transactions, query unshielded balances, or monitor DUST generation status.
 ---
 
