@@ -24,6 +24,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Write Compact smart contracts | `compact/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
+| Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder. | `example-hello-world/` |
 
 
 ## Skills
@@ -71,3 +72,6 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Midnight.js](/midnight-js/SKILL.md)
 - TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).
 - Contract deployment, circuit calls, DUST generation, private state, testkit.
+
+### [Example Hello World](/example-hello-world/SKILL.md)
+- Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.
