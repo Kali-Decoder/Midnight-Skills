@@ -33,7 +33,7 @@ This skill generates a complete, runnable Midnight DApp. It covers every file in
 hello-world-local/
 ├── contracts/
 │   ├── hello-world.compact          # Compact smart contract (you create this)
-│   ├── index.ts                     # Barrel file for compiled contract exports (create after first compile)
+│   ├── index.ts                     # Barrel file for compiled contract exports (create manually)
 │   └── managed/
 │       └── hello-world/             # Compiler output (auto-generated, do not edit)
 │           ├── compiler/
@@ -86,6 +86,7 @@ compact --version
     "node": ">=22.0.0"
   },
   "scripts": {
+    "compile": "compact compile contracts/hello-world.compact managed/hello-world",
     "test": "NODE_OPTIONS='--experimental-vm-modules' vitest run",
     "test:local": "MIDNIGHT_NETWORK=local yarn test",
     "env:up": "docker compose up -d --wait",
@@ -210,9 +211,9 @@ This generates `contracts/managed/hello-world/contract/index.js` (and keys, zkir
 
 ---
 
-## 7) `contracts/index.ts` (barrel file — create after first compile)
+## 7) `contracts/index.ts` (barrel file — create manually)
 
-Create this file **after** running `compact compile` so the generated contract module exists to import from. It uses `@midnight-ntwrk/compact-runtime` (which is installed) — not a separate `compact-js` package.
+Create this file manually — it imports from the compiled contract output. The compiled contract module must exist (from running `compact compile`) for the imports to resolve.
 
 ```typescript
 import { CompiledContract } from '@midnight-ntwrk/compact-runtime';
@@ -471,6 +472,8 @@ export function buildProviders(
     privateStateProvider: levelPrivateStateProvider({
       privateStateStoreName: `hello-world-${Date.now()}`,
       walletProvider: wallet,
+      privateStoragePasswordProvider: () => 'xK9#mQ2$pL8@nR5!vW3*',
+      accountId: `test-account-${Date.now()}`,
     }),
     publicDataProvider: indexerPublicDataProvider(
       config.indexer,
@@ -718,7 +721,7 @@ Expected output:
 | `Wallet sync timeout` | Docker services not healthy | Verify `yarn env:up` finished — all 3 containers must be healthy |
 | `v4/graphql` 404 | Old indexer URL | Local devnet uses `/api/v4/graphql` — correct in `config.ts` |
 | `FluentWalletBuilder is not a function` | Wrong testkit-js import | Import from `@midnight-ntwrk/testkit-js` |
-| `levelPrivateStateProvider` options error | Unsupported option fields | Only pass `privateStateStoreName` and `walletProvider` |
+| `levelPrivateStateProvider` options error | Missing required fields | Must pass `privateStateStoreName`, `walletProvider`, `privateStoragePasswordProvider` (strong password, min 16 chars, no sequential patterns), and `accountId` |
 | TS: `Cannot find module` for contracts | Wrong `tsconfig.json` include | Must be `"contract/**/*.ts"` (singular), not `"contracts/**/*.ts"` |
 | `submitCallTx` not found | Wrong import | Import from `@midnight-ntwrk/midnight-js-contracts` |
 | Old contract address fails after recompile | Verifier key changed | Redeploy — compiled keys change when contract source changes |

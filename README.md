@@ -13,6 +13,7 @@ Knowledge skills for AI agents building on Midnight Network. Each skill is a sta
 | [Multinetwork](multinetwork/SKILL.md) | Deploy a single dApp across all networks (localnet, preview, preprod, mainnet) from one codebase |
 | [Indexer](indexer/SKILL.md) | Query blockchain data via GraphQL, watch contract state, subscribe to real-time events |
 | [Security](security/SKILL.md) | Privacy audit checklist, data leak patterns, defensive Compact patterns |
+| [Example Hello World](example-hello-world/SKILL.md) | Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder. |
 | [Example Counter](example-counter/SKILL.md) | Complete DApp reference — headless wallet, CLI, counter contract, DUST, deploy |
 | [NFT](nft/SKILL.md) | Build NFTs (shielded + unshielded) with OpenZeppelin and native Midnight functions |
 | [Token Transfers](token-transfers/SKILL.md) | Shielded and unshielded token transfers, balance flows, multi-party transactions |
