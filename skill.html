@@ -187,7 +187,11 @@ a:hover { text-decoration: underline; }
   </div>
 </div>
 
+<script src="/analytics.js"></script>
 <script>
+try { window.MidnightAnalytics.track("page_view", { meta: { page: "skill" } }); } catch {}
+try { window.MidnightAnalytics.ensureGithubUsername(); } catch {}
+
 const SKILLS = [
   { id: '1am-wallet', name: '1AM Wallet', desc: 'Integrate the 1AM browser wallet for dust-free contract deployment and transaction flow.' },
   { id: 'compact', name: 'Compact', desc: 'The Compact smart contract language — TypeScript-like DSL that compiles to ZK circuits.' },
@@ -196,7 +200,7 @@ const SKILLS = [
   { id: 'multinetwork', name: 'Multinetwork', desc: 'Deploy a single dApp across all networks (localnet, preview, preprod, mainnet) from one codebase.' },
   { id: 'midnight-indexer', name: 'Indexer', desc: 'Query blockchain data via GraphQL, watch contract state, subscribe to real-time events.' },
   { id: 'midnight-security', name: 'Security', desc: 'Privacy audit checklist, data leak patterns, defensive Compact contract patterns.' },
-  { id: 'example-hello-world', name: 'Example Hello World', desc: 'Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.' },
+  { id: 'hello-world', name: 'Example Hello World', desc: 'Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.' },
   { id: 'example-counter', name: 'Example Counter', desc: 'Complete DApp reference — headless wallet, CLI, deploy, interaction.' },
   { id: 'nft', name: 'NFT', desc: 'Build NFTs (shielded + unshielded) with OpenZeppelin and native functions.' },
   { id: 'token-transfers', name: 'Token Transfers', desc: 'Shielded/unshielded transfers, balance queries, multi-party flows.' },
@@ -228,7 +232,10 @@ function loadSkill(id) {
   const skill = SKILLS.find(s => s.id === id);
   if (!skill) return;
 
-  const skillUrl = window.location.origin + '/' + id + '/SKILL.md';
+  let anonId = null;
+  try { anonId = window.MidnightAnalytics.getAnonId(); } catch {}
+  let gh = null;
+  try { gh = window.MidnightAnalytics.getGithubUsername(); } catch {}
 
   // Update header
   document.title = skill.name + ' — MIDSKILLS';
@@ -242,7 +249,12 @@ function loadSkill(id) {
 
   // Load content
   content.innerHTML = '<p class="loading">Loading...</p>';
-  fetch(id + '/SKILL.md')
+  try { window.MidnightAnalytics.track("skill_view", { skill_name: id }); } catch {}
+  fetch(
+    '/api/skill?name=' + encodeURIComponent(id) +
+    (anonId ? ('&anon_id=' + encodeURIComponent(anonId)) : '') +
+    (gh ? ('&github_username=' + encodeURIComponent(gh)) : '')
+  )
     .then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); })
     .then(text => { content.innerHTML = renderMarkdown(text); content.scrollTop = 0; })
     .catch(err => {
@@ -255,10 +267,12 @@ function loadSkill(id) {
   const origHTML = copyBtn.innerHTML;
   let timer;
   copyBtn.addEventListener('click', async () => {
+    try { await window.MidnightAnalytics.ensureGithubUsername({ force: true }); } catch {}
     const params = new URLSearchParams(window.location.search);
     const name = params.get('name');
     if (!name) return;
     const url = window.location.origin + '/' + name + '/SKILL.md';
+    try { window.MidnightAnalytics.track("copy_skill_url", { skill_name: name }); } catch {}
     try { await navigator.clipboard.writeText(url); } catch(err) {
       const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
     }

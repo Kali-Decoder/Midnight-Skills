@@ -1,27 +1,41 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { getCollection, hashIp } from "./_lib/db.js";
+import { logEventToSupabase } from "./_lib/analytics.js";
 
-const VALID_SKILLS = [
-  "why-midnight",
-  "1am-wallet",
-  "compact",
-  "testing",
-  "midnight-js"
-];
+function getSkillsIndex() {
+  try {
+    const raw = readFileSync(join(process.cwd(), "skills.json"), "utf-8");
+    const parsed = JSON.parse(raw);
+    const map = new Map();
+    for (const s of parsed.skills || []) {
+      if (typeof s?.name === "string" && typeof s?.path === "string") {
+        map.set(s.name, s.path);
+      }
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
+}
 
 export default async function handler(req, res) {
   const skill = req.query.name;
 
-  if (!skill || !VALID_SKILLS.includes(skill)) {
+  if (!skill) {
     return res.status(404).send("Skill not found");
   }
 
   let content;
   try {
-    const filePath = skill === "midnight-skills"
-      ? join(process.cwd(), "SKILL.md")
-      : join(process.cwd(), skill, "SKILL.md");
+    const index = getSkillsIndex();
+    const relPath =
+      index.get(skill) ||
+      (skill === "midnight-skills" ? "SKILL.md" : null);
+
+    if (!relPath) return res.status(404).send("Skill not found");
+
+    const filePath = join(process.cwd(), relPath);
     content = readFileSync(filePath, "utf-8");
   } catch {
     return res.status(404).send("Skill not found");
@@ -47,6 +61,23 @@ export default async function handler(req, res) {
       console.error("Failed to log download:", e);
     }
   }
+
+  // Fire-and-forget: log to Supabase analytics (if configured)
+  // NOTE: `anon_id` is optional; if not provided, this still logs an event.
+  let pagePath = null;
+  try {
+    if (req.headers?.referer) pagePath = new URL(req.headers.referer).pathname;
+  } catch {
+    pagePath = null;
+  }
+  logEventToSupabase(req, "skill_fetch", {
+    anon_id: req.query.anon_id,
+    github_username: req.query.github_username,
+    skill_name: skill,
+    page_path: pagePath,
+    referrer: req.headers?.referer || null,
+    meta: { source: "api/skill" },
+  });
 
   res.setHeader("Content-Type", "text/markdown; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");

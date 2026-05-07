@@ -292,7 +292,7 @@ h2 {
   <img class="provider-logo" src="logos/opencode.png" alt="OpenCode" title="OpenCode">
 </div>
 
-<div class="footer">MIT License · <a href="skill.html?name=why-midnight" target="_blank" rel="noopener">Browse Skills</a> · <a href="howto.html" target="_blank" rel="noopener">How To Use</a><br>Anonymous download tracking (no personal data)</div>
+<div class="footer">MIT License · <a href="skill.html?name=why-midnight" target="_blank" rel="noopener">Browse Skills</a> · <a href="howto.html" target="_blank" rel="noopener">How To Use</a> · <a href="analytics.html" target="_blank" rel="noopener">Analytics</a><br>Usage tracking includes GitHub username</div>
 
 <div id="disclaimer" class="disclaimer-backdrop" aria-hidden="false">
   <div class="disclaimer-box" role="alertdialog" aria-modal="true">
@@ -302,8 +302,12 @@ h2 {
   </div>
 </div>
 
+<script src="/analytics.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
 <script>
+try { window.MidnightAnalytics.track("page_view", { meta: { page: "index" } }); } catch {}
+try { window.MidnightAnalytics.ensureGithubUsername(); } catch {}
+
 // ASCII hero animation — CRT flicker-on effect
 (function() {
   const ascii = document.querySelector('.ascii');
@@ -387,6 +391,7 @@ document.querySelectorAll('.how-to-tab-panel code').forEach(code => {
   const orig = code.textContent;
   let timer;
   code.addEventListener('click', async () => {
+    try { window.MidnightAnalytics.track("copy_snippet", { meta: { page: "index", snippet: orig.slice(0, 80) } }); } catch {}
     try { await navigator.clipboard.writeText(orig); } catch(err) {
       const t = document.createElement('textarea'); t.value = orig; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
     }

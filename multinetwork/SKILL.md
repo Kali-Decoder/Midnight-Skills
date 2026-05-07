@@ -35,10 +35,12 @@ Running the `undeployed` network locally requires three Docker containers: a Mid
 The official tool at `github.com/midnightntwrk/midnight-local-dev` manages the full stack and handles genesis wallet funding:
 
 ```bash
+
 git clone https://github.com/midnightntwrk/midnight-local-dev
 cd midnight-local-dev
 npm install
 npm start
+
 ```
 
 `npm start` will:

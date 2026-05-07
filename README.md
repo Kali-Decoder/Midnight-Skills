@@ -50,6 +50,10 @@ cp .env.example .env
 | `MONGODB_URI` | Yes | MongoDB connection string |
 | `MONGODB_DB` | No | Database name (default: `midnight-skills`) |
 | `STATS_SECRET` | Yes | Secret key to access `/api/stats` |
+| `SUPABASE_URL` | No | Supabase project URL (enables `/api/track` + `/api/analytics`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | No | Supabase service role key (server-side only) |
+| `ANALYTICS_SECRET` | No | (Deprecated) `/api/analytics` is public now |
+| `ANALYTICS_IP_SALT` | No | Salt for daily IP hashing (recommended) |
 
 ### Database Setup
 
@@ -61,6 +65,12 @@ Create a MongoDB database (Atlas or self-hosted). The app will create the
 The site deploys to Vercel. Push to `main` to trigger a deploy.
 
 Ensure `MONGODB_URI` and `STATS_SECRET` are set in your Vercel project environment variables.
+
+### Optional: Supabase Analytics
+
+- Apply `supabase/analytics_schema.sql` in your Supabase SQL editor.
+- Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Vercel.
+- Open `analytics.html` to view usage.
 
 ## License
 
