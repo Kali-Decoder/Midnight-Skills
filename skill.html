@@ -193,18 +193,18 @@ try { window.MidnightAnalytics.track("page_view", { meta: { page: "skill" } }); 
 try { window.MidnightAnalytics.ensureGithubUsername(); } catch {}
 
 const SKILLS = [
-  { id: '1am-wallet', name: '1AM Wallet', desc: 'Integrate the 1AM browser wallet for dust-free contract deployment and transaction flow.' },
-  { id: 'compact', name: 'Compact', desc: 'The Compact smart contract language — TypeScript-like DSL that compiles to ZK circuits.' },
-  { id: 'midnight-js', name: 'Midnight.js', desc: 'TypeScript SDK — provider wiring, wallet SDK, contract deployment, DUST flow, testkit.' },
-  { id: 'testing', name: 'Testing', desc: 'Debug Compact contracts, read compiler errors, manage versions, and avoid common traps.' },
-  { id: 'multinetwork', name: 'Multinetwork', desc: 'Deploy a single dApp across all networks (localnet, preview, preprod, mainnet) from one codebase.' },
-  { id: 'midnight-indexer', name: 'Indexer', desc: 'Query blockchain data via GraphQL, watch contract state, subscribe to real-time events.' },
-  { id: 'midnight-security', name: 'Security', desc: 'Privacy audit checklist, data leak patterns, defensive Compact contract patterns.' },
-  { id: 'hello-world', name: 'Example Hello World', desc: 'Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.' },
-  { id: 'example-counter', name: 'Example Counter', desc: 'Complete DApp reference — headless wallet, CLI, deploy, interaction.' },
-  { id: 'nft', name: 'NFT', desc: 'Build NFTs (shielded + unshielded) with OpenZeppelin and native functions.' },
-  { id: 'token-transfers', name: 'Token Transfers', desc: 'Shielded/unshielded transfers, balance queries, multi-party flows.' },
-  { id: 'why-midnight', name: 'Why Midnight', desc: 'What Midnight is, why it exists, and how it works (public/private state + zero-knowledge proofs).' }
+  { id: '1am-wallet', name: '1AM Wallet', path: '1am-wallet/SKILL.md', desc: 'Integrate the 1AM browser wallet for dust-free contract deployment and transaction flow.' },
+  { id: 'compact', name: 'Compact', path: 'compact/SKILL.md', desc: 'The Compact smart contract language — TypeScript-like DSL that compiles to ZK circuits.' },
+  { id: 'midnight-js', name: 'Midnight.js', path: 'midnight-js/SKILL.md', desc: 'TypeScript SDK — provider wiring, wallet SDK, contract deployment, DUST flow, testkit.' },
+  { id: 'testing', name: 'Testing', path: 'testing/SKILL.md', desc: 'Debug Compact contracts, read compiler errors, manage versions, and avoid common traps.' },
+  { id: 'multinetwork', name: 'Multinetwork', path: 'multinetwork/SKILL.md', desc: 'Deploy a single dApp across all networks (localnet, preview, preprod, mainnet) from one codebase.' },
+  { id: 'midnight-indexer', name: 'Indexer', path: 'indexer/SKILL.md', desc: 'Query blockchain data via GraphQL, watch contract state, subscribe to real-time events.' },
+  { id: 'midnight-security', name: 'Security', path: 'security/SKILL.md', desc: 'Privacy audit checklist, data leak patterns, defensive Compact contract patterns.' },
+  { id: 'hello-world', name: 'Example Hello World', path: 'example-hello-world/SKILL.md', desc: 'Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.' },
+  { id: 'example-counter', name: 'Example Counter', path: 'example-counter/SKILL.md', desc: 'Complete DApp reference — headless wallet, CLI, deploy, interaction.' },
+  { id: 'nft', name: 'NFT', path: 'nft/SKILL.md', desc: 'Build NFTs (shielded + unshielded) with OpenZeppelin and native functions.' },
+  { id: 'token-transfers', name: 'Token Transfers', path: 'token-transfers/SKILL.md', desc: 'Shielded/unshielded transfers, balance queries, multi-party flows.' },
+  { id: 'why-midnight', name: 'Why Midnight', path: 'why-midnight/SKILL.md', desc: 'What Midnight is, why it exists, and how it works (public/private state + zero-knowledge proofs).' }
 ];
 
 const sidebar = document.getElementById('sidebar');
@@ -250,12 +250,20 @@ function loadSkill(id) {
   // Load content
   content.innerHTML = '<p class="loading">Loading...</p>';
   try { window.MidnightAnalytics.track("skill_view", { skill_name: id }); } catch {}
-  fetch(
+
+  const tryLoad = (url) =>
+    fetch(url)
+      .then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); });
+
+  const apiUrl =
     '/api/skill?name=' + encodeURIComponent(id) +
     (anonId ? ('&anon_id=' + encodeURIComponent(anonId)) : '') +
-    (gh ? ('&github_username=' + encodeURIComponent(gh)) : '')
-  )
-    .then(r => { if (!r.ok) throw new Error(r.statusText); return r.text(); })
+    (gh ? ('&github_username=' + encodeURIComponent(gh)) : '');
+
+  const fileUrl = skill.path;
+
+  tryLoad(apiUrl)
+    .catch(() => tryLoad(fileUrl))
     .then(text => { content.innerHTML = renderMarkdown(text); content.scrollTop = 0; })
     .catch(err => {
       content.innerHTML = '<p class="error">Could not load skill: ' + escHtml(err.message) + '.</p>';
