@@ -1,10 +1,12 @@
 const { readFileSync } = require("fs");
-const { join } = require("path");
+const { join, resolve } = require("path");
 const { logEventToSupabase } = require("./_lib/analytics.js");
+
+const PROJECT_ROOT = resolve(__dirname, "..", "..");
 
 function getSkillsIndex() {
   try {
-    const raw = readFileSync(join(process.cwd(), "skills.json"), "utf-8");
+    const raw = readFileSync(join(PROJECT_ROOT, "skills.json"), "utf-8");
     const parsed = JSON.parse(raw);
     const map = new Map();
     for (const s of parsed.skills || []) {
@@ -28,7 +30,7 @@ exports.handler = async (event) => {
     const index = getSkillsIndex();
     const relPath = index.get(skill) || (skill === "midnight-skills" ? "SKILL.md" : null);
     if (!relPath) return { statusCode: 404, body: "Skill not found" };
-    content = readFileSync(join(process.cwd(), relPath), "utf-8");
+    content = readFileSync(join(PROJECT_ROOT, relPath), "utf-8");
   } catch {
     return { statusCode: 404, body: "Skill not found" };
   }

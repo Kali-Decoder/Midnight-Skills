@@ -1,11 +1,16 @@
 import { readFileSync } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
+import { fileURLToPath } from "url";
 import { getCollection, hashIp } from "./_lib/db.js";
 import { logEventToSupabase } from "./_lib/analytics.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = resolve(__filename, "..");
+const PROJECT_ROOT = resolve(__dirname, "..");
+
 function getSkillsIndex() {
   try {
-    const raw = readFileSync(join(process.cwd(), "skills.json"), "utf-8");
+    const raw = readFileSync(join(PROJECT_ROOT, "skills.json"), "utf-8");
     const parsed = JSON.parse(raw);
     const map = new Map();
     for (const s of parsed.skills || []) {
@@ -35,7 +40,7 @@ export default async function handler(req, res) {
 
     if (!relPath) return res.status(404).send("Skill not found");
 
-    const filePath = join(process.cwd(), relPath);
+    const filePath = join(PROJECT_ROOT, relPath);
     content = readFileSync(filePath, "utf-8");
   } catch {
     return res.status(404).send("Skill not found");
