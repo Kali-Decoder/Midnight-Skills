@@ -93,6 +93,47 @@
     .error { color: var(--accent); margin-top: 0.75rem; }
     .ok { color: var(--dim); margin-top: 0.75rem; }
     .full { grid-column: 1 / -1; }
+    .chart {
+      display: grid;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .bar {
+      display: grid;
+      grid-template-columns: 1fr 6fr 60px;
+      gap: 10px;
+      align-items: center;
+      font-size: 13px;
+    }
+    .bar .label {
+      color: var(--fg);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bar .track {
+      height: 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 212, 0, 0.02);
+      overflow: hidden;
+    }
+    .bar .fill {
+      height: 100%;
+      background: var(--accent);
+      opacity: 0.85;
+      width: 0%;
+    }
+    .bar .val {
+      text-align: right;
+      color: var(--dim);
+      font-variant-numeric: tabular-nums;
+    }
+    .hint {
+      margin-top: 8px;
+      color: var(--dim);
+      font-size: 12px;
+    }
     @media (max-width: 820px) {
       .controls { grid-template-columns: 1fr 120px; }
       .controls button { grid-column: 1 / -1; }
@@ -127,6 +168,10 @@
       <div class="panel">
         <h2>Unique Visitors</h2>
         <div id="unique"></div>
+      </div>
+      <div class="panel full">
+        <h2>Users Per Skill (Unique)</h2>
+        <div id="usersPerSkillChart"></div>
       </div>
       <div class="panel full">
         <h2>Daily (Last N Days)</h2>
@@ -165,6 +210,32 @@
       return html;
     }
 
+    function renderBarChart(rows, { labelKey, valueKey, limit = 20 } = {}) {
+      if (!Array.isArray(rows) || !rows.length) return "<div class='muted'>No data.</div>";
+      const sorted = [...rows]
+        .filter((r) => r && typeof r[labelKey] === "string")
+        .map((r) => ({ label: r[labelKey], value: Number(r[valueKey] || 0) }))
+        .filter((r) => Number.isFinite(r.value))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, limit);
+
+      const max = Math.max(1, ...sorted.map((r) => r.value));
+      let html = "<div class='chart'>";
+      for (const r of sorted) {
+        const pct = Math.max(0, Math.min(100, (r.value / max) * 100));
+        html += [
+          "<div class='bar'>",
+            "<div class='label' title='", esc(r.label), "'>", esc(r.label), "</div>",
+            "<div class='track' aria-hidden='true'><div class='fill' style='width:", String(pct.toFixed(2)), "%'></div></div>",
+            "<div class='val'>", esc(r.value), "</div>",
+          "</div>",
+        ].join("");
+      }
+      html += "</div>";
+      html += "<div class='hint'>Top " + esc(limit) + " skills by unique visitors.</div>";
+      return html;
+    }
+
     async function load() {
       const days = $("days").value.trim() || "30";
       statusEl.className = "ok";
@@ -186,6 +257,11 @@
           { key: "skill_name", label: "skill" },
           { key: "unique_visitors", label: "unique" },
         ]);
+        $("usersPerSkillChart").innerHTML = renderBarChart(json.unique_visitors || [], {
+          labelKey: "skill_name",
+          valueKey: "unique_visitors",
+          limit: 20,
+        });
         $("daily").innerHTML = renderTable((json.daily || []).slice(0, 200), [
           { key: "date", label: "date" },
           { key: "skill_name", label: "skill" },
