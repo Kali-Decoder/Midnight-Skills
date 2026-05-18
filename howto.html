@@ -1,395 +1,451 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MIDSKILLS — How To Use</title>
-<meta name="description" content="How to use MIDSKILLS with npx skills, agents, and direct URLs.">
-<style>
-:root {
-  --bg: #0b0b0b;
-  --fg: #fff6bf;
-  --dim: #cbbf76;
-  --accent: #ffd400;
-  --border: #3a2f00;
-  --hover: #151200;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; }
-body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
-  font-size: 14px;
-  line-height: 1.6;
-  display: flex;
-  flex-direction: column;
-}
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIDSKILLS — How To Use</title>
+  <meta name="description" content="Operational guide for configuring MIDSKILLS with CLI tools, local agents, and AI context boundaries.">
+  <style>
+    :root {
+      --bg: #0b0b0b;
+      --fg: #fff6bf;
+      --dim: #cbbf76;
+      --accent: #ffd400;
+      --border: #3a2f00;
+      --hover: #151200;
+      --card-bg: rgba(255, 212, 0, 0.015);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+    }
+    @media (min-width: 480px) {
+      body { padding: 1.5rem; }
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-.back-link {
-  color: var(--dim);
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  transition: color 0.15s;
-}
-.back-link:hover { color: var(--fg); text-decoration: none; }
-.back-link svg { width: 14px; height: 14px; }
-.title {
-  color: var(--accent);
-  font-size: 15px;
-  font-weight: 600;
-}
+    .wrap { max-width: 1000px; margin: 0 auto; width: 100%; }
 
-.content {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1.5rem 1.5rem 2.5rem;
-  width: 100%;
-}
+    .header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    @media (min-width: 520px) {
+      .header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .back-link {
+      color: var(--dim);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--fg); text-decoration: none; }
+    .back-link svg { width: 14px; height: 14px; }
+    .title {
+      color: var(--accent);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
 
-.section {
-  border: 1px solid var(--border);
-  background: var(--hover);
-  border-radius: 6px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
-}
-.section h2 {
-  color: var(--accent);
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 0.6rem;
-  font-weight: 600;
-}
-.section p { color: var(--fg); margin: 0.3rem 0; }
-.section .muted { color: var(--dim); }
+    .section {
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    @media (min-width: 640px) {
+      .section { padding: 1.25rem; margin-bottom: 1.5rem; }
+    }
+    .section h2 {
+      color: var(--accent);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 0.4rem;
+    }
+    .section p { color: var(--fg); margin: 0.5rem 0; }
+    .sub-label { color: var(--dim); font-size: 12px; margin-top: 0.5rem; display: block; }
 
-.code {
-  display: block;
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--fg);
-  background: #0e0b00;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
-  margin-top: 0.6rem;
-  white-space: pre;
-  overflow-x: auto;
-}
+    /* Flex Grid Layout Engine */
+    .cli-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    @media (min-width: 768px) {
+      .cli-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        margin-top: 0.5rem;
+      }
+    }
 
-.copy-wrap {
-  position: relative;
-}
-.copy-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--accent);
-  font-family: inherit;
-  font-size: 11px;
-  padding: 0.2rem 0.5rem;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-}
-.copy-btn:hover {
-  border-color: var(--accent);
-  color: var(--fg);
-}
-.copy-btn.copied {
-  border-color: var(--accent);
-  color: var(--accent);
-}
+    .copy-wrap {
+      position: relative;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .code {
+      display: block;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--fg);
+      background: #040404;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.85rem 1rem;
+      padding-top: 2.75rem; /* Space for absolute positioning copy button on narrow widths */
+      white-space: pre;
+      overflow-x: auto;
+    }
+    @media (min-width: 480px) {
+      .code {
+        padding: 0.85rem 4.2rem 0.85rem 1rem;
+      }
+    }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: inline-flex;
+      align-items: center;
+      background: var(--hover);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 11px;
+      padding: 0.25rem 0.5rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      z-index: 5;
+    }
+    .copy-btn:hover {
+      border-color: var(--accent);
+      background: rgba(255, 212, 0, 0.05);
+    }
+    .copy-btn.copied {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--bg);
+    }
 
-.how-to-tab-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.6rem;
-}
-.how-to-tab-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.3rem 0.6rem;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--dim);
-  cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
-}
-.how-to-tab-btn:hover { color: var(--fg); }
-.how-to-tab-btn.active {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-.how-to-tab-panel { display: none; }
-.how-to-tab-panel.active { display: block; }
+    /* Tab Layout Architecture */
+    .how-to-tab-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.6rem;
+      margin-top: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .how-to-tab-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.35rem 0.6rem;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--dim);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-grow: 1;
+      text-align: center;
+    }
+    @media (min-width: 520px) {
+      .how-to-tab-btn {
+        padding: 0.35rem 0.75rem;
+        font-size: 12px;
+        flex-grow: 0;
+      }
+    }
+    .how-to-tab-btn:hover { color: var(--fg); border-color: var(--dim); }
+    .how-to-tab-btn.active {
+      color: var(--bg);
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    
+    .how-to-tab-panel { 
+      display: none; 
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.85rem;
+      margin-top: 0.5rem;
+    }
+    @media (min-width: 640px) {
+      .how-to-tab-panel { padding: 1rem; }
+    }
+    .how-to-tab-panel.active { display: block; }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (max-width: 760px) {
-  .grid { grid-template-columns: 1fr; }
-}
-</style>
+    /* Directory Fluid Auto Grid */
+    .directory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    @media (min-width: 580px) {
+      .directory-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      }
+    }
+    .dir-item {
+      border: 1px solid rgba(58, 47, 0, 0.6);
+      padding: 0.75rem;
+      border-radius: 4px;
+      background: rgba(255, 212, 0, 0.005);
+      transition: all 0.2s ease;
+    }
+    .dir-item:hover {
+      border-color: var(--accent);
+      background: var(--hover);
+    }
+    .dir-item a {
+      font-weight: 600;
+      display: inline-block;
+      margin-bottom: 0.15rem;
+    }
+    .dir-desc {
+      color: var(--dim);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+  </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-left">
-    <a href="/" class="back-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Back</a>
-    <span class="title">MIDSKILLS — How To Use</span>
-  </div>
-</div>
-
-<div class="content">
-  <div class="section">
-    <h2>Install (npx)</h2>
-    <p>Add MIDSKILLS to your local skills index:</p>
-    <div class="copy-wrap">
-      <button class="copy-btn" data-copy>Copy</button>
-      <code class="code">npx skills add Kali-Decoder/midnight-skills</code>
-    </div>
-    <p class="muted">This lets tools pull skills by URL from your repo.</p>
-    <div class="copy-wrap">
-      <button class="copy-btn" data-copy>Copy</button>
-      <code class="code">https://&lt;your-domain&gt;/example-counter</code>
+<div class="wrap">
+  
+  <!-- System Navigation Header -->
+  <div class="header">
+    <div class="header-left">
+      <a href="/" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg> Return to Core
+      </a>
+      <span class="title">// SYS_INSTRUCTION_MANUAL</span>
     </div>
   </div>
 
-  <div class="section">
-    <h2>Use In Scripts (curl)</h2>
-    <p>Pull markdown into a local file:</p>
-    <div class="copy-wrap">
-      <button class="copy-btn" data-copy>Copy</button>
-      <code class="code">curl -fsSL https://midnight-skills.netlify.app/compact -o compact.SKILL.md</code>
+  <!-- Row 1: Shell Automation & Package Config -->
+  <div class="cli-grid">
+    <div class="section">
+      <h2>Package Pipeline (npx)</h2>
+      <p>Inject MIDSKILLS protocols directly into your local execution runtime environments:</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">npx skills add Kali-Decoder/midnight-skills</code>
+      </div>
+      <span class="sub-label">Enables local development clients to map resource abstractions via repository dependencies.</span>
+    </div>
+
+    <div class="section">
+      <h2>Automated Pull (curl)</h2>
+      <p>Download standard markdown definitions straight into an active workspace asset subfolder:</p>
+      <div class="copy-wrap">
+        <button class="copy-btn" data-copy>Copy</button>
+        <code class="code">curl -fsSL https://midnight-skills.netlify.app/compact -o compact.SKILL.md</code>
+      </div>
+      <span class="sub-label">Perfect for embedding specific contextual knowledge definitions within standalone CI pipelines.</span>
     </div>
   </div>
 
+  <!-- Row 2: Deep LLM Context Matrix Integration Interface -->
   <div class="section">
-    <h2>AI Tools — How To Use</h2>
-    <div class="how-to-tab-nav" role="tablist" aria-label="AI tools">
-      <button class="how-to-tab-btn active" data-tab="chatgpt">ChatGPT/Codex</button>
-      <button class="how-to-tab-btn" data-tab="claude">Claude</button>
-      <button class="how-to-tab-btn" data-tab="cursor">Cursor</button>
+    <h2>LLM Agent & Engine Injection Vectors</h2>
+    <p>Target precise behavioral definitions using contextual web endpoints inside prompt topologies:</p>
+    
+    <div class="how-to-tab-nav" role="tablist" aria-label="AI Platform Selection Links">
+      <button class="how-to-tab-btn active" data-tab="chatgpt">ChatGPT</button>
+      <button class="how-to-tab-btn" data-tab="claude">Claude Code</button>
+      <button class="how-to-tab-btn" data-tab="cursor">Cursor IDE</button>
       <button class="how-to-tab-btn" data-tab="gemini">Gemini</button>
       <button class="how-to-tab-btn" data-tab="copilot">GitHub Copilot</button>
     </div>
 
+    <!-- Tab Panels Container Block -->
     <div class="how-to-tab-panel active" data-tab="chatgpt">
-      <p class="muted">Requires web access or URL reading.</p>
+      <span class="sub-label" style="margin-bottom:0.5rem;">Requires active browsing or live internet crawling permissions:</span>
       <div class="copy-wrap">
         <button class="copy-btn" data-copy>Copy</button>
         <code class="code">Read https://midnight-skills.netlify.app and use the 1am-wallet and compact skills to explain how to integrate a wallet and deploy a contract on Midnight.</code>
       </div>
-      <p class="muted">Ask follow-ups like "explain the dust-free flow" or "show me how witnesses work."</p>
+      <p class="sub-label">Suggested progression prompts: "Breakdown dust-free handling loops" or "Expose zero-knowledge validation proofs."</p>
     </div>
 
     <div class="how-to-tab-panel" data-tab="claude">
-      <p class="muted">Claude Code can fetch URLs directly.</p>
+      <span class="sub-label" style="margin-bottom:0.5rem;">Claude Code execution context allows active path resolving via URL fetching:</span>
       <div class="copy-wrap">
         <button class="copy-btn" data-copy>Copy</button>
-        <code class="code">Read https://midnight-skills.netlify.app and apply the midnight-js and compact skills.</code>
+        <code class="code">Read https://midnight-skills.netlify.app and apply the midnight-js and compact skills to my active folder layout.</code>
       </div>
-      <p class="muted">Claude will load the root skill, then the specific skills.</p>
+      <p class="sub-label">Claude maps out the parent hierarchy mapping schema automatically before running specialized logic injections.</p>
     </div>
 
     <div class="how-to-tab-panel" data-tab="cursor">
-      <p class="muted">Paste in Cursor chat.</p>
+      <span class="sub-label" style="margin-bottom:0.5rem;">Inject inside active inline Composer panels or Sidebar panel chats:</span>
       <div class="copy-wrap">
         <button class="copy-btn" data-copy>Copy</button>
         <code class="code">Read https://midnight-skills.netlify.app and use the compact skill to write a bulletin board contract on Midnight.</code>
       </div>
-      <p class="muted">Cursor will fetch the markdown if network access is enabled.</p>
+      <p class="sub-label">Ensure global index features or network documentation tracking modes are enabled inside workspace parameters.</p>
     </div>
 
     <div class="how-to-tab-panel" data-tab="gemini">
-      <p class="muted">Works in AI Studio / Vertex with web access.</p>
+      <span class="sub-label" style="margin-bottom:0.5rem;">Optimal performance metrics verified inside Google AI Studio / Vertex Workbench layers:</span>
       <div class="copy-wrap">
         <button class="copy-btn" data-copy>Copy</button>
         <code class="code">Read https://midnight-skills.netlify.app and explain how Midnight combines public and private state with ZK proofs.</code>
       </div>
-      <p class="muted">Gemini will use the skill URLs as context.</p>
+      <p class="sub-label">The models interpret tracking arrays seamlessly to compile clean systemic answers.</p>
     </div>
 
     <div class="how-to-tab-panel" data-tab="copilot">
-      <p class="muted">Use Copilot Chat with web browsing enabled.</p>
+      <span class="sub-label" style="margin-bottom:0.5rem;">Utilize standard inline system extensions alongside enabled browser search integrations:</span>
       <div class="copy-wrap">
         <button class="copy-btn" data-copy>Copy</button>
         <code class="code">Read https://midnight-skills.netlify.app/midnight-js and summarize the wallet setup and provider wiring in 5 bullet points.</code>
       </div>
-      <p class="muted">If browsing is disabled, paste the skill contents manually.</p>
+      <p class="sub-label">If automated crawling restrictions apply, access data endpoints directly and append text outputs to prompts manually.</p>
     </div>
   </div>
 
+  <!-- Row 3: Comprehensive Grid Directory Map -->
   <div class="section">
-    <h2>Available Skills</h2>
-    <div class="grid">
-      <div>
-        <p><a href="skill.html?name=1am-wallet">1AM Wallet</a> — Wallet integration, dust-free tx flow</p>
-        <p><a href="skill.html?name=compact">Compact</a> — Smart contract language (ZK circuits)</p>
-        <p><a href="skill.html?name=testing">Testing</a> — Debugging, version management, common traps</p>
-        <p><a href="skill.html?name=multinetwork">Multinetwork</a> — Deploy across all networks from one codebase</p>
-        <p><a href="skill.html?name=midnight-indexer">Indexer</a> — GraphQL queries, subscriptions, event watching</p>
-        <p><a href="skill.html?name=midnight-security">Security</a> — Privacy audit, leak patterns, defensive patterns</p>
-        <p><a href="skill.html?name=example-counter">Example Counter</a> — Complete DApp reference (wallet, deploy, interact)</p>
-        <p><a href="skill.html?name=nft">NFT</a> — Build NFTs (shielded + unshielded)</p>
-        <p><a href="skill.html?name=token-transfers">Token Transfers</a> — Shielded/unshielded transfers, balance flows</p>
+    <h2>Available Structural Skills Ecosystem</h2>
+    <p>Select a discrete node below to review individual definitions or configure isolated targeting references:</p>
+    
+    <div class="directory-grid">
+      <div class="dir-item">
+        <a href="skill.html?name=1am-wallet">1AM Wallet</a>
+        <div class="dir-desc">Wallet configuration models, setup procedures, and dust-free transaction execution controls.</div>
       </div>
-      <div>
-        <p><a href="skill.html?name=midnight-js">Midnight.js</a> — TypeScript SDK, providers, wallets</p>
-        <p><a href="skill.html?name=why-midnight">Why Midnight</a> — Architecture &amp; privacy model</p>
+      <div class="dir-item">
+        <a href="skill.html?name=compact">Compact</a>
+        <div class="dir-desc">Smart contract language syntax specifications optimized for zero-knowledge zk-Circuit assembly.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=testing">Testing</a>
+        <div class="dir-desc">Debugging frameworks, sandbox emulation traps, environmental profiles, and runtime assertions.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=multinetwork">Multinetwork</a>
+        <div class="dir-desc">Cross-network environment deployment instructions managing Devnet, Testnet, and Production endpoints.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=midnight-indexer">Indexer</a>
+        <div class="dir-desc">GraphQL pipeline structures, transactional data mapping, subscription patterns, and block event watchers.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=midnight-security">Security</a>
+        <div class="dir-desc">Privacy validation standards, identifying storage state leaks, and defensive contract architecture patterns.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=example-counter">Example Counter</a>
+        <div class="dir-desc">End-to-end boilerplate architecture tracing front-end UI synchronization and full ledger deployment scripts.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=nft">NFT</a>
+        <div class="dir-desc">Techniques for designing composite token protocols managing public balances and shielded asset vaults.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=token-transfers">Token Transfers</a>
+        <div class="dir-desc">Shielded and unshielded native balance asset shifting mechanics and ledger verification hooks.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=midnight-js">Midnight.js</a>
+        <div class="dir-desc">TypeScript client SDK interaction layers, network bridge connectors, and dynamic browser extension wiring.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=why-midnight">Why Midnight</a>
+        <div class="dir-desc">Structural analysis mapping architectural logic, data privacy strategies, and selective cryptography metrics.</div>
       </div>
     </div>
   </div>
-    <div class="copy-wrap">
-      <button class="copy-btn" data-copy>Copy</button>
-      <code class="code">https://midnight-skills.netlify.app/indexer</code>
-    </div>
-  </div>
 
-  <div class="section">
-    <h2>Use In Scripts (curl)</h2>
-    <p>Pull markdown into a local file:</p>
-    <div class="copy-wrap">
-      <button class="copy-btn" data-copy>Copy</button>
-      <code class="code">curl -fsSL https://midnight-skills.netlify.app/why-midnight -o why-midnight.SKILL.md</code>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>AI Tools — How To Use</h2>
-    <div class="how-to-tab-nav" role="tablist" aria-label="AI tools">
-      <button class="how-to-tab-btn active" data-tab="chatgpt">ChatGPT/Codex</button>
-      <button class="how-to-tab-btn" data-tab="claude">Claude</button>
-      <button class="how-to-tab-btn" data-tab="cursor">Cursor</button>
-      <button class="how-to-tab-btn" data-tab="gemini">Gemini</button>
-      <button class="how-to-tab-btn" data-tab="copilot">GitHub Copilot</button>
-    </div>
-
-    <div class="how-to-tab-panel active" data-tab="chatgpt">
-      <p class="muted">Requires web access or URL reading.</p>
-      <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
-        <code class="code">Read https://midnight-skills.netlify.app and use the why-midnight skill to explain Midnight and its core privacy concepts.</code>
-      </div>
-      <p class="muted">Ask follow-ups like “summarize the transaction flow” or “explain selective disclosure.”</p>
-    </div>
-
-    <div class="how-to-tab-panel" data-tab="claude">
-      <p class="muted">Claude Code can fetch URLs directly.</p>
-      <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
-        <code class="code">Read https://midnight-skills.netlify.app and apply the why-midnight skill.</code>
-      </div>
-      <p class="muted">Claude will load the root skill, then the specific skills.</p>
-    </div>
-
-    <div class="how-to-tab-panel" data-tab="cursor">
-      <p class="muted">Paste in Cursor chat.</p>
-      <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
-        <code class="code">Read https://midnight-skills.netlify.app and use the why-midnight skill to generate a short explainer for a product page.</code>
-      </div>
-      <p class="muted">Cursor will fetch the markdown if network access is enabled.</p>
-    </div>
-
-    <div class="how-to-tab-panel" data-tab="gemini">
-      <p class="muted">Works in AI Studio / Vertex with web access.</p>
-      <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
-        <code class="code">Read https://midnight-skills.netlify.app and explain how Midnight combines public and private state with ZK proofs.</code>
-      </div>
-      <p class="muted">Gemini will use the skill URLs as context.</p>
-    </div>
-
-    <div class="how-to-tab-panel" data-tab="copilot">
-      <p class="muted">Use Copilot Chat with web browsing enabled.</p>
-      <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
-        <code class="code">Read https://midnight-skills.netlify.app/why-midnight and summarize it in 5 bullet points.</code>
-      </div>
-      <p class="muted">If browsing is disabled, paste the skill contents manually.</p>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Available Skills</h2>
-    <div class="copy-wrap">
-      <button class="copy-btn" data-copy>Copy</button>
-      <code class="code">https://midnight-skills.netlify.app/why-midnight</code>
-    </div>
-  </div>
 </div>
 
+<!-- System Navigation & Event Engines Scripting -->
 <script>
-const tabButtons = document.querySelectorAll('.how-to-tab-btn');
-const tabPanels = document.querySelectorAll('.how-to-tab-panel');
+  // UI Presentation State Swapping Logic (Tabs)
+  const tabButtons = document.querySelectorAll('.how-to-tab-btn');
+  const tabPanels = document.querySelectorAll('.how-to-tab-panel');
 
-tabButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tab = btn.dataset.tab;
-    tabButtons.forEach(b => b.classList.toggle('active', b === btn));
-    tabPanels.forEach(p => p.classList.toggle('active', p.dataset.tab === tab));
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selectedTab = btn.dataset.tab;
+      tabButtons.forEach(b => b.classList.toggle('active', b === btn));
+      tabPanels.forEach(p => p.classList.toggle('active', p.dataset.tab === selectedTab));
+    });
   });
-});
 
-const copyButtons = document.querySelectorAll('[data-copy]');
-copyButtons.forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const code = btn.parentElement.querySelector('.code');
-    if (!code) return;
-    const text = code.textContent.trim();
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (err) {
-      const t = document.createElement('textarea');
-      t.value = text;
-      document.body.appendChild(t);
-      t.select();
-      document.execCommand('copy');
-      document.body.removeChild(t);
-    }
-    btn.classList.add('copied');
-    const prev = btn.textContent;
-    btn.textContent = 'Copied!';
-    setTimeout(() => {
-      btn.textContent = prev;
-      btn.classList.remove('copied');
-    }, 1200);
+  // Safe Clipboard Copy Operation Pipeline
+  const copyButtons = document.querySelectorAll('[data-copy]');
+  copyButtons.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const codeBlock = btn.parentElement.querySelector('.code');
+      if (!codeBlock) return;
+      const textToCapture = codeBlock.textContent.trim();
+      
+      try {
+        await navigator.clipboard.writeText(textToCapture);
+      } catch (err) {
+        // Fallback engine handling deprecated browser states gracefully
+        const fallbackTextArea = document.createElement('textarea');
+        fallbackTextArea.value = textToCapture;
+        fallbackTextArea.style.position = 'fixed'; 
+        document.body.appendChild(fallbackTextArea);
+        fallbackTextArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(fallbackTextArea);
+      }
+      
+      // Update interactive feedback states temporarily
+      btn.classList.add('copied');
+      const standardLabel = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => {
+        btn.textContent = standardLabel;
+        btn.classList.remove('copied');
+      }, 1200);
+    });
   });
-});
 </script>
 
 </body>
