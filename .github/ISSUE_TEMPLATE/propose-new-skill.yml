@@ -1,0 +1,73 @@
+name: 💡 Propose a New Skill
+description: Suggest a new skill or category to be added to the Midnight skills platform.
+title: "[Skill Proposal]: "
+labels: ["new-skill", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Thank you for contributing to the Midnight Skills Platform!
+        Please fill out this form as completely as possible so the community can review and implement your suggestion.
+
+  - type: input
+    id: skill-name
+    attributes:
+      label: Name of the Skill
+      description: What is the official name of the skill you want to add?
+      placeholder: e.g., Zero-Knowledge Proofs, Compact Smart Contracts, Privacy-Preserving Voting
+    validations:
+      required: true
+
+  - type: textarea
+    id: skill-description
+    attributes:
+      label: Description of the Skill
+      description: Provide a clear and concise explanation of what this skill involves.
+      placeholder: Explain what a developer or user learns or achieves with this skill...
+    validations:
+      required: true
+
+  - type: textarea
+    id: why-needed
+    attributes:
+      label: Why do we need this skill?
+      description: How does this benefit the Midnight ecosystem or the users on this platform?
+      placeholder: e.g., It fills a gap in privacy engineering, helps devs build better dApps, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: key-features
+    attributes:
+      label: What features/topics does it have?
+      description: Break down the core sub-topics, tools, or concepts included under this skill.
+      placeholder: |
+        - Feature/Topic 1: ...
+        - Feature/Topic 2: ...
+        - Feature/Topic 3: ...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: skill-category
+    attributes:
+      label: Skill Category
+      description: Where does this skill best fit?
+      options:
+        - Cryptography & ZK-Proofs
+        - Smart Contract Development (Compact)
+        - Front-End Integration
+        - Protocol Infrastructure
+        - Devops & Node Operations
+        - Other (Specify in description)
+    validations:
+      required: true
+
+  - type: textarea
+    id: resources
+    attributes:
+      label: Recommended Resources (Optional)
+      description: Links to documentation, GitHub repos, or articles that help define this skill.
+      placeholder: https://midnight.network/docs...
+    validations:
+      required: false
