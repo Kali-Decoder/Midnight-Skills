@@ -25,6 +25,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Write Compact smart contracts | `compact/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
 | Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder. | `example-hello-world/` |
+| Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet. | `example-payment-dapp/` |
 
 
 ## Skills
@@ -75,3 +76,6 @@ This file will guide to the right skill with the latest knowledge about Midnight
 
 ### [Example Hello World](/example-hello-world/SKILL.md)
 - Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.
+
+### [Example Payment Dapp](/example-payment-dapp/SKILL.md)
+- Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet.

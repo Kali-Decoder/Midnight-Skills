@@ -17,6 +17,7 @@ Knowledge skills for AI agents building on Midnight Network. Each skill is a sta
 | [Example Counter](example-counter/SKILL.md) | Complete DApp reference — headless wallet, CLI, counter contract, DUST, deploy |
 | [NFT](nft/SKILL.md) | Build NFTs (shielded + unshielded) with OpenZeppelin and native Midnight functions |
 | [Token Transfers](token-transfers/SKILL.md) | Shielded and unshielded token transfers, balance flows, multi-party transactions |
+| [Example Payment Dapp](example-payment-dapp/SKILL.md) | Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet. |
 | [Why Midnight](why-midnight/SKILL.md) | Midnight's architecture, privacy model, selective disclosure, and ZK proofs |
 
 ## Architecture
