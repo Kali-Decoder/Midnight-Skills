@@ -65,6 +65,11 @@
       "name": "hello-world",
       "path": "example-hello-world/SKILL.md",
       "description": "Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder."
+    },
+    {
+      "name": "example-payment-dapp",
+      "path": "example-payment-dapp/SKILL.md",
+      "description": "Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet."
     }
   ]
 }
