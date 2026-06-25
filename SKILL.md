@@ -22,6 +22,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Build NFTs (shielded + unshielded) with OpenZeppelin | `nft/` |
 | Token transfers, balance flows, multi-party txs | `token-transfers/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
+| Build a React app with wallet connect/disconnect via DApp Connector API | `react-wallet-connector/` |
 | Write Compact smart contracts | `compact/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
 | Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder. | `example-hello-world/` |
@@ -37,6 +38,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [1AM Wallet](/1am-wallet/SKILL.md)
 - Detect, connect, and wire 1AM browser extension into frontend.
 - Provider setup, contract deployment, and dust-free transaction flow.
+
+### [React Wallet Connector](/react-wallet-connector/SKILL.md)
+- Scaffold a React + Vite app with DApp Connector API wallet connection.
+- `window.midnight` enumeration, connect/disconnect UI, unshielded address display.
 
 ### [Compact](/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.

@@ -17,6 +17,11 @@
       "description": "Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network."
     },
     {
+      "name": "react-wallet-connector",
+      "path": "react-wallet-connector/SKILL.md",
+      "description": "Scaffold a React + Vite app with DApp Connector API wallet connection, connect/disconnect UI, and unshielded address display."
+    },
+    {
       "name": "compact",
       "path": "compact/SKILL.md",
       "description": "The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits."
