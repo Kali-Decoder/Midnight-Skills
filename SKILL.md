@@ -27,6 +27,9 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
 | Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder. | `example-hello-world/` |
 | Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet. | `example-payment-dapp/` |
+| Build a time-lock vault dApp: lock unshielded NIGHT until a deadline, beneficiary releases via Compact + 1AM wallet. | `example-locker-dapp/` |
+| Build a time-lock vault dApp: lock unshielded NIGHT until a deadline, beneficiary releases via Compact + 1AM wallet. | `example-locker-dapp/` |
+| Build a time-lock vault dApp: lock unshielded NIGHT until a deadline, beneficiary releases via Compact + 1AM wallet. | `example-locker-dapp/` |
 
 
 ## Skills
@@ -84,3 +87,12 @@ This file will guide to the right skill with the latest knowledge about Midnight
 
 ### [Example Payment Dapp](/example-payment-dapp/SKILL.md)
 - Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet.
+
+### [Example Locker Dapp](/example-locker-dapp/SKILL.md)
+- Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth.
+
+### [Example Locker Dapp](/example-locker-dapp/SKILL.md)
+- Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth.
+
+### [Example Locker Dapp](/example-locker-dapp/SKILL.md)
+- Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth.

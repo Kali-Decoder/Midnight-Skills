@@ -75,6 +75,11 @@
       "name": "example-payment-dapp",
       "path": "example-payment-dapp/SKILL.md",
       "description": "Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet."
+    },
+    {
+      "name": "example-locker-dapp",
+      "path": "example-locker-dapp/SKILL.md",
+      "description": "Time-lock vault dApp: lock unshielded NIGHT until a Unix deadline; beneficiary releases tokens via Compact blockTimeGte and witness auth."
     }
   ]
 }
