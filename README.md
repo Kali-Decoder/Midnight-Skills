@@ -22,7 +22,7 @@ Knowledge skills for AI agents building on Midnight Network. Each skill is a sta
 | [Example Payment Dapp](example-payment-dapp/SKILL.md) | Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet. |
 | [Example Locker Dapp](example-locker-dapp/SKILL.md) | Time-lock vault: lock unshielded NIGHT until a deadline; beneficiary releases on-chain |
 | [React Wallet Connector](react-wallet-connector/SKILL.md) | Scaffold React + Vite with DApp Connector API wallet connection |
-| [Dynamic Midnight Wallet](dynamic-midnight-wallet/SKILL.md) | Scaffold React + Vite with Dynamic.xyz Midnight wallet (unshielded, shielded, DUST) |
+<!-- | [Dynamic Midnight Wallet](dynamic-midnight-wallet/SKILL.md) | Scaffold React + Vite with Dynamic.xyz Midnight wallet (unshielded, shielded, DUST) | -->
 | [Why Midnight](why-midnight/SKILL.md) | Midnight's architecture, privacy model, selective disclosure, and ZK proofs |
 
 ## Architecture

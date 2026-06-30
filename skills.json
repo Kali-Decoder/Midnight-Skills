@@ -22,11 +22,6 @@
       "description": "Scaffold a React + Vite app with DApp Connector API wallet connection, connect/disconnect UI, and unshielded address display."
     },
     {
-      "name": "dynamic-midnight-wallet",
-      "path": "dynamic-midnight-wallet/SKILL.md",
-      "description": "Scaffold React + Vite with Dynamic.xyz Midnight wallet — unshielded, shielded, and DUST surfaces, balances, and send routing via @dynamic-labs/midnight."
-    },
-    {
       "name": "compact",
       "path": "compact/SKILL.md",
       "description": "The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits."

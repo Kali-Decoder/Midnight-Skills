@@ -1,12 +1,10 @@
 ---
 name: dynamic-midnight-wallet
 description: >
-  Scaffold a React + Vite app with Dynamic.xyz Midnight wallet connection via
-  @dynamic-labs/midnight. Covers injected 1AM extension (MidnightWalletConnectors)
-  and optional embedded MPC wallets (DynamicWaasMidnightConnectors). Exposes
-  unshielded, shielded, and DUST surfaces, balance reads, and send routing.
-  Use when integrating Dynamic, DynamicWidget, isMidnightWallet, additionalAddresses,
-  or building a deposit UI that surfaces both public and private Midnight addresses.
+  DISABLED ON PLATFORM — skill file retained for future release. Do not surface
+  in MIDSKILLS index until re-enabled. Scaffold a React + Vite app with Dynamic.xyz
+  Midnight wallet connection via @dynamic-labs/midnight.
+disable-model-invocation: true
 ---
 
 # Dynamic Midnight Wallet Skill
