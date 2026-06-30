@@ -1,5 +1,7 @@
 # Midnight Skills
 
+This project extends the Midnight Network with additional developer tooling.
+
 Knowledge skills for AI agents building on Midnight Network. Each skill is a standalone markdown file that agents fetch and read into their context.
 
 ## Skills
@@ -18,6 +20,9 @@ Knowledge skills for AI agents building on Midnight Network. Each skill is a sta
 | [NFT](nft/SKILL.md) | Build NFTs (shielded + unshielded) with OpenZeppelin and native Midnight functions |
 | [Token Transfers](token-transfers/SKILL.md) | Shielded and unshielded token transfers, balance flows, multi-party transactions |
 | [Example Payment Dapp](example-payment-dapp/SKILL.md) | Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet. |
+| [Example Locker Dapp](example-locker-dapp/SKILL.md) | Time-lock vault: lock unshielded NIGHT until a deadline; beneficiary releases on-chain |
+| [React Wallet Connector](react-wallet-connector/SKILL.md) | Scaffold React + Vite with DApp Connector API wallet connection |
+| [Dynamic Midnight Wallet](dynamic-midnight-wallet/SKILL.md) | Scaffold React + Vite with Dynamic.xyz Midnight wallet (unshielded, shielded, DUST) |
 | [Why Midnight](why-midnight/SKILL.md) | Midnight's architecture, privacy model, selective disclosure, and ZK proofs |
 
 ## Architecture

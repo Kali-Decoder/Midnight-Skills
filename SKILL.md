@@ -23,12 +23,13 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Token transfers, balance flows, multi-party txs | `token-transfers/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Build a React app with wallet connect/disconnect via DApp Connector API | `react-wallet-connector/` |
+| Build a React app with Dynamic.xyz Midnight wallet (unshielded, shielded, DUST) | `dynamic-midnight-wallet/` |
+| Build a React app with Dynamic.xyz Midnight wallet (unshielded, shielded, DUST) | `dynamic-midnight-wallet/` |
+| Build a React app with Dynamic.xyz Midnight wallet (unshielded, shielded, DUST) | `dynamic-midnight-wallet/` |
 | Write Compact smart contracts | `compact/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
 | Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder. | `example-hello-world/` |
 | Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet. | `example-payment-dapp/` |
-| Build a time-lock vault dApp: lock unshielded NIGHT until a deadline, beneficiary releases via Compact + 1AM wallet. | `example-locker-dapp/` |
-| Build a time-lock vault dApp: lock unshielded NIGHT until a deadline, beneficiary releases via Compact + 1AM wallet. | `example-locker-dapp/` |
 | Build a time-lock vault dApp: lock unshielded NIGHT until a deadline, beneficiary releases via Compact + 1AM wallet. | `example-locker-dapp/` |
 
 
@@ -45,6 +46,15 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [React Wallet Connector](/react-wallet-connector/SKILL.md)
 - Scaffold a React + Vite app with DApp Connector API wallet connection.
 - `window.midnight` enumeration, connect/disconnect UI, unshielded address display.
+
+### [Dynamic Midnight Wallet](/dynamic-midnight-wallet/SKILL.md)
+- Scaffold React + Vite with Dynamic.xyz Midnight connectors — unshielded, shielded, DUST surfaces, balances, send routing.
+
+### [Dynamic Midnight Wallet](/dynamic-midnight-wallet/SKILL.md)
+- Scaffold React + Vite with Dynamic.xyz Midnight connectors — unshielded, shielded, DUST surfaces, balances, send routing.
+
+### [Dynamic Midnight Wallet](/dynamic-midnight-wallet/SKILL.md)
+- Scaffold React + Vite with Dynamic.xyz Midnight connectors — unshielded, shielded, DUST surfaces, balances, send routing.
 
 ### [Compact](/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.
@@ -87,12 +97,6 @@ This file will guide to the right skill with the latest knowledge about Midnight
 
 ### [Example Payment Dapp](/example-payment-dapp/SKILL.md)
 - Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet.
-
-### [Example Locker Dapp](/example-locker-dapp/SKILL.md)
-- Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth.
-
-### [Example Locker Dapp](/example-locker-dapp/SKILL.md)
-- Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth.
 
 ### [Example Locker Dapp](/example-locker-dapp/SKILL.md)
 - Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth.
