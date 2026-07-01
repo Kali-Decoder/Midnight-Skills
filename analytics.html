@@ -3,529 +3,266 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MIDSKILLS — Analytics</title>
-  <style>
-    :root {
-      --bg: #0b0b0b;
-      --fg: #fff6bf;
-      --dim: #cbbf76;
-      --accent: #ffd400;
-      --border: #3a2f00;
-      --hover: #151200;
-      --card-bg: rgba(255, 212, 0, 0.015);
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      background: var(--bg);
-      color: var(--fg);
-      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
-      font-size: 14px;
-      line-height: 1.6;
-      padding: 1.5rem;
-    }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    
-    .wrap { max-width: 1200px; margin: 0 auto; }
-    
-    .top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding-bottom: 1rem;
-      margin-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .title { color: var(--accent); font-weight: 700; font-size: 1.2rem; letter-spacing: 1px;}
-    .muted { color: var(--dim); font-size: 12px; }
-    
-    .panel {
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 1.25rem;
-      background: var(--card-bg);
-      margin-bottom: 1rem;
-    }
-    
-    .controls-wrapper {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-    .controls {
-      display: flex;
-      gap: 0.5rem;
-    }
-    input, button {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--fg);
-      font-family: inherit;
-      font-size: 13px;
-      padding: 0.5rem 0.75rem;
-      border-radius: 4px;
-      outline: none;
-    }
-    input:focus { border-color: var(--accent); }
-    button {
-      cursor: pointer;
-      color: var(--accent);
-      background: rgba(255,212,0,0.02);
-      transition: all 0.2s;
-    }
-    button:hover { border-color: var(--accent); background: var(--hover); }
-    
-    /* Summary KPI Cards Grid */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .kpi-card {
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 1rem;
-      background: rgba(255, 212, 0, 0.01);
-    }
-    .kpi-title {
-      font-size: 11px;
-      text-transform: uppercase;
-      color: var(--dim);
-      letter-spacing: 1px;
-      margin-bottom: 0.25rem;
-    }
-    .kpi-value {
-      font-size: 1.75rem;
-      font-weight: bold;
-      color: var(--accent);
-    }
-
-    /* Main Workspace Layout */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 1.25rem;
-    }
-    .col-4 { grid-column: span 4; }
-    .col-6 { grid-column: span 6; }
-    .col-8 { grid-column: span 8; }
-    .col-12 { grid-column: span 12; }
-    
-    h2 {
-      color: var(--accent);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 0.85rem;
-      font-weight: 600;
-      border-bottom: 1px dashed var(--border);
-      padding-bottom: 0.4rem;
-    }
-    
-    /* Scrollable Containers for Tables */
-    .table-container {
-      max-height: 320px;
-      overflow-y: auto;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    th, td {
-      padding: 0.5rem 0.75rem;
-      text-align: left;
-    }
-    th { 
-      background: var(--hover); 
-      color: var(--accent);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      box-shadow: 0 1px 0 var(--border);
-    }
-    tr:not(:last-child) td {
-      border-bottom: 1px solid rgba(58, 47, 0, 0.5);
-    }
-    tr:hover td {
-      background: rgba(255, 212, 0, 0.02);
-    }
-    
-    .error { color: #ff5555; margin-top: 0.5rem; }
-    .ok { color: var(--dim); margin-top: 0.5rem; }
-    
-    /* Advanced CSS Charts Architecture */
-    .chart {
-      display: grid;
-      gap: 10px;
-      margin-top: 6px;
-    }
-    .bar {
-      display: grid;
-      grid-template-columns: 160px 1fr 70px;
-      gap: 12px;
-      align-items: center;
-      font-size: 13px;
-    }
-    .bar .label {
-      color: var(--fg);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .bar .track {
-      height: 12px;
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      background: rgba(255, 212, 0, 0.01);
-      overflow: hidden;
-    }
-    .bar .fill {
-      height: 100%;
-      background: linear-gradient(90deg, rgba(255,212,0,0.4), var(--accent));
-      width: 0%;
-      transition: width 0.6s cubic-bezier(0.1, 0.8, 0.2, 1);
-    }
-    .bar .val {
-      text-align: right;
-      color: var(--dim);
-      font-variant-numeric: tabular-nums;
-    }
-    
-    /* Area / Trend Timeline simulation visualization */
-    .timeline-viz {
-      display: flex;
-      align-items: flex-end;
-      gap: 4px;
-      height: 120px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 1rem;
-    }
-    .timeline-bar {
-      flex: 1;
-      background: rgba(255, 214, 0, 0.15);
-      border: 1px solid var(--border);
-      border-bottom: none;
-      height: 0%;
-      min-width: 8px;
-      position: relative;
-      transition: height 0.5s ease;
-    }
-    .timeline-bar:hover {
-      background: var(--accent);
-    }
-    .timeline-bar:hover::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--bg);
-      color: var(--accent);
-      border: 1px solid var(--border);
-      padding: 2px 6px;
-      font-size: 10px;
-      white-space: nowrap;
-      z-index: 100;
-      border-radius: 3px;
-    }
-
-    .hint {
-      margin-top: 8px;
-      color: var(--dim);
-      font-size: 11px;
-    }
-    
-    @media (max-width: 960px) {
-      .col-4, .col-6, .col-8 { grid-column: span 12; }
-      .bar { grid-template-columns: 120px 1fr 50px; }
-    }
-    @media (max-width: 600px) {
-      .controls-wrapper { flex-direction: column; align-items: flex-start; }
-      .controls { width: 100%; }
-      .controls input { flex-grow: 1; }
-    }
-  </style>
+  <title>Analytics — MIDSKILLS</title>
+  <meta name="description" content="Usage analytics for MIDSKILLS — skill views, copies, and visitor trends.">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/analytics.css">
 </head>
-<body>
-  <div class="wrap">
-    
-    <!-- Top Bar Navigation -->
-    <div class="top">
-      <div>
-        <div class="title">MIDSKILLS // SYSTEM_ANALYTICS</div>
-        <div class="muted">Public cluster metrics & core aggregated utilization.</div>
-      </div>
-      <a href="/">← Exit Dashboard</a>
-    </div>
+<body class="page-analytics" data-nav-active="analytics" data-site-footer="on">
 
-    <!-- Controls Panel -->
-    <div class="panel">
-      <div class="controls-wrapper">
-        <div class="controls">
-          <input id="days" placeholder="Days" inputmode="numeric" value="30">
-          <button id="load">Execute Scan</button>
-        </div>
-        <div id="status" class="ok">System ready.</div>
-      </div>
-    </div>
+<div class="analytics-wrap">
 
-    <!-- High-Level KPI Matrix Cards -->
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-title">Total Processed Events</div>
-        <div class="kpi-value" id="kpi-total-events">0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-title">Total Unique Cohort</div>
-        <div class="kpi-value" id="kpi-total-visitors">0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-title">Tracked Skills</div>
-        <div class="kpi-value" id="kpi-unique-skills">0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-title">Active Classrooms/Users</div>
-        <div class="kpi-value" id="kpi-unique-users">0</div>
-      </div>
-    </div>
+  <div class="analytics-intro">
+    <h1 class="page-title">Analytics</h1>
+    <p>Aggregated usage metrics for skill views, copies, and site activity.</p>
+  </div>
 
-    <!-- Main Operational Grid Graphs & Metrics Tables -->
-    <div class="grid">
-      
-      <!-- Graph: Users Per Skill Distribution -->
-      <div class="panel col-8">
-        <h2>Volume Distribution by Skill (Unique Visitors)</h2>
-        <div id="usersPerSkillChart"></div>
+  <div class="panel controls-panel">
+    <div class="controls-wrapper">
+      <div class="controls">
+        <input class="field-input" id="days" placeholder="Days" inputmode="numeric" value="30" aria-label="Number of days">
+        <button class="field-btn" id="load" type="button">Load data</button>
       </div>
-
-      <!-- Graph: Events Contribution Matrix -->
-      <div class="panel col-4">
-        <h2>Event Impact Share (%)</h2>
-        <div id="eventShareChart"></div>
-      </div>
-
-      <!-- Timeline Component Simulation from Daily Data -->
-      <div class="panel col-12">
-        <h2>Chronological Traffic Density (Activity Timeline)</h2>
-        <div id="timelineVisualization" class="timeline-viz"></div>
-        <div class="hint">Relative timeline density distribution derived across the active range parameter window.</div>
-      </div>
-
-      <!-- Left Data Feed: Totals & Unique Breakdowns -->
-      <div class="panel col-6">
-        <h2>Total Activity Counter</h2>
-        <div class="table-container" id="totals"></div>
-      </div>
-      
-      <div class="panel col-6">
-        <h2>Unique User Allocations</h2>
-        <div class="table-container" id="unique"></div>
-      </div>
-
-      <!-- Advanced User Leaderboard Analytics Matrix -->
-      <div class="panel col-6">
-        <h2>Top Global User Leaders (By Volume)</h2>
-        <div class="table-container" id="userLeaderboard"></div>
-      </div>
-
-      <!-- Relational Data Feed Matrix: User x Skill Mapping -->
-      <div class="panel col-6">
-        <h2>Relational Index: User × Skill Duplications</h2>
-        <div class="table-container" id="userSkill"></div>
-      </div>
-
-      <!-- Historic Daily Event Streams Log -->
-      <div class="panel col-12">
-        <h2>Master Linear Historical Audit Stream (Daily Activity)</h2>
-        <div class="table-container" id="daily"></div>
-      </div>
-
+      <div id="status" class="status-ok">Ready.</div>
     </div>
   </div>
 
-  <script src="/analytics.js"></script>
-  <script>
-    try { window.MidnightAnalytics.track("page_view", { meta: { page: "analytics" } }); } catch {}
-    try { window.MidnightAnalytics.ensureGithubUsername(); } catch {}
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-title">Total events</div>
+      <div class="kpi-value" id="kpi-total-events">0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Unique visitors</div>
+      <div class="kpi-value" id="kpi-total-visitors">0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Skills tracked</div>
+      <div class="kpi-value" id="kpi-unique-skills">0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">GitHub users</div>
+      <div class="kpi-value" id="kpi-unique-users">0</div>
+    </div>
+  </div>
 
-    const $ = (id) => document.getElementById(id);
-    const statusEl = $("status");
+  <div class="analytics-grid">
 
-    function esc(s) {
-      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
+    <div class="panel col-8">
+      <h2>Visitors per skill</h2>
+      <div id="usersPerSkillChart"></div>
+    </div>
 
-    function renderTable(rows, cols) {
-      if (!rows || !rows.length) return "<div class='muted' style='padding:1rem;'>No active matrix data return.</div>";
-      let html = "<table><thead><tr>";
-      for (const c of cols) html += "<th>" + esc(c.label) + "</th>";
-      html += "</tr></thead><tbody>";
-      for (const r of rows) {
-        html += "<tr>";
-        for (const c of cols) html += "<td>" + esc(r[c.key] ?? "") + "</td>";
-        html += "</tr>";
+    <div class="panel col-4">
+      <h2>Event share</h2>
+      <div id="eventShareChart"></div>
+    </div>
+
+    <div class="panel col-12">
+      <h2>Activity over time</h2>
+      <div id="timelineVisualization" class="timeline-viz"></div>
+      <p class="chart-hint">Daily event volume for the selected date range.</p>
+    </div>
+
+    <div class="panel col-6">
+      <h2>Events by skill</h2>
+      <div class="table-container" id="totals"></div>
+    </div>
+
+    <div class="panel col-6">
+      <h2>Unique visitors by skill</h2>
+      <div class="table-container" id="unique"></div>
+    </div>
+
+    <div class="panel col-6">
+      <h2>Top users</h2>
+      <div class="table-container" id="userLeaderboard"></div>
+    </div>
+
+    <div class="panel col-6">
+      <h2>User × skill copies</h2>
+      <div class="table-container" id="userSkill"></div>
+    </div>
+
+    <div class="panel col-12">
+      <h2>Daily activity log</h2>
+      <div class="table-container" id="daily"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/site.js"></script>
+<script src="/analytics.js"></script>
+<script>
+try { window.MidnightAnalytics.track('page_view', { meta: { page: 'analytics' } }); } catch {}
+try { window.MidnightAnalytics.ensureGithubUsername(); } catch {}
+
+const $ = (id) => document.getElementById(id);
+const statusEl = $('status');
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function renderTable(rows, cols) {
+  if (!rows || !rows.length) {
+    return "<p class='text-muted' style='padding:1rem;'>No data for this range.</p>";
+  }
+  let html = "<table class='data-table'><thead><tr>";
+  for (const c of cols) html += '<th>' + esc(c.label) + '</th>';
+  html += '</tr></thead><tbody>';
+  for (const r of rows) {
+    html += '<tr>';
+    for (const c of cols) html += '<td>' + esc(r[c.key] ?? '') + '</td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+function renderBarChart(rows, { labelKey, valueKey, limit = 12 } = {}) {
+  if (!Array.isArray(rows) || !rows.length) {
+    return "<p class='text-muted'>No data.</p>";
+  }
+  const sorted = [...rows]
+    .filter((r) => r && typeof r[labelKey] === 'string')
+    .map((r) => ({ label: r[labelKey], value: Number(r[valueKey] || 0) }))
+    .filter((r) => Number.isFinite(r.value))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit);
+
+  const max = Math.max(1, ...sorted.map((r) => r.value));
+  let html = "<div class='chart'>";
+  for (const r of sorted) {
+    const pct = Math.max(0, Math.min(100, (r.value / max) * 100));
+    html += [
+      "<div class='bar'>",
+      "<div class='label' title='", esc(r.label), "'>", esc(r.label), '</div>',
+      "<div class='track' aria-hidden='true'><div class='fill' style='width:", String(pct.toFixed(2)), "%'></div></div>",
+      "<div class='val'>", esc(r.value.toLocaleString()), '</div>',
+      '</div>',
+    ].join('');
+  }
+  html += '</div>';
+  html += "<p class='chart-hint'>Top " + esc(limit) + " by count.</p>";
+  return html;
+}
+
+function renderShareChart(rows, labelKey, valueKey) {
+  if (!rows || !rows.length) return "<p class='text-muted'>No data.</p>";
+  const total = rows.reduce((acc, r) => acc + Number(r[valueKey] || 0), 0) || 1;
+  return renderBarChart(
+    rows.map((r) => ({
+      [labelKey]: r[labelKey],
+      [valueKey]: Math.round((Number(r[valueKey] || 0) / total) * 100),
+    })),
+    { labelKey, valueKey, limit: 6 },
+  ).replace(/Top \d+ by count\./, 'Share of total events (%).');
+}
+
+function generateTimeline(dailyRows) {
+  const container = $('timelineVisualization');
+  if (!dailyRows || !dailyRows.length) {
+    container.innerHTML = "<p class='text-muted'>No timeline data.</p>";
+    return;
+  }
+  const rolls = {};
+  dailyRows.forEach((r) => { if (r.date) rolls[r.date] = (rolls[r.date] || 0) + Number(r.events || 0); });
+  const sortedDates = Object.keys(rolls).sort();
+  const maxVal = Math.max(1, ...Object.values(rolls));
+  const targetDates = sortedDates.slice(-35);
+  let html = '';
+  for (const d of targetDates) {
+    const normalizedPct = (rolls[d] / maxVal) * 100;
+    const tooltipText = d + ' : ' + rolls[d] + ' events';
+    html += '<div class="timeline-bar" style="height: ' + normalizedPct + '%" data-tooltip="' + esc(tooltipText) + '"></div>';
+  }
+  container.innerHTML = html;
+}
+
+async function load() {
+  const days = $('days').value.trim() || '30';
+  statusEl.className = 'status-ok';
+  statusEl.textContent = 'Loading…';
+
+  try {
+    const resp = await fetch('/api/analytics?days=' + encodeURIComponent(days));
+    const json = await resp.json();
+    if (!resp.ok) throw new Error(json?.error || 'Request failed');
+
+    statusEl.className = 'status-ok';
+    statusEl.textContent = 'Last ' + json.range_days + ' days · ' + json.sample_rows + ' rows';
+
+    const aggregateEvents = (json.totals || []).reduce((sum, r) => sum + Number(r.events || 0), 0);
+    const aggregateUnique = (json.unique_visitors || []).reduce((sum, r) => sum + Number(r.unique_visitors || 0), 0);
+    const uniqueSkillsCount = (json.totals || []).length;
+    const individualProfiles = new Set((json.user_skill || []).map((r) => r.github_username));
+
+    $('kpi-total-events').textContent = aggregateEvents.toLocaleString();
+    $('kpi-total-visitors').textContent = aggregateUnique.toLocaleString();
+    $('kpi-unique-skills').textContent = uniqueSkillsCount.toLocaleString();
+    $('kpi-unique-users').textContent = individualProfiles.size.toLocaleString();
+
+    const userMap = {};
+    (json.user_skill || []).forEach((r) => {
+      if (r.github_username) {
+        userMap[r.github_username] = (userMap[r.github_username] || 0) + Number(r.count || 0);
       }
-      html += "</tbody></table>";
-      return html;
-    }
+    });
+    const userLeaderboardRows = Object.keys(userMap)
+      .map((k) => ({ github_username: k, copies: userMap[k] }))
+      .sort((a, b) => b.copies - a.copies);
 
-    function renderBarChart(rows, { labelKey, valueKey, limit = 12 } = {}) {
-      if (!Array.isArray(rows) || !rows.length) return "<div class='muted'>No structural vector parameters.</div>";
-      const sorted = [...rows]
-        .filter((r) => r && typeof r[labelKey] === "string")
-        .map((r) => ({ label: r[labelKey], value: Number(r[valueKey] || 0) }))
-        .filter((r) => Number.isFinite(r.value))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, limit);
+    $('totals').innerHTML = renderTable(json.totals || [], [
+      { key: 'skill_name', label: 'Skill' },
+      { key: 'events', label: 'Events' },
+    ]);
+    $('unique').innerHTML = renderTable(json.unique_visitors || [], [
+      { key: 'skill_name', label: 'Skill' },
+      { key: 'unique_visitors', label: 'Visitors' },
+    ]);
+    $('usersPerSkillChart').innerHTML = renderBarChart(json.unique_visitors || [], {
+      labelKey: 'skill_name',
+      valueKey: 'unique_visitors',
+      limit: 10,
+    });
+    $('eventShareChart').innerHTML = renderShareChart(json.totals || [], 'skill_name', 'events');
+    generateTimeline(json.daily || []);
 
-      const max = Math.max(1, ...sorted.map((r) => r.value));
-      let html = "<div class='chart'>";
-      for (const r of sorted) {
-        const pct = Math.max(0, Math.min(100, (r.value / max) * 100));
-        html += [
-          "<div class='bar'>",
-            "<div class='label' title='", esc(r.label), "'>", esc(r.label), "</div>",
-            "<div class='track' aria-hidden='true'><div class='fill' style='width:", String(pct.toFixed(2)), "%'></div></div>",
-            "<div class='val'>", esc(r.value.toLocaleString()), "</div>",
-          "</div>",
-        ].join("");
-      }
-      html += "</div>";
-      html += "<div class='hint'>Displaying top " + esc(limit) + " vectors sorted by absolute weight.</div>";
-      return html;
-    }
+    $('userLeaderboard').innerHTML = renderTable(userLeaderboardRows.slice(0, 100), [
+      { key: 'github_username', label: 'GitHub user' },
+      { key: 'copies', label: 'Copies' },
+    ]);
 
-    // Secondary relative graphical rendering pipeline engine
-    function renderShareChart(rows, labelKey, valueKey) {
-      if (!rows || !rows.length) return "<div class='muted'>Data absent.</div>";
-      const total = rows.reduce((acc, r) => acc + Number(r[valueKey] || 0), 0) || 1;
-      return renderBarChart(
-        rows.map(r => ({ [labelKey]: r[labelKey], [valueKey]: Math.round((Number(r[valueKey] || 0) / total) * 100) })),
-        { labelKey, valueKey, limit: 6 }
-      ).replace(/vectors sorted by absolute weight/g, "% total breakdown index");
-    }
+    $('daily').innerHTML = renderTable((json.daily || []).slice(0, 200), [
+      { key: 'date', label: 'Date' },
+      { key: 'skill_name', label: 'Skill' },
+      { key: 'events', label: 'Events' },
+    ]) + ((json.daily || []).length > 200
+      ? "<p class='text-muted' style='padding:0.5rem;'>Showing first 200 rows.</p>"
+      : '');
 
-    // Constructing a CSS-only visual timeline distribution metric chart
-    function generateTimeline(dailyRows) {
-      const container = $("timelineVisualization");
-      if (!dailyRows || !dailyRows.length) {
-        container.innerHTML = "<div class='muted'>No chronological points found.</div>";
-        return;
-      }
-      
-      // Roll up events by date string sequence
-      const rolls = {};
-      dailyRows.forEach(r => { if(r.date) rolls[r.date] = (rolls[r.date] || 0) + Number(r.events || 0); });
-      const sortedDates = Object.keys(rolls).sort();
-      const maxVal = Math.max(1, ...Object.values(rolls));
+    $('userSkill').innerHTML = renderTable((json.user_skill || []).slice(0, 200), [
+      { key: 'github_username', label: 'GitHub user' },
+      { key: 'skill_name', label: 'Skill' },
+      { key: 'count', label: 'Copies' },
+    ]) + ((json.user_skill || []).length > 200
+      ? "<p class='text-muted' style='padding:0.5rem;'>Showing first 200 rows.</p>"
+      : '');
 
-      let html = "";
-      // Keep viewport tidy, slice last 30 operational dates if necessary
-      const targetDates = sortedDates.slice(-35); 
-      for(const d of targetDates) {
-        const normalizedPct = (rolls[d] / maxVal) * 100;
-        const tooltipText = `${d} : ${rolls[d]} events`;
-        html += `<div class="timeline-bar" style="height: ${normalizedPct}%" data-tooltip="${esc(tooltipText)}"></div>`;
-      }
-      container.innerHTML = html;
-    }
+  } catch (e) {
+    statusEl.className = 'status-error';
+    statusEl.textContent = 'Error: ' + (e && e.message ? e.message : 'Could not load analytics');
+  }
+}
 
-    async function load() {
-      const days = $("days").value.trim() || "30";
-      statusEl.className = "ok";
-      statusEl.textContent = "Scanning datastores...";
+$('load').addEventListener('click', load);
+const params = new URLSearchParams(window.location.search);
+const daysQ = params.get('days');
+if (daysQ) $('days').value = daysQ;
+load();
+</script>
 
-      try {
-        const resp = await fetch("/api/analytics?days=" + encodeURIComponent(days));
-        const json = await resp.json();
-        if (!resp.ok) throw new Error(json?.error || "Request failed");
-
-        statusEl.className = "ok";
-        statusEl.textContent = "SYS_STATUS: " + json.range_days + "d Range Scope · Rows Parsed: " + json.sample_rows;
-
-        // Dynamic Calculations for upscaled KPIs
-        const aggregateEvents = (json.totals || []).reduce((sum, r) => sum + Number(r.events || 0), 0);
-        const aggregateUnique = (json.unique_visitors || []).reduce((sum, r) => sum + Number(r.unique_visitors || 0), 0);
-        const uniqueSkillsCount = (json.totals || []).length;
-        
-        // Extract unique profiles counts from User-Skill dataset matrices
-        const individualProfiles = new Set((json.user_skill || []).map(r => r.github_username));
-        
-        // Render KPIs
-        $("kpi-total-events").textContent = aggregateEvents.toLocaleString();
-        $("kpi-total-visitors").textContent = aggregateUnique.toLocaleString();
-        $("kpi-unique-skills").textContent = uniqueSkillsCount.toLocaleString();
-        $("kpi-unique-users").textContent = individualProfiles.size.toLocaleString();
-
-        // Process a custom derived dataset: Top User Leaderboard aggregated array profiles
-        const userMap = {};
-        (json.user_skill || []).forEach(r => {
-          if (r.github_username) {
-            userMap[r.github_username] = (userMap[r.github_username] || 0) + Number(r.count || 0);
-          }
-        });
-        const userLeaderboardRows = Object.keys(userMap).map(k => ({ github_username: k, aggregate_copies: userMap[k] }))
-                                         .sort((a,b) => b.aggregate_copies - a.aggregate_copies);
-
-        // Render Tables & Main Core Layout Panels
-        $("totals").innerHTML = renderTable(json.totals || [], [
-          { key: "skill_name", label: "SKILL CORE VECTOR" },
-          { key: "events", label: "TOTAL EVENTS LOGGED" },
-        ]);
-        $("unique").innerHTML = renderTable(json.unique_visitors || [], [
-          { key: "skill_name", label: "SKILL CORE VECTOR" },
-          { key: "unique_visitors", label: "UNIQUE VISITOR COHORT" },
-        ]);
-        
-        // Render Advanced New Analytics Graphs Elements
-        $("usersPerSkillChart").innerHTML = renderBarChart(json.unique_visitors || [], {
-          labelKey: "skill_name",
-          valueKey: "unique_visitors",
-          limit: 10,
-        });
-        $("eventShareChart").innerHTML = renderShareChart(json.totals || [], "skill_name", "events");
-        generateTimeline(json.daily || []);
-
-        // Secondary tables bindings rendering
-        $("userLeaderboard").innerHTML = renderTable(userLeaderboardRows.slice(0, 100), [
-          { key: "github_username", label: "GITHUB IDENTITY" },
-          { key: "aggregate_copies", label: "ACCUMULATED COPIES" }
-        ]);
-
-        $("daily").innerHTML = renderTable((json.daily || []).slice(0, 200), [
-          { key: "date", label: "AUDIT TIMESTAMP" },
-          { key: "skill_name", label: "TARGET SKILL VECTOR" },
-          { key: "events", label: "DISPATCHED METRICS" },
-        ]) + ((json.daily || []).length > 200 ? "<div class='muted' style='margin-top:0.5rem; padding: 0.5rem;'>Output truncated at 200 system tracking iterations.</div>" : "");
-
-        $("userSkill").innerHTML = renderTable((json.user_skill || []).slice(0, 200), [
-          { key: "github_username", label: "IDENTITY ENTITY" },
-          { key: "skill_name", label: "SKILL VALUE" },
-          { key: "count", label: "COPY VOLUME INSTANCES" },
-        ]) + ((json.user_skill || []).length > 200 ? "<div class='muted' style='margin-top:0.5rem; padding: 0.5rem;'>Output truncated at 200 system tracking iterations.</div>" : "");
-
-      } catch (e) {
-        statusEl.className = "error";
-        statusEl.textContent = "CRITICAL METRIC EXCEPTION: " + (e && e.message ? e.message : "Unknown Network Refusal");
-      }
-    }
-
-    $("load").addEventListener("click", load);
-
-    // Dynamic Parameter System Handlers initialization
-    const params = new URLSearchParams(window.location.search);
-    const daysQ = params.get("days");
-    if (daysQ) $("days").value = daysQ;
-    load();
-  </script>
 </body>
 </html>

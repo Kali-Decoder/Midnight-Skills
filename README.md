@@ -94,6 +94,8 @@ Ensure `MONGODB_URI` and `STATS_SECRET` are set in your Vercel project environme
 
 **Runnable template:** `templates/locker-dapp/` — copy and run for the locker dApp skill.
 
+**Skill journey map:** `skillLevels` in `skills.json` drives the animated beginner → intermediate → advanced mind map on the homepage.
+
 ## Contributing
 
 See **[CONTRIBUTING.md](CONTRIBUTING.md)** for contribution rules and a step-by-step guide to adding a new skill.

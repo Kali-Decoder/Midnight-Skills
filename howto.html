@@ -6,40 +6,15 @@
   <title>How to Use — MIDSKILLS</title>
   <meta name="description" content="Install Midnight skills, use them with AI tools, and browse the full skill catalog.">
   <link rel="stylesheet" href="/styles.css">
-  <style>
-    .howto-section .tab-nav { margin-top: 0.75rem; }
-    .howto-section .tab-panel {
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 0.85rem;
-      margin-top: 0.5rem;
-    }
-    @media (min-width: 640px) { .howto-section .tab-panel { padding: 1rem; } }
-    .howto-section .tab-btn {
-      border: 1px solid var(--border);
-      flex-grow: 1;
-      text-align: center;
-      font-size: 11px;
-      padding: 0.35rem 0.6rem;
-    }
-    @media (min-width: 520px) {
-      .howto-section .tab-btn { flex-grow: 0; font-size: 12px; padding: 0.35rem 0.75rem; }
-    }
-  </style>
 </head>
-<body class="page-howto">
+<body class="page-howto" data-nav-active="howto" data-site-footer="on">
 
 <div class="howto-wrap">
 
   <div class="howto-header">
-    <div class="header-left">
-      <a href="/" class="back-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg> Home
-      </a>
-      <span class="page-title">How to Use</span>
+    <div>
+      <h1 class="page-title" style="margin-bottom:0.25rem;">How to Use</h1>
+      <p class="text-muted">Install skills, use them with AI tools, and browse the catalog.</p>
     </div>
   </div>
 
@@ -203,6 +178,7 @@
 
 </div>
 
+<script src="/site.js"></script>
 <script>
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {

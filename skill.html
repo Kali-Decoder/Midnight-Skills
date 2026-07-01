@@ -8,13 +8,10 @@
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/skill.css">
 </head>
-<body class="page-skill">
+<body class="page-skill" data-nav-active="skills" data-site-footer="on">
 
 <div class="header">
-  <div class="header-left">
-    <a href="/" class="back-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Home</a>
-    <span class="page-title" id="skill-title">Browse Skills</span>
-  </div>
+  <span class="page-title" id="skill-title">Browse Skills</span>
   <button class="copy-btn" id="copy-btn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> <span id="copy-label">Copy skill URL</span></button>
 </div>
 
@@ -31,6 +28,7 @@
   </article>
 </div>
 
+<script src="/site.js"></script>
 <script src="/analytics.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>

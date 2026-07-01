@@ -1,15 +1,36 @@
 /* Skill browser page */
 
-html, body.page-skill { height: 100%; overflow: hidden; }
 body.page-skill {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+}
+html, body.page-skill {
+  height: 100%;
+  overflow: hidden;
+}
+body.page-skill .skill-main {
+  flex: 1;
+  min-height: 0;
+}
+body.page-skill .site-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
 }
 
 .skill-main {
   display: flex;
   flex: 1;
   min-height: 0;
+}
+
+body.page-skill .header {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+body.page-skill .header .page-title {
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-wrap {
@@ -91,7 +112,9 @@ body.page-skill {
   overflow-x: hidden;
   padding: 1.5rem 2rem;
   min-width: 0;
-  max-width: 52rem;
+  max-width: 56rem;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* Markdown prose */
@@ -179,6 +202,11 @@ body.page-skill {
 
 @media (max-width: 700px) {
   .skill-main { flex-direction: column; }
+  html, body.page-skill {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
   .sidebar-wrap {
     width: 100%;
     border-right: none;

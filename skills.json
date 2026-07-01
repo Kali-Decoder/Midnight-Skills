@@ -22,6 +22,47 @@
       ]
     }
   ],
+  "skillLevels": [
+    {
+      "id": "beginner",
+      "title": "Beginner",
+      "subtitle": "Learn the privacy model, Compact basics, and wallet connect",
+      "color": "#7ec8e3",
+      "skills": [
+        { "skillId": "why-midnight", "summary": "What Midnight is and how ZK privacy works" },
+        { "skillId": "compact", "summary": "Write your first .compact contract" },
+        { "skillId": "testing", "summary": "Debug compiler errors and sync toolchain versions" },
+        { "skillId": "react-wallet-connector", "summary": "Connect a wallet in React + Vite" }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "subtitle": "Deploy contracts, call circuits, and ship a full dApp",
+      "color": "#ffd400",
+      "skills": [
+        { "skillId": "hello-world", "summary": "Hello-world dApp with vitest + testkit" },
+        { "skillId": "1am-wallet", "summary": "1AM wallet, providers, dust-free deploy" },
+        { "skillId": "midnight-js", "summary": "SDK wiring, wallets, contract calls" },
+        { "skillId": "example-counter", "summary": "Complete counter dApp reference + CLI" },
+        { "skillId": "token-transfers", "summary": "Shielded and unshielded NIGHT flows" },
+        { "skillId": "midnight-indexer", "summary": "Query chain data and watch contract state" }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "subtitle": "DeFi templates, multinet, NFTs, and privacy audits",
+      "color": "#b8e986",
+      "skills": [
+        { "skillId": "example-payment-dapp", "summary": "Privacy-preserving payment vault" },
+        { "skillId": "example-locker-dapp", "summary": "Time-lock vault with runnable template" },
+        { "skillId": "multinetwork", "summary": "One codebase, all networks" },
+        { "skillId": "nft", "summary": "Shielded + unshielded NFTs" },
+        { "skillId": "midnight-security", "summary": "Privacy audit checklist and leak patterns" }
+      ]
+    }
+  ],
   "skills": [
     {
       "id": "midnightskill",

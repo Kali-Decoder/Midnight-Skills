@@ -26,6 +26,60 @@ html, body {
 a { color: var(--accent); text-decoration: none; transition: color 0.15s ease; }
 a:hover { text-decoration: underline; color: #fff; }
 
+/* Global site navigation */
+.site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.site-nav-brand {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+.site-nav-brand:hover { color: #fff; text-decoration: none; }
+.site-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  flex-wrap: wrap;
+}
+.site-nav-links a {
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.2rem 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.site-nav-links a:hover {
+  color: var(--fg);
+  text-decoration: none;
+}
+.site-nav-links a.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.text-muted { color: var(--dim); font-size: 12px; }
+.text-center { text-align: center; }
+.mt-2 { margin-top: 2rem; }
+.view-all-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* Section headings */
 h2.section-heading {
   color: var(--accent);
@@ -131,6 +185,9 @@ h2.section-heading {
   background: var(--card-bg);
   padding: 1rem;
 }
+@media (min-width: 640px) {
+  .card { padding: 1.25rem; }
+}
 .card h2 {
   color: var(--accent);
   font-size: 12px;
@@ -223,15 +280,15 @@ h2.section-heading {
   color: var(--dim);
   font-size: 11px;
   margin-top: auto;
-  padding-top: 1.5rem;
+  padding: 1.5rem;
   border-top: 1px solid var(--border);
   width: 100%;
-  max-width: 960px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 100%;
   flex-shrink: 0;
   text-align: center;
 }
+.site-footer a { color: var(--dim); }
+.site-footer a:hover { color: var(--accent); }
 
 /* Disclaimer modal */
 .disclaimer-backdrop {
@@ -377,6 +434,22 @@ h2.section-heading {
 }
 .skill-card-name { font-weight: 600; font-size: 13px; color: var(--accent); margin-bottom: 0.25rem; }
 .skill-card-desc { color: var(--dim); font-size: 11px; line-height: 1.4; }
+.skill-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+.skill-card-cat {
+  display: inline-block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--dim);
+  border: 1px solid var(--border);
+  padding: 0.1rem 0.35rem;
+  border-radius: 2px;
+}
 .skill-card-badge {
   display: inline-block;
   font-size: 9px;
@@ -386,7 +459,6 @@ h2.section-heading {
   background: var(--accent);
   padding: 0.1rem 0.35rem;
   border-radius: 2px;
-  margin-top: 0.4rem;
 }
 
 /* Homepage layout */
@@ -394,7 +466,7 @@ body.page-home {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 1.5rem;
+  padding: 0;
 }
 .main-container {
   display: flex;
@@ -406,7 +478,7 @@ body.page-home {
   width: 100%;
   margin: 0 auto;
   text-align: center;
-  padding-top: 1rem;
+  padding: 1.5rem 1.5rem 0;
 }
 
 .ascii {
@@ -452,6 +524,16 @@ body.page-home {
   border-radius: 6px;
   background: var(--card-bg);
   padding: 1rem;
+}
+.how-to-tabs .tab-nav {
+  margin-bottom: 0.75rem;
+}
+.how-to-tabs .tab-panel.active {
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .providers {
@@ -499,10 +581,16 @@ body.page-home {
 body.page-howto {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  min-height: 100vh;
+  padding: 0;
 }
-@media (min-width: 480px) { body.page-howto { padding: 1.5rem; } }
-.howto-wrap { max-width: 1000px; margin: 0 auto; width: 100%; }
+.howto-wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1;
+  padding: 1.5rem;
+}
 .howto-header {
   display: flex;
   flex-direction: column;
@@ -511,6 +599,10 @@ body.page-howto {
   padding-bottom: 1rem;
   margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--border);
+}
+.howto-header h1.page-title {
+  font-size: 1.25rem;
+  letter-spacing: 0.5px;
 }
 @media (min-width: 520px) {
   .howto-header { flex-direction: row; align-items: center; justify-content: space-between; }
@@ -524,14 +616,10 @@ body.page-howto {
   .cli-grid { grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 0.5rem; }
 }
 .howto-section {
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  border-radius: 6px;
-  padding: 1rem;
   margin-bottom: 1.25rem;
 }
 @media (min-width: 640px) {
-  .howto-section { padding: 1.25rem; margin-bottom: 1.5rem; }
+  .howto-section { margin-bottom: 1.5rem; }
 }
 .directory-grid {
   display: grid;
@@ -553,8 +641,35 @@ body.page-howto {
 .dir-item a { font-weight: 600; display: inline-block; margin-bottom: 0.15rem; }
 .dir-desc { color: var(--dim); font-size: 12px; line-height: 1.4; }
 
+/* Howto tab panels inside sections */
+.howto-section .tab-nav { margin-top: 0.75rem; }
+.howto-section .tab-panel {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.85rem;
+  margin-top: 0.5rem;
+}
+@media (min-width: 640px) {
+  .howto-section .tab-panel { padding: 1rem; }
+}
+.howto-section .tab-btn {
+  border: 1px solid var(--border);
+  flex-grow: 1;
+  text-align: center;
+  font-size: 11px;
+  padding: 0.35rem 0.6rem;
+}
+@media (min-width: 520px) {
+  .howto-section .tab-btn {
+    flex-grow: 0;
+    font-size: 12px;
+    padding: 0.35rem 0.75rem;
+  }
+}
+
 .loading { color: var(--dim); padding: 2rem 0; }
-.error { color: var(--accent); padding: 2rem 0; }
+.error { color: #ff6b6b; padding: 2rem 0; }
 
 @media (max-height: 740px) {
   html, body { overflow: auto; height: auto; }
@@ -562,8 +677,8 @@ body.page-howto {
 }
 @media (max-width: 600px) {
   html, body { overflow: auto; height: auto; }
-  body.page-home { padding: 1rem; }
+  .main-container, .howto-wrap, .analytics-wrap { padding: 1rem; }
+  .site-nav { padding: 0.65rem 1rem; }
   .ascii { font-size: 6.5px; letter-spacing: 0.1px; margin-bottom: 1rem; }
   .snippet-code::after { display: none; }
-  .site-footer { margin-top: 2rem; }
 }

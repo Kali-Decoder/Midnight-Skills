@@ -10,14 +10,13 @@
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/mindmap.css">
 </head>
-<body class="page-home">
+<body class="page-home" data-nav-active="home" data-site-footer="on">
 
-<!-- Main Structural Centered Alignment Content Element Wrapper -->
 <div class="main-container">
 
-  <!-- Hero Identity Header -->
-  <div class="ascii">
+  <div class="ascii" aria-hidden="true">
     MID🌜NIGHT
     ███╗   ███╗██╗██████╗ ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
     ████╗ ████║██║██╔══██╗██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
@@ -27,7 +26,6 @@
     ╚═╝     ╚═╝╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
   </div>
 
-  <!-- Typewritten Statement Framework -->
   <div class="tagline-container">
     <p class="tagline" id="typist-target"><span class="cursor"></span></p>
   </div>
@@ -46,36 +44,42 @@
     </div>
   </div>
 
-  <div class="providers">
-    <span class="providers-label">Works with</span>
-    <div class="provider-container">
-      <img class="provider-logo" src="logos/cursor.png" alt="Cursor" title="Cursor IDE Integration">
-      <img class="provider-logo" src="logos/claude.png" alt="Claude Code" title="Claude Code Shell">
-      <img class="provider-logo" src="logos/openai.png" alt="Codex CLI" title="OpenAI GPT Systems">
-      <img class="provider-logo" src="logos/gemini.png" alt="Gemini CLI" title="Google Gemini Frameworks">
-      <img class="provider-logo" src="logos/github.png" alt="VS Code Copilot" title="GitHub Copilot Workbench">
-      <img class="provider-logo" src="logos/kiro.png" alt="Kiro" title="Kiro Systems Engine">
-      <img class="provider-logo" src="logos/opencode.png" alt="OpenCode" title="OpenCode Core Framework">
-    </div>
-  </div>
-
   <div class="discovery" id="discovery">
-    <h2 class="section-heading">Learning Paths</h2>
+
+    <section class="mindmap-section" id="mindmap-section" aria-labelledby="mindmap-heading">
+      <div class="mindmap-intro">
+        <h2 class="section-heading" id="mindmap-heading">Skill Journey Map</h2>
+        <p>See how skills connect from beginner to advanced — click a level to focus the path.</p>
+      </div>
+      <div class="mindmap-mount">
+        <p class="text-muted">Loading mind map…</p>
+      </div>
+    </section>
+
+    <h2 class="section-heading mt-2">Step-by-Step Guides</h2>
     <div class="path-tabs" id="path-tabs" role="tablist"></div>
     <div id="path-panels"></div>
 
-    <h2 class="section-heading" style="margin-top: 2rem;">Featured Skills</h2>
+    <h2 class="section-heading mt-2">Featured Skills</h2>
     <div class="skill-grid" id="skill-grid">
-      <p style="color: var(--dim); font-size: 12px;">Loading skills…</p>
+      <p class="text-muted">Loading skills…</p>
+    </div>
+    <a class="view-all-link" href="skill.html">View all skills →</a>
+  </div>
+
+  <div class="providers">
+    <span class="providers-label">Works with</span>
+    <div class="provider-container">
+      <img class="provider-logo" src="logos/cursor.png" alt="Cursor" title="Cursor">
+      <img class="provider-logo" src="logos/claude.png" alt="Claude Code" title="Claude Code">
+      <img class="provider-logo" src="logos/openai.png" alt="OpenAI" title="OpenAI">
+      <img class="provider-logo" src="logos/gemini.png" alt="Gemini" title="Gemini">
+      <img class="provider-logo" src="logos/github.png" alt="GitHub Copilot" title="GitHub Copilot">
+      <img class="provider-logo" src="logos/kiro.png" alt="Kiro" title="Kiro">
+      <img class="provider-logo" src="logos/opencode.png" alt="OpenCode" title="OpenCode">
     </div>
   </div>
 
-</div>
-
-<div class="site-footer">
-  MIT License · <a href="skill.html?name=why-midnight">Browse skills</a> · <a href="howto.html">How to use</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="analytics.html">Analytics</a>
-  <br>
-  <span style="opacity: 0.65;">Anonymous usage analytics may record public GitHub usernames.</span>
 </div>
 
 <div id="disclaimer" class="disclaimer-backdrop" aria-hidden="false">
@@ -86,18 +90,26 @@
   </div>
 </div>
 
-<!-- Animation & Core Logic Pipelines Execution Engines -->
+<script src="/site.js"></script>
 <script src="/analytics.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+<script src="/mindmap.js"></script>
 <script>
 try { window.MidnightAnalytics.track("page_view", { meta: { page: "index" } }); } catch {}
 try { window.MidnightAnalytics.ensureGithubUsername(); } catch {}
 
-// Complex Multi-String Auto Typist Engine
+const CATEGORY_LABELS = {
+  foundation: 'Foundation',
+  wallet: 'Wallet',
+  sdk: 'SDK',
+  domain: 'Domain',
+  template: 'Template',
+};
+
 const TYPIST_PHRASES = [
-  "Skills for configuring and deploying privacy-preserving decentralized applications on Midnight.",
-  "Learn selective disclosure mechanisms, isolated state primitives, and zero-knowledge circuit mapping.",
-  "Inject structured cryptographic knowledge limits seamlessly into active developer prompts."
+  "Skills for building privacy-preserving apps on Midnight Network.",
+  "Compact contracts, wallet integration, and full dApp templates for AI agents.",
+  "Install once — your agent picks the right skill for each task.",
 ];
 let phraseIdx = 0;
 let letterIdx = 0;
@@ -106,39 +118,34 @@ const typistTarget = document.getElementById("typist-target");
 
 function processTypingLoop() {
   const currentPhrase = TYPIST_PHRASES[phraseIdx];
-  
   if (!isDeleting) {
     typistTarget.innerHTML = currentPhrase.substring(0, letterIdx) + '<span class="cursor"></span>';
     letterIdx++;
-    
     if (letterIdx > currentPhrase.length) {
       isDeleting = true;
-      setTimeout(processTypingLoop, 3500); 
+      setTimeout(processTypingLoop, 3500);
       return;
     }
     setTimeout(processTypingLoop, 35 + Math.random() * 25);
   } else {
     typistTarget.innerHTML = currentPhrase.substring(0, letterIdx) + '<span class="cursor"></span>';
     letterIdx--;
-    
     if (letterIdx < 0) {
       isDeleting = false;
       phraseIdx = (phraseIdx + 1) % TYPIST_PHRASES.length;
-      setTimeout(processTypingLoop, 400); 
+      setTimeout(processTypingLoop, 400);
       return;
     }
     setTimeout(processTypingLoop, 15);
   }
 }
 
-// Initializing ASCII Matrix Flicker and Shine Sweeping Engines via GSAP
-(function() {
+(function initAscii() {
   const ascii = document.querySelector('.ascii');
   const raw = ascii.textContent;
-  const lines = raw.split('\n').filter(l => l.length > 0);
-  const maxLen = Math.max(...lines.map(l => l.length));
-  const padded = lines.map(l => l.padEnd(maxLen));
-
+  const lines = raw.split('\n').filter((l) => l.length > 0);
+  const maxLen = Math.max(...lines.map((l) => l.length));
+  const padded = lines.map((l) => l.padEnd(maxLen));
   ascii.textContent = '';
   for (let row = 0; row < padded.length; row++) {
     for (let col = 0; col < maxLen; col++) {
@@ -154,106 +161,82 @@ function processTypingLoop() {
     }
     if (row < padded.length - 1) ascii.appendChild(document.createTextNode('\n'));
   }
-
   const chars = ascii.querySelectorAll('.ch');
   gsap.set(chars, { autoAlpha: 0 });
   gsap.set(ascii, { opacity: 1 });
-
-  // Matrix construction cluster stagger
   gsap.to(chars, {
     autoAlpha: 1,
     duration: 0.04,
-    ease: "none",
-    stagger: { each: 0.0015, from: "random" },
+    ease: 'none',
+    stagger: { each: 0.0015, from: 'random' },
     delay: 0.2,
-    onComplete: function() {
-      // Shimmer overlay text application layout bindings
-      ascii.style.background = "linear-gradient(110deg, #ffd400 38%, #fff9d4 50%, #ffd400 62%)";
-      ascii.style.backgroundSize = "250% 100%";
-      ascii.style.webkitBackgroundClip = "text";
-      ascii.style.backgroundClip = "text";
-      ascii.style.webkitTextFillColor = "transparent";
-      
-      // Infinite sweeping loop
+    onComplete: function () {
+      ascii.style.background = 'linear-gradient(110deg, #ffd400 38%, #fff9d4 50%, #ffd400 62%)';
+      ascii.style.backgroundSize = '250% 100%';
+      ascii.style.webkitBackgroundClip = 'text';
+      ascii.style.backgroundClip = 'text';
+      ascii.style.webkitTextFillColor = 'transparent';
       gsap.fromTo(ascii,
-        { backgroundPosition: "180% 0" },
-        { backgroundPosition: "-80% 0", duration: 2.2, ease: "power1.inOut", repeat: -1, repeatDelay: 4.5 }
+        { backgroundPosition: '180% 0' },
+        { backgroundPosition: '-80% 0', duration: 2.2, ease: 'power1.inOut', repeat: -1, repeatDelay: 4.5 }
       );
-      
-      // Initialize text statement generation loops safely post graphics rendering
       processTypingLoop();
-    }
+    },
   });
 })();
 
-// Safety Context Disclaimer Configuration Matrix
 const disclaimer = document.getElementById('disclaimer');
 const disclaimerAccept = document.getElementById('disclaimer-accept');
-
 if (sessionStorage.getItem('disclaimer-accepted')) {
   disclaimer.classList.add('hidden');
   disclaimer.setAttribute('aria-hidden', 'true');
 }
-
 disclaimerAccept.addEventListener('click', () => {
   gsap.to(disclaimer.querySelector('.disclaimer-box'), {
-    y: 20,
-    opacity: 0,
-    duration: 0.2,
-    ease: "power2.in",
+    y: 20, opacity: 0, duration: 0.2, ease: 'power2.in',
     onComplete: () => {
       disclaimer.classList.add('hidden');
       disclaimer.setAttribute('aria-hidden', 'true');
       sessionStorage.setItem('disclaimer-accepted', '1');
-    }
+    },
   });
 });
 
-// Interactive Tab State Swapper Handling
-document.querySelectorAll('.tab-btn').forEach(btn => {
+document.querySelectorAll('.tab-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     const selectedTab = btn.dataset.tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    
+    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
     btn.classList.add('active');
-    const targetedPanel = document.querySelector('.tab-panel[data-tab="' + selectedTab + '"]');
-    targetedPanel.classList.add('active');
-    
-    gsap.fromTo(targetedPanel, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.2 });
+    document.querySelector('.tab-panel[data-tab="' + selectedTab + '"]').classList.add('active');
   });
 });
 
-document.querySelectorAll('.snippet-code').forEach(code => {
-  const absoluteSnippetString = code.textContent;
+document.querySelectorAll('.snippet-code').forEach((code) => {
+  const original = code.textContent;
   let resetTimer;
-  
   code.addEventListener('click', async () => {
-    try { window.MidnightAnalytics.track("copy_snippet", { meta: { page: "index", snippet: absoluteSnippetString.slice(0, 80) } }); } catch {}
-    
-    try { 
-      await navigator.clipboard.writeText(absoluteSnippetString); 
-    } catch(err) {
-      const sandboxTextarea = document.createElement('textarea'); 
-      sandboxTextarea.value = absoluteSnippetString; 
-      document.body.appendChild(sandboxTextarea); 
-      sandboxTextarea.select(); 
-      document.execCommand('copy'); 
-      document.body.removeChild(sandboxTextarea);
+    try { window.MidnightAnalytics.track('copy_snippet', { meta: { page: 'index', snippet: original.slice(0, 80) } }); } catch {}
+    try {
+      await navigator.clipboard.writeText(original);
+    } catch {
+      const t = document.createElement('textarea');
+      t.value = original;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand('copy');
+      document.body.removeChild(t);
     }
-    
     clearTimeout(resetTimer);
     code.textContent = 'Copied to clipboard';
     code.classList.add('copied');
-    
-    resetTimer = setTimeout(() => { 
-      code.textContent = absoluteSnippetString; 
-      code.classList.remove('copied'); 
+    resetTimer = setTimeout(() => {
+      code.textContent = original;
+      code.classList.remove('copied');
     }, 1800);
   });
 });
 
-// Load learning paths and featured skills from registry
 (async function loadDiscovery() {
   const pathTabs = document.getElementById('path-tabs');
   const pathPanels = document.getElementById('path-panels');
@@ -271,12 +254,10 @@ document.querySelectorAll('.snippet-code').forEach(code => {
       tab.className = 'path-tab' + (idx === 0 ? ' active' : '');
       tab.type = 'button';
       tab.textContent = path.title;
-      tab.dataset.path = path.id;
       pathTabs.appendChild(tab);
 
       const panel = document.createElement('div');
       panel.className = 'path-panel' + (idx === 0 ? ' active' : '');
-      panel.dataset.path = path.id;
       const ol = document.createElement('ol');
       ol.className = 'path-steps';
       (path.steps || []).forEach((step, stepIdx) => {
@@ -308,14 +289,19 @@ document.querySelectorAll('.snippet-code').forEach(code => {
       const card = document.createElement('a');
       card.className = 'skill-card';
       card.href = 'skill.html?name=' + skill.id;
+      let meta = '<div class="skill-card-meta">';
+      if (skill.category) {
+        meta += '<span class="skill-card-cat">' + (CATEGORY_LABELS[skill.category] || skill.category) + '</span>';
+      }
+      if (skill.templatePath) meta += '<span class="skill-card-badge">Runnable template</span>';
+      meta += '</div>';
       card.innerHTML =
         '<div class="skill-card-name">' + skill.name + '</div>' +
-        '<div class="skill-card-desc">' + skill.description + '</div>' +
-        (skill.templatePath ? '<span class="skill-card-badge">Runnable template</span>' : '');
+        '<div class="skill-card-desc">' + skill.description + '</div>' + meta;
       skillGrid.appendChild(card);
     });
   } catch (err) {
-    skillGrid.innerHTML = '<p style="color: var(--dim); font-size: 12px;">Could not load skill registry.</p>';
+    skillGrid.innerHTML = '<p class="text-muted">Could not load skill registry.</p>';
     console.error(err);
   }
 })();
