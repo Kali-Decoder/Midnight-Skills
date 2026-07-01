@@ -41,6 +41,7 @@
     "./indexer",
     "./security",
     "./example-counter",
+    "./android-example-voting",
     "./example-hello-world",
     "./example-payment-dapp",
     "./example-locker-dapp",
