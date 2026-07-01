@@ -194,16 +194,7 @@ function loadSkill(id) {
   content.innerHTML = '<p class="loading">Loading…</p>';
   try { window.MidnightAnalytics.track('skill_view', { skill_name: id }); } catch {}
 
-  const tryLoad = (url) =>
-    fetch(url).then((r) => { if (!r.ok) throw new Error(r.statusText); return r.text(); });
-
-  const apiUrl =
-    '/api/skill?name=' + encodeURIComponent(id) +
-    (anonId ? '&anon_id=' + encodeURIComponent(anonId) : '') +
-    (gh ? '&github_username=' + encodeURIComponent(gh) : '');
-
-  tryLoad(apiUrl)
-    .catch(() => tryLoad(skill.path))
+  fetchSkillMarkdown(skill, id, anonId, gh)
     .then((text) => {
       content.innerHTML = renderMarkdown(text);
       content.scrollTop = 0;
@@ -211,6 +202,26 @@ function loadSkill(id) {
     .catch((err) => {
       content.innerHTML = '<p class="error">Could not load skill: ' + escHtml(err.message) + '.</p>';
     });
+}
+
+async function fetchSkillMarkdown(skill, id, anonId, gh) {
+  const staticUrl = '/' + String(skill.path).replace(/^\//, '');
+  const apiUrl =
+    '/api/skill?name=' + encodeURIComponent(id) +
+    (anonId ? '&anon_id=' + encodeURIComponent(anonId) : '') +
+    (gh ? '&github_username=' + encodeURIComponent(gh) : '');
+
+  for (const url of [staticUrl, apiUrl]) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text && text.trim() && text.trim() !== 'Skill not found') return text;
+    } catch {
+      /* try next source */
+    }
+  }
+  throw new Error('Skill content not found');
 }
 
 {
@@ -221,7 +232,9 @@ function loadSkill(id) {
     const params = new URLSearchParams(window.location.search);
     const name = params.get('name');
     if (!name) return;
-    const url = window.location.origin + '/' + name + '/SKILL.md';
+    const skill = SKILLS.find((s) => s.id === name);
+    if (!skill) return;
+    const url = window.location.origin + '/' + String(skill.path).replace(/^\//, '');
     try { window.MidnightAnalytics.track('copy_skill_url', { skill_name: name }); } catch {}
     try {
       await navigator.clipboard.writeText(url);
@@ -254,6 +267,7 @@ function escHtml(s) {
 }
 
 function stripFrontmatter(md) {
+  if (!md || typeof md !== 'string') return '';
   let raw = md.replace(/\r\n?/g, '\n');
   if (raw.startsWith('---\n')) {
     const end = raw.indexOf('\n---', 4);
@@ -263,9 +277,14 @@ function stripFrontmatter(md) {
 }
 
 function renderMarkdown(md) {
+  const source = stripFrontmatter(md);
+  if (!source.trim()) throw new Error('Empty skill content');
+
   const renderer = new marked.Renderer();
-  renderer.code = function ({ text, lang }) {
-    const language = (lang || '').trim();
+  renderer.code = function (token) {
+    const text = (token && typeof token === 'object' ? token.text : token) || '';
+    const lang = (token && typeof token === 'object' ? token.lang : arguments[1]) || '';
+    const language = String(lang).trim();
     let highlighted;
     if (language && hljs.getLanguage(language)) {
       highlighted = hljs.highlight(text, { language }).value;
@@ -275,7 +294,7 @@ function renderMarkdown(md) {
     const langClass = language ? ' language-' + language : '';
     return '<pre><code class="hljs' + langClass + '">' + highlighted + '</code></pre>';
   };
-  return marked.parse(stripFrontmatter(md), { renderer });
+  return marked.parse(source, { renderer });
 }
 
 initSkillsPage();

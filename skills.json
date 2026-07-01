@@ -8,7 +8,7 @@
         { "skillId": "why-midnight", "summary": "Privacy model and ZK basics" },
         { "skillId": "react-wallet-connector", "summary": "Connect a wallet in React" },
         { "skillId": "compact", "summary": "Write your first Compact contract" },
-        { "skillId": "example-hello-world", "summary": "Full stack hello-world + tests" },
+        { "skillId": "hello-world", "summary": "Full stack hello-world + tests" },
         { "skillId": "1am-wallet", "summary": "Deploy and call circuits via 1AM" }
       ]
     },

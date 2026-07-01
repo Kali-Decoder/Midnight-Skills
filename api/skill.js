@@ -14,9 +14,9 @@ function getSkillsIndex() {
     const parsed = JSON.parse(raw);
     const map = new Map();
     for (const s of parsed.skills || []) {
-      if (typeof s?.name === "string" && typeof s?.path === "string" && s.enabled !== false) {
-        map.set(s.name, s.path);
-      }
+      if (typeof s?.path !== "string" || s.enabled === false) continue;
+      if (typeof s.id === "string") map.set(s.id, s.path);
+      if (typeof s.name === "string") map.set(s.name, s.path);
     }
     return map;
   } catch {
