@@ -23,8 +23,9 @@ When helping the user, follow this sequence:
 
 1. **Detect where they are**: Contract authoring → Provider setup → Deploy → Circuit calls → Indexer/state polling → UI
 2. **Check for known gotchas first** (see `references/gotchas.md`) before writing any provider or circuit code
-3. **Use low-level SDK functions** (`createUnprovenDeployTx`, `submitTxAsync`, `submitCallTxAsync`) — never the high-level wrappers (`deployContract`, `createProofProvider`) which are broken on preprod
-4. **Always wrap the public data provider** with the patched version to avoid the GraphQL `offset: null` bug
+3. **Copy provider wiring** from `references/midnight-session.md` (canonical `lib/midnight.ts` for all browser dApps)
+4. **Use low-level SDK functions** (`createUnprovenDeployTx`, `submitTxAsync`, `submitCallTxAsync`) — never the high-level wrappers (`deployContract`, `createProofProvider`) which are broken on preprod
+5. **Always wrap the public data provider** with the patched version to avoid the GraphQL `offset: null` bug
 
 ---
 
@@ -33,7 +34,7 @@ When helping the user, follow this sequence:
 ```
 Browser (Next.js)
 ├── app/payment/PaymentClient.tsx   ← client component (all UI + logic)
-├── lib/midnight.ts                 ← wallet detection, session, providers
+├── lib/midnight.ts                 ← wallet detection, session, providers (see references/midnight-session.md)
 ├── lib/payment.ts                  ← deploy, deposit, withdraw
 └── public/zk/payment/             ← ZK proving assets (synced from contract build)
 

@@ -10,7 +10,7 @@ function getSkillsIndex() {
     const parsed = JSON.parse(raw);
     const map = new Map();
     for (const s of parsed.skills || []) {
-      if (typeof s?.name === "string" && typeof s?.path === "string") {
+      if (typeof s?.name === "string" && typeof s?.path === "string" && s.enabled !== false) {
         map.set(s.name, s.path);
       }
     }

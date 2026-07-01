@@ -28,25 +28,26 @@
     "privacy"
   ],
   "skills": [
-    "./addresses",
-    "./scaffold",
-    "./decryption",
-    "./private-token",
-    "./vesting-wallet",
-    "./erc20-wrapper",
-    "./erc7984-standard",
-    "./confidential-payroll",
+    "./why-midnight",
     "./1am-wallet",
+    "./react-wallet-connector",
     "./compact",
     "./testing",
     "./multinetwork",
+    "./midnight-js",
     "./indexer",
     "./security",
     "./example-counter",
+    "./example-hello-world",
+    "./example-payment-dapp",
+    "./example-locker-dapp",
     "./nft",
     "./token-transfers"
   ],
   "private": true,
+  "scripts": {
+    "sync:registry": "node scripts/sync-skill-registry.mjs"
+  },
   "dependencies": {
     "mongodb": "^6.13.0"
   }

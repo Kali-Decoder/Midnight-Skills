@@ -15,12 +15,19 @@ description: >
 
 A **locker dApp** holds unshielded NIGHT in a Compact contract until `unlockTime` (Unix seconds, `Uint<64>`). No one — including the deployer — can withdraw early. After the deadline, only the **beneficiary** (proven via witness) can call `release` and send tokens to a recipient address.
 
+**Runnable template:** Copy `templates/locker-dapp/` for a complete Next.js project (contract + UI). Run `npm install && npm run compact && npm run dev` after installing the [1AM wallet](https://1am.dev).
+
 **What this skill produces:**
 - `contract/` — Compact locker vault + TypeScript witnesses + compile scripts
 - `app/locker/` — Next.js client UI (connect, deploy, lock, release, status)
-- `lib/midnight.ts` — wallet session + patched indexer provider (same patterns as payment dapp)
+- `lib/midnight.ts` — wallet session + patched indexer provider (**copy from** `references/midnight-session.md` or `templates/locker-dapp/lib/midnight.ts`)
 - `lib/locker.ts` — deploy, `lockTokens`, `release`, ledger decode
 - `public/zk/locker/` — ZK proving assets synced from contract build
+
+**Shared references** (canonical provider + troubleshooting — do not duplicate in prompts):
+- `references/midnight-session.md` — `createConnectedSession`, indexer patch, deploy/call helpers
+- `references/gotchas.md` — preprod deploy hangs, GraphQL `offset: null`, ZK asset paths
+- `references/versions.json` — pinned `@midnight-ntwrk/*` versions
 
 **Primary references:**
 - `example-payment-dapp/` — provider wiring, low-level deploy/call, indexer patch
@@ -44,7 +51,7 @@ A **locker dApp** holds unshielded NIGHT in a Compact contract until `unlockTime
 When helping the user, follow this sequence:
 
 1. **Contract** — `locker.compact` compile + witnesses
-2. **Providers** — `createConnectedSession` (copy from payment dapp pattern)
+2. **Providers** — `createConnectedSession` (from `references/midnight-session.md`)
 3. **Deploy** — low-level deploy, persist private state + contract address
 4. **Lock** — `lockTokens(amount, releaseTime, beneficiaryPkBytes)`
 5. **Poll indexer** — read `balance`, `unlockTime`, `lockActive` from ledger
@@ -700,11 +707,24 @@ Deploy multiple locker contracts with staggered `unlockTime` values, or add a `v
 
 ### React-only wallet shell
 
-If the user only needs connect UI first, scaffold with `react-wallet-connector/` then merge `lib/midnight.ts` from this skill.
+If the user only needs connect UI first, scaffold with `react-wallet-connector/` then add provider wiring from `references/midnight-session.md`.
 
 ---
 
-## 19) Related Skills
+## 20) Troubleshooting
+
+See `references/gotchas.md` for the full table. Common locker-specific issues:
+
+| Symptom | Fix |
+|---------|-----|
+| `unlockTime` overflow | Use `Uint<64>` for Unix seconds, not `Uint<16>` |
+| Release before deadline | `blockTimeGte(unlockTime)` must pass — check indexer block time |
+| Wrong beneficiary on release | Witness `beneficiaryKey` must match bytes stored at lock time |
+| Deploy hangs on preprod | Use `createUnprovenDeployTx` + `submitTxAsync`, not `deployContract()` |
+
+---
+
+## 21) Related Skills
 
 | Next step | Skill |
 |---|---|

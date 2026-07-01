@@ -352,69 +352,82 @@
     <p>Select a discrete node below to review individual definitions or configure isolated targeting references:</p>
     
     <div class="directory-grid">
+<!-- SKILLS_REGISTRY:HOWTO_GRID -->
       <div class="dir-item">
         <a href="skill.html?name=1am-wallet">1AM Wallet</a>
-        <div class="dir-desc">Wallet configuration models, setup procedures, and dust-free transaction execution controls.</div>
+        <div class="dir-desc">Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network.</div>
       </div>
-      <div class="dir-item">
-        <a href="skill.html?name=react-wallet-connector">React Wallet Connector</a>
-        <div class="dir-desc">React + Vite scaffold with DApp Connector API — connect/disconnect UI, window.midnight enumeration, and unshielded address display.</div>
-      </div>
-      <!--
-      <div class="dir-item">
-        <a href="skill.html?name=dynamic-midnight-wallet">Dynamic Midnight Wallet</a>
-        <div class="dir-desc">React + Vite scaffold with Dynamic.xyz Midnight connectors — unshielded, shielded, and DUST surfaces, balances, and send routing.</div>
-      </div>
-      -->
       <div class="dir-item">
         <a href="skill.html?name=compact">Compact</a>
-        <div class="dir-desc">Smart contract language syntax specifications optimized for zero-knowledge zk-Circuit assembly.</div>
-      </div>
-      <div class="dir-item">
-        <a href="skill.html?name=testing">Testing</a>
-        <div class="dir-desc">Debugging frameworks, sandbox emulation traps, environmental profiles, and runtime assertions.</div>
-      </div>
-      <div class="dir-item">
-        <a href="skill.html?name=multinetwork">Multinetwork</a>
-        <div class="dir-desc">Cross-network environment deployment instructions managing Devnet, Testnet, and Production endpoints.</div>
-      </div>
-      <div class="dir-item">
-        <a href="skill.html?name=midnight-indexer">Indexer</a>
-        <div class="dir-desc">GraphQL pipeline structures, transactional data mapping, subscription patterns, and block event watchers.</div>
-      </div>
-      <div class="dir-item">
-        <a href="skill.html?name=midnight-security">Security</a>
-        <div class="dir-desc">Privacy validation standards, identifying storage state leaks, and defensive contract architecture patterns.</div>
+        <div class="dir-desc">The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits.</div>
       </div>
       <div class="dir-item">
         <a href="skill.html?name=example-counter">Example Counter</a>
-        <div class="dir-desc">End-to-end boilerplate architecture tracing front-end UI synchronization and full ledger deployment scripts.</div>
+        <div class="dir-desc">Complete Midnight DApp reference — headless wallet, CLI, counter contract, DUST generation, deploy, interaction.</div>
       </div>
       <div class="dir-item">
-        <a href="skill.html?name=nft">NFT</a>
-        <div class="dir-desc">Techniques for designing composite token protocols managing public balances and shielded asset vaults.</div>
-      </div>
-      <div class="dir-item">
-        <a href="skill.html?name=token-transfers">Token Transfers</a>
-        <div class="dir-desc">Shielded and unshielded native balance asset shifting mechanics and ledger verification hooks.</div>
-      </div>
-      <div class="dir-item">
-        <a href="skill.html?name=example-payment-dapp">Example Payment Dapp</a>
-        <div class="dir-desc">Privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet.</div>
+        <a href="skill.html?name=hello-world">Example Hello World</a>
+        <div class="dir-desc">Build a complete Midnight Network hello-world DApp from scratch with Compact, vitest, and FluentWalletBuilder.</div>
       </div>
       <div class="dir-item">
         <a href="skill.html?name=example-locker-dapp">Example Locker Dapp</a>
-        <div class="dir-desc">Time-lock vault: lock unshielded NIGHT until a deadline; beneficiary releases tokens via Compact blockTimeGte and witness auth.</div>
+        <div class="dir-desc">Time-lock vault dApp: lock unshielded NIGHT until a Unix deadline; beneficiary releases via blockTimeGte.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=example-payment-dapp">Example Payment Dapp</a>
+        <div class="dir-desc">Privacy-preserving payment vault: deposit/withdraw tNIGHT via Compact + 1AM wallet.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=midnight-indexer">Indexer</a>
+        <div class="dir-desc">Query and subscribe to Midnight blockchain data via Indexer GraphQL API v4.</div>
       </div>
       <div class="dir-item">
         <a href="skill.html?name=midnight-js">Midnight.js</a>
-        <div class="dir-desc">TypeScript client SDK interaction layers, network bridge connectors, and dynamic browser extension wiring.</div>
+        <div class="dir-desc">TypeScript SDK — provider wiring, wallet SDK, contract deployment, DUST flow, testkit.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=multinetwork">Multinetwork</a>
+        <div class="dir-desc">Build a single dApp that deploys across all networks (localnet, preview, preprod, mainnet) from one codebase.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=nft">NFT</a>
+        <div class="dir-desc">Build shielded and unshielded NFTs on Midnight using OpenZeppelin Compact contracts.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=react-wallet-connector">React Wallet Connector</a>
+        <div class="dir-desc">Scaffold a React + Vite app with DApp Connector API wallet connection, connect/disconnect UI, and unshielded address display.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=midnight-security">Security</a>
+        <div class="dir-desc">Privacy audit checklist, data leak patterns, defensive Compact patterns.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=testing">Testing</a>
+        <div class="dir-desc">Debug Compact contracts and manage toolchain versions. Static vs dynamic errors, version sync, common traps.</div>
+      </div>
+      <div class="dir-item">
+        <a href="skill.html?name=token-transfers">Token Transfers</a>
+        <div class="dir-desc">Shielded and unshielded token transfers, balance queries, multi-party flows on Midnight.</div>
       </div>
       <div class="dir-item">
         <a href="skill.html?name=why-midnight">Why Midnight</a>
-        <div class="dir-desc">Structural analysis mapping architectural logic, data privacy strategies, and selective cryptography metrics.</div>
+        <div class="dir-desc">What Midnight is, why it exists, and how it works — public/private state, selective disclosure, and ZK proofs.</div>
       </div>
+<!-- /SKILLS_REGISTRY:HOWTO_GRID -->
     </div>
+  </div>
+
+  <div class="section">
+    <h2>Contribute a Skill</h2>
+    <p>Want to add or improve a Midnight skill? Follow the registry workflow in <a href="CONTRIBUTING.md">CONTRIBUTING.md</a>:</p>
+    <div class="copy-wrap">
+      <button class="copy-btn" data-copy>Copy</button>
+      <code class="code"># 1. Create your-skill-name/SKILL.md
+# 2. Register in skills.json
+# 3. npm run sync:registry
+# 4. Open a PR on GitHub</code>
+    </div>
+    <span class="sub-label">Skills must be Midnight-specific, agent-oriented, and synced via <code>skills.json</code> — never edit router tables by hand.</span>
   </div>
 
 </div>

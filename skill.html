@@ -192,45 +192,64 @@ a:hover { text-decoration: underline; }
 try { window.MidnightAnalytics.track("page_view", { meta: { page: "skill" } }); } catch {}
 try { window.MidnightAnalytics.ensureGithubUsername(); } catch {}
 
-const SKILLS = [
-  { id: '1am-wallet', name: '1AM Wallet', path: '1am-wallet/SKILL.md', desc: 'Integrate the 1AM browser wallet for dust-free contract deployment and transaction flow.' },
-  { id: 'react-wallet-connector', name: 'React Wallet Connector', path: 'react-wallet-connector/SKILL.md', desc: 'Scaffold a React + Vite app with DApp Connector API wallet connection, connect/disconnect UI, and unshielded address display.' },
-  // { id: 'dynamic-midnight-wallet', name: 'Dynamic Midnight Wallet', path: 'dynamic-midnight-wallet/SKILL.md', desc: 'Scaffold React + Vite with Dynamic.xyz Midnight connectors — unshielded, shielded, DUST surfaces, balances, and send routing.' },
-  { id: 'compact', name: 'Compact', path: 'compact/SKILL.md', desc: 'The Compact smart contract language — TypeScript-like DSL that compiles to ZK circuits.' },
-  { id: 'midnight-js', name: 'Midnight.js', path: 'midnight-js/SKILL.md', desc: 'TypeScript SDK — provider wiring, wallet SDK, contract deployment, DUST flow, testkit.' },
-  { id: 'testing', name: 'Testing', path: 'testing/SKILL.md', desc: 'Debug Compact contracts, read compiler errors, manage versions, and avoid common traps.' },
-  { id: 'multinetwork', name: 'Multinetwork', path: 'multinetwork/SKILL.md', desc: 'Deploy a single dApp across all networks (localnet, preview, preprod, mainnet) from one codebase.' },
-  { id: 'midnight-indexer', name: 'Indexer', path: 'indexer/SKILL.md', desc: 'Query blockchain data via GraphQL, watch contract state, subscribe to real-time events.' },
-  { id: 'midnight-security', name: 'Security', path: 'security/SKILL.md', desc: 'Privacy audit checklist, data leak patterns, defensive Compact contract patterns.' },
-  { id: 'hello-world', name: 'Example Hello World', path: 'example-hello-world/SKILL.md', desc: 'Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.' },
-  { id: 'example-counter', name: 'Example Counter', path: 'example-counter/SKILL.md', desc: 'Complete DApp reference — headless wallet, CLI, deploy, interaction.' },
-  { id: 'nft', name: 'NFT', path: 'nft/SKILL.md', desc: 'Build NFTs (shielded + unshielded) with OpenZeppelin and native functions.' },
-  { id: 'token-transfers', name: 'Token Transfers', path: 'token-transfers/SKILL.md', desc: 'Shielded/unshielded transfers, balance queries, multi-party flows.' },
-  { id: 'example-payment-dapp', name: 'Example Payment Dapp', path: 'example-payment-dapp/SKILL.md', desc: 'Privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet.' },
-  { id: 'example-locker-dapp', name: 'Example Locker Dapp', path: 'example-locker-dapp/SKILL.md', desc: 'Time-lock vault: lock unshielded NIGHT until a deadline; beneficiary releases via blockTimeGte and witness auth.' },
-  { id: 'why-midnight', name: 'Why Midnight', path: 'why-midnight/SKILL.md', desc: 'What Midnight is, why it exists, and how it works (public/private state + zero-knowledge proofs).' }
-];
-
 const sidebar = document.getElementById('sidebar');
 const content = document.getElementById('content');
 const titleEl = document.getElementById('skill-title');
 const copyBtn = document.getElementById('copy-btn');
 const copyLabel = document.getElementById('copy-label');
 
-// Build sidebar
-SKILLS.forEach(skill => {
-  const item = document.createElement('a');
-  item.className = 'sidebar-item';
-  item.href = 'skill.html?name=' + skill.id;
-  item.dataset.skill = skill.id;
-  item.innerHTML = '<div class="sidebar-item-name">' + skill.name + '</div><div class="sidebar-item-desc">' + skill.desc + '</div>';
-  item.addEventListener('click', (e) => {
-    e.preventDefault();
-    loadSkill(skill.id);
-    history.pushState(null, '', 'skill.html?name=' + skill.id);
+let SKILLS = [];
+
+async function loadRegistry() {
+  const res = await fetch('/skills.json');
+  if (!res.ok) throw new Error('Failed to load skills.json');
+  const data = await res.json();
+  SKILLS = (data.skills || [])
+    .filter((s) => s.enabled !== false && s.listInRouter !== false && s.id !== 'midnightskill')
+    .map((s) => ({ id: s.id, name: s.name, path: s.path, desc: s.description }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'en'));
+  return data;
+}
+
+function buildSidebar() {
+  sidebar.innerHTML = '';
+  SKILLS.forEach((skill) => {
+    const item = document.createElement('a');
+    item.className = 'sidebar-item';
+    item.href = 'skill.html?name=' + skill.id;
+    item.dataset.skill = skill.id;
+    item.innerHTML =
+      '<div class="sidebar-item-name">' +
+      skill.name +
+      '</div><div class="sidebar-item-desc">' +
+      skill.desc +
+      '</div>';
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      loadSkill(skill.id);
+      history.pushState(null, '', 'skill.html?name=' + skill.id);
+    });
+    sidebar.appendChild(item);
   });
-  sidebar.appendChild(item);
-});
+}
+
+async function initSkillsPage() {
+  try {
+    await loadRegistry();
+    buildSidebar();
+    const params = new URLSearchParams(window.location.search);
+    const initial = params.get('name');
+    if (initial && SKILLS.find((s) => s.id === initial)) {
+      loadSkill(initial);
+    } else if (SKILLS.length) {
+      loadSkill(SKILLS[0].id);
+      history.replaceState(null, '', 'skill.html?name=' + SKILLS[0].id);
+    }
+  } catch (err) {
+    content.innerHTML = '<p class="error">Could not load skill registry.</p>';
+    console.error(err);
+  }
+}
 
 function loadSkill(id) {
   const skill = SKILLS.find(s => s.id === id);
@@ -302,14 +321,7 @@ window.addEventListener('popstate', () => {
 });
 
 // Load initial skill from URL or default to first
-const params = new URLSearchParams(window.location.search);
-const initial = params.get('name');
-if (initial && SKILLS.find(s => s.id === initial)) {
-  loadSkill(initial);
-} else {
-  loadSkill(SKILLS[0].id);
-  history.replaceState(null, '', 'skill.html?name=' + SKILLS[0].id);
-}
+// (handled by initSkillsPage after registry load)
 
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -394,6 +406,8 @@ function renderMarkdown(md) {
   }
   return out;
 }
+
+initSkillsPage();
 </script>
 </body>
 </html>

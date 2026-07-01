@@ -13,84 +13,82 @@ This file will guide to the right skill with the latest knowledge about Midnight
 
 | I'm doing... | Fetch these skills |
 |--------------|-------------------|
+<!-- SKILLS_REGISTRY:TASK_TABLE -->
 | Understand Midnight's architecture, privacy model, and ZK approach | `why-midnight/` |
-| Debug Compact contracts, read errors, manage versions | `testing/` |
-| Build a single dApp targeting all networks from one codebase | `multinetwork/` |
-| Query blockchain data, watch contract state, subscribe to events | `indexer/` |
-| Privacy audit checklist, prevent data leaks, defensive Compact patterns | `security/` |
-| Complete DApp reference: wallet, deploy, interact (use as template) | `example-counter/` |
-| Build NFTs (shielded + unshielded) with OpenZeppelin | `nft/` |
-| Token transfers, balance flows, multi-party txs | `token-transfers/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Build a React app with wallet connect/disconnect via DApp Connector API | `react-wallet-connector/` |
-<!-- | Build a React app with Dynamic.xyz Midnight wallet (unshielded, shielded, DUST) | `dynamic-midnight-wallet/` | -->
 | Write Compact smart contracts | `compact/` |
+| Debug Compact contracts, read errors, manage versions | `testing/` |
+| Build a single dApp targeting all networks from one codebase | `multinetwork/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
-| Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder. | `example-hello-world/` |
-| Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet. | `example-payment-dapp/` |
-| Build a time-lock vault dApp: lock unshielded NIGHT until a deadline, beneficiary releases via Compact + 1AM wallet. | `example-locker-dapp/` |
+| Query blockchain data, watch contract state, subscribe to events | `midnight-indexer/` |
+| Privacy audit checklist, prevent data leaks, defensive Compact patterns | `midnight-security/` |
+| Complete DApp reference: wallet, deploy, interact (use as template) | `example-counter/` |
+| Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder. | `hello-world/` |
+| Build a privacy-preserving payment vault with 1AM wallet | `example-payment-dapp/` |
+| Build a time-lock vault dApp on Midnight | `example-locker-dapp/` |
+| Build NFTs (shielded + unshielded) with OpenZeppelin | `nft/` |
+| Token transfers, balance flows, multi-party txs | `token-transfers/` |
+<!-- /SKILLS_REGISTRY:TASK_TABLE -->
 
 
 ## Skills
 
-### [Why Midnight](/why-midnight/SKILL.md)
-- Data protection blockchain with public/private state, selective disclosure, and zk-SNARKs.
-- Why it exists, how it works, and the privacy guarantees it provides.
-
+<!-- SKILLS_REGISTRY:SECTIONS -->
 ### [1AM Wallet](/1am-wallet/SKILL.md)
 - Detect, connect, and wire 1AM browser extension into frontend.
 - Provider setup, contract deployment, and dust-free transaction flow.
-
-### [React Wallet Connector](/react-wallet-connector/SKILL.md)
-- Scaffold a React + Vite app with DApp Connector API wallet connection.
-- `window.midnight` enumeration, connect/disconnect UI, unshielded address display.
-
-<!--
-### [Dynamic Midnight Wallet](/dynamic-midnight-wallet/SKILL.md)
-- Scaffold React + Vite with Dynamic.xyz Midnight connectors — unshielded, shielded, DUST surfaces, balances, send routing.
--->
 
 ### [Compact](/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.
 - Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns.
 
-### [Testing](/testing/SKILL.md)
-- Static vs dynamic errors, reading compiler messages, `--skip-zk` dev loop.
-- Version management across 6 components, common debugging patterns.
+### [Example Counter](/example-counter/SKILL.md)
+- Complete DApp reference: headless wallet, CLI, counter contract.
+- DUST generation, deploy, interaction, standalone mode.
 
-### [Multinetwork](/multinetwork/SKILL.md)
-- Unified provider builder, wallet abstraction, proof server routing.
-- Contract registry, deploy scripts, DUST flow per network.
+### [Example Hello World](/example-hello-world/SKILL.md)
+- Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.
+
+### [Example Locker Dapp](/example-locker-dapp/SKILL.md)
+- Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth.
+
+### [Example Payment Dapp](/example-payment-dapp/SKILL.md)
+- Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet.
 
 ### [Indexer](/indexer/SKILL.md)
 - GraphQL queries and subscriptions, contract state reads, transaction lookups.
 - Real-time event watching, offset/null bug workaround, TypeScript helpers.
 
-### [Security](/security/SKILL.md)
-- Privacy audit checklist, data leak patterns, commitment/nullifier design.
-- Witness trust, front-running resistance, transaction semantics.
+### [Midnight.js](/midnight-js/SKILL.md)
+- TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).
+- Contract deployment, circuit calls, DUST generation, private state, testkit.
 
-### [Example Counter](/example-counter/SKILL.md)
-- Complete DApp reference: headless wallet, CLI, counter contract.
-- DUST generation, deploy, interaction, standalone mode.
+### [Multinetwork](/multinetwork/SKILL.md)
+- Unified provider builder, wallet abstraction, proof server routing.
+- Contract registry, deploy scripts, DUST flow per network.
 
 ### [NFT](/nft/SKILL.md)
 - Build shielded and unshielded NFTs on Midnight.
 - OpenZeppelin NonFungibleToken, mint, transfer, metadata, privacy patterns.
 
+### [React Wallet Connector](/react-wallet-connector/SKILL.md)
+- Scaffold a React + Vite app with DApp Connector API wallet connection.
+- `window.midnight` enumeration, connect/disconnect UI, unshielded address display.
+
+### [Security](/security/SKILL.md)
+- Privacy audit checklist, data leak patterns, commitment/nullifier design.
+- Witness trust, front-running resistance, transaction semantics.
+
+### [Testing](/testing/SKILL.md)
+- Static vs dynamic errors, reading compiler messages, `--skip-zk` dev loop.
+- Version management across 6 components, common debugging patterns.
+
 ### [Token Transfers](/token-transfers/SKILL.md)
 - Shielded and unshielded token transfers.
 - Balance queries, multi-party flows, transaction semantics.
 
-### [Midnight.js](/midnight-js/SKILL.md)
-- TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).
-- Contract deployment, circuit calls, DUST generation, private state, testkit.
-
-### [Example Hello World](/example-hello-world/SKILL.md)
-- Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.
-
-### [Example Payment Dapp](/example-payment-dapp/SKILL.md)
-- Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet.
-
-### [Example Locker Dapp](/example-locker-dapp/SKILL.md)
-- Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth.
+### [Why Midnight](/why-midnight/SKILL.md)
+- Data protection blockchain with public/private state, selective disclosure, and zk-SNARKs.
+- Why it exists, how it works, and the privacy guarantees it provides.
+<!-- /SKILLS_REGISTRY:SECTIONS -->

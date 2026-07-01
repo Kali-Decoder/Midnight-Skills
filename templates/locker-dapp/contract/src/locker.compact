@@ -1,0 +1,55 @@
+pragma language_version >= 0.23;
+import CompactStandardLibrary;
+
+export ledger balance: Uint<128>;
+export ledger unlockTime: Uint<64>;
+export ledger beneficiary: Bytes<32>;
+export ledger lockActive: Boolean;
+export ledger totalLocked: Uint<128>;
+export ledger totalReleased: Uint<128>;
+
+witness beneficiaryKey(): Bytes<32>;
+
+constructor() {
+  balance = 0;
+  unlockTime = 0;
+  beneficiary = default<Bytes<32>>;
+  lockActive = false;
+  totalLocked = 0;
+  totalReleased = 0;
+}
+
+export circuit lockTokens(
+  amount: Uint<128>,
+  releaseTime: Uint<64>,
+  beneficiaryPk: Bytes<32>
+): [] {
+  assert(!disclose(lockActive), "Vault already has an active lock");
+  assert(disclose(amount) > 0, "Amount must be positive");
+  receiveUnshielded(default<Bytes<32>>, disclose(amount));
+  beneficiary = disclose(beneficiaryPk);
+  unlockTime = disclose(releaseTime);
+  balance = disclose(amount);
+  lockActive = disclose(true);
+  totalLocked = disclose((totalLocked + amount) as Uint<128>);
+}
+
+export circuit release(recipient: UserAddress): [] {
+  assert(disclose(lockActive), "No active lock");
+  assert(blockTimeGte(disclose(unlockTime)), "Lock period not finished");
+  assert(deriveKey(beneficiaryKey()) == beneficiary, "Only beneficiary can release");
+  const amount = disclose(balance);
+  assert(amount > 0, "Nothing to release");
+  sendUnshielded(
+    default<Bytes<32>>,
+    amount,
+    right<ContractAddress, UserAddress>(disclose(recipient))
+  );
+  totalReleased = disclose((totalReleased + amount) as Uint<128>);
+  balance = 0;
+  lockActive = false;
+}
+
+pure circuit deriveKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "locker:beneficiary:v1"), sk]);
+}

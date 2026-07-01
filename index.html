@@ -44,12 +44,133 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       flex: 1;
-      max-width: 760px;
+      max-width: 960px;
       width: 100%;
       margin: 0 auto;
       text-align: center;
+      padding-top: 1rem;
+    }
+
+    .discovery {
+      width: 100%;
+      margin-top: 1rem;
+      text-align: left;
+    }
+
+    .path-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .path-tab {
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.85rem;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--dim);
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    .path-tab:hover { color: var(--fg); border-color: var(--accent); }
+    .path-tab.active {
+      color: var(--bg);
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .path-panel { display: none; }
+    .path-panel.active { display: block; }
+
+    .path-steps {
+      list-style: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--card-bg);
+      overflow: hidden;
+    }
+    .path-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s ease;
+    }
+    .path-step:last-child { border-bottom: none; }
+    .path-step:hover { background: var(--hover); }
+    .path-step-num {
+      flex-shrink: 0;
+      width: 1.5rem;
+      height: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--bg);
+      background: var(--accent);
+      border-radius: 3px;
+    }
+    .path-step-body a {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .path-step-body p {
+      color: var(--dim);
+      font-size: 12px;
+      margin-top: 0.15rem;
+    }
+
+    .skill-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+      width: 100%;
+    }
+    .skill-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      background: var(--card-bg);
+      transition: all 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .skill-card:hover {
+      border-color: var(--accent);
+      background: var(--hover);
+      text-decoration: none;
+      color: var(--fg);
+      box-shadow: 0 0 12px var(--glow);
+    }
+    .skill-card-name {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+    .skill-card-desc {
+      color: var(--dim);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .skill-card-badge {
+      display: inline-block;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--bg);
+      background: var(--accent);
+      padding: 0.1rem 0.35rem;
+      border-radius: 2px;
+      margin-top: 0.4rem;
     }
     
     a { color: var(--accent); text-decoration: none; transition: color 0.15s ease; }
@@ -247,7 +368,7 @@
       padding-top: 1.5rem;
       border-top: 1px solid var(--border);
       width: 100%;
-      max-width: 760px;
+      max-width: 960px;
       margin-left: auto;
       margin-right: auto;
       flex-shrink: 0;
@@ -370,11 +491,22 @@
     </div>
   </div>
 
+  <div class="discovery" id="discovery">
+    <h2>Learning Paths</h2>
+    <div class="path-tabs" id="path-tabs" role="tablist"></div>
+    <div id="path-panels"></div>
+
+    <h2 style="margin-top: 2rem;">Featured Skills</h2>
+    <div class="skill-grid" id="skill-grid">
+      <p style="color: var(--dim); font-size: 12px;">Loading skills…</p>
+    </div>
+  </div>
+
 </div>
 
 <!-- Structural System Pinned Bottom Footnotes Container -->
 <div class="footer">
-  MIT License · <a href="skill.html?name=why-midnight" target="_blank" rel="noopener">Browse Skill Nodes</a> · <a href="howto.html" target="_blank" rel="noopener">Usage Manual</a> · <a href="analytics.html" target="_blank" rel="noopener">System Metrics Log</a>
+  MIT License · <a href="skill.html?name=why-midnight" target="_blank" rel="noopener">Browse Skill Nodes</a> · <a href="howto.html" target="_blank" rel="noopener">Usage Manual</a> · <a href="CONTRIBUTING.md" target="_blank" rel="noopener">Contribute</a> · <a href="analytics.html" target="_blank" rel="noopener">System Metrics Log</a>
   <br>
   <span style="opacity: 0.65;">Operational tracing captures public GitHub identifiers dynamically.</span>
 </div>
@@ -555,6 +687,73 @@ document.querySelectorAll('.how-to-tab-panel code').forEach(code => {
     }, 1800);
   });
 });
+
+// Load learning paths and featured skills from registry
+(async function loadDiscovery() {
+  const pathTabs = document.getElementById('path-tabs');
+  const pathPanels = document.getElementById('path-panels');
+  const skillGrid = document.getElementById('skill-grid');
+  if (!pathTabs || !skillGrid) return;
+
+  try {
+    const res = await fetch('/skills.json');
+    if (!res.ok) throw new Error('registry fetch failed');
+    const data = await res.json();
+    const skillsById = Object.fromEntries((data.skills || []).map((s) => [s.id, s]));
+
+    (data.learningPaths || []).forEach((path, idx) => {
+      const tab = document.createElement('button');
+      tab.className = 'path-tab' + (idx === 0 ? ' active' : '');
+      tab.type = 'button';
+      tab.textContent = path.title;
+      tab.dataset.path = path.id;
+      pathTabs.appendChild(tab);
+
+      const panel = document.createElement('div');
+      panel.className = 'path-panel' + (idx === 0 ? ' active' : '');
+      panel.dataset.path = path.id;
+      const ol = document.createElement('ol');
+      ol.className = 'path-steps';
+      (path.steps || []).forEach((step, stepIdx) => {
+        const skill = skillsById[step.skillId];
+        const li = document.createElement('li');
+        li.className = 'path-step';
+        li.innerHTML =
+          '<span class="path-step-num">' + (stepIdx + 1) + '</span>' +
+          '<div class="path-step-body">' +
+          '<a href="skill.html?name=' + step.skillId + '">' + (skill ? skill.name : step.skillId) + '</a>' +
+          '<p>' + (step.summary || (skill && skill.description) || '') + '</p>' +
+          '</div>';
+        ol.appendChild(li);
+      });
+      panel.appendChild(ol);
+      pathPanels.appendChild(panel);
+
+      tab.addEventListener('click', () => {
+        pathTabs.querySelectorAll('.path-tab').forEach((b) => b.classList.remove('active'));
+        pathPanels.querySelectorAll('.path-panel').forEach((p) => p.classList.remove('active'));
+        tab.classList.add('active');
+        panel.classList.add('active');
+      });
+    });
+
+    const featured = (data.skills || []).filter((s) => s.enabled !== false && s.featured && s.id !== 'midnightskill');
+    skillGrid.innerHTML = '';
+    featured.forEach((skill) => {
+      const card = document.createElement('a');
+      card.className = 'skill-card';
+      card.href = 'skill.html?name=' + skill.id;
+      card.innerHTML =
+        '<div class="skill-card-name">' + skill.name + '</div>' +
+        '<div class="skill-card-desc">' + skill.description + '</div>' +
+        (skill.templatePath ? '<span class="skill-card-badge">Runnable template</span>' : '');
+      skillGrid.appendChild(card);
+    });
+  } catch (err) {
+    skillGrid.innerHTML = '<p style="color: var(--dim); font-size: 12px;">Could not load skill registry.</p>';
+    console.error(err);
+  }
+})();
 </script>
 
 </body>

@@ -7,10 +7,12 @@ description: Integrate the 1AM wallet for dust-free contract deployment and tran
 This skill covers detecting, connecting, and wiring the 1AM browser extension (`window.midnight['1am']`) into a frontend dApp. The 1AM wallet handles all ZK proving and dust fee sponsorship — users pay zero gas. This skill is generic: replace every `YourContract` / `yourCircuit` / `your-contract` placeholder with your actual contract name and circuit IDs.
 
 Suggested file layout (adapt to your project):
-- `src/lib/midnight.ts` → wallet session, provider wiring, indexer patch
+- `src/lib/midnight.ts` → wallet session, provider wiring, indexer patch (**canonical source:** `references/midnight-session.md`)
 - `src/lib/encryption.ts` → optional payload encryption derived from wallet signature
 - `src/hooks/useContract.ts` → app logic and state orchestration
 - `src/contexts/WalletContext.tsx` → wallet connection state
+
+**Shared references:** `references/midnight-session.md`, `references/gotchas.md`, `references/versions.json`
 
 ---
 
