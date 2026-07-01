@@ -3,354 +3,125 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MIDSKILLS — How To Use</title>
-  <meta name="description" content="Operational guide for configuring MIDSKILLS with CLI tools, local agents, and AI context boundaries.">
+  <title>How to Use — MIDSKILLS</title>
+  <meta name="description" content="Install Midnight skills, use them with AI tools, and browse the full skill catalog.">
+  <link rel="stylesheet" href="/styles.css">
   <style>
-    :root {
-      --bg: #0b0b0b;
-      --fg: #fff6bf;
-      --dim: #cbbf76;
-      --accent: #ffd400;
-      --border: #3a2f00;
-      --hover: #151200;
-      --card-bg: rgba(255, 212, 0, 0.015);
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      background: var(--bg);
-      color: var(--fg);
-      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
-      font-size: 14px;
-      line-height: 1.6;
-      display: flex;
-      flex-direction: column;
-      padding: 1rem;
-    }
-    @media (min-width: 480px) {
-      body { padding: 1.5rem; }
-    }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    .wrap { max-width: 1000px; margin: 0 auto; width: 100%; }
-
-    .header {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.75rem;
-      padding-bottom: 1rem;
-      margin-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-    @media (min-width: 520px) {
-      .header {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-      }
-    }
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 1.25rem;
-      flex-wrap: wrap;
-    }
-    .back-link {
-      color: var(--dim);
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      transition: color 0.15s;
-    }
-    .back-link:hover { color: var(--fg); text-decoration: none; }
-    .back-link svg { width: 14px; height: 14px; }
-    .title {
-      color: var(--accent);
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 1px;
-    }
-
-    .section {
-      border: 1px solid var(--border);
-      background: var(--card-bg);
-      border-radius: 6px;
-      padding: 1rem;
-      margin-bottom: 1.25rem;
-    }
-    @media (min-width: 640px) {
-      .section { padding: 1.25rem; margin-bottom: 1.5rem; }
-    }
-    .section h2 {
-      color: var(--accent);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 0.75rem;
-      font-weight: 600;
-      border-bottom: 1px dashed var(--border);
-      padding-bottom: 0.4rem;
-    }
-    .section p { color: var(--fg); margin: 0.5rem 0; }
-    .sub-label { color: var(--dim); font-size: 12px; margin-top: 0.5rem; display: block; }
-
-    /* Flex Grid Layout Engine */
-    .cli-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-    @media (min-width: 768px) {
-      .cli-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 1.25rem;
-        margin-top: 0.5rem;
-      }
-    }
-
-    .copy-wrap {
-      position: relative;
-      margin-top: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-    .code {
-      display: block;
-      font-family: inherit;
-      font-size: 13px;
-      color: var(--fg);
-      background: #040404;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 0.85rem 1rem;
-      padding-top: 2.75rem; /* Space for absolute positioning copy button on narrow widths */
-      white-space: pre;
-      overflow-x: auto;
-    }
-    @media (min-width: 480px) {
-      .code {
-        padding: 0.85rem 4.2rem 0.85rem 1rem;
-      }
-    }
-    .copy-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      display: inline-flex;
-      align-items: center;
-      background: var(--hover);
-      border: 1px solid var(--border);
-      color: var(--accent);
-      font-family: inherit;
-      font-size: 11px;
-      padding: 0.25rem 0.5rem;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      z-index: 5;
-    }
-    .copy-btn:hover {
-      border-color: var(--accent);
-      background: rgba(255, 212, 0, 0.05);
-    }
-    .copy-btn.copied {
-      border-color: var(--accent);
-      background: var(--accent);
-      color: var(--bg);
-    }
-
-    /* Tab Layout Architecture */
-    .how-to-tab-nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.6rem;
-      margin-top: 0.75rem;
-      margin-bottom: 0.75rem;
-    }
-    .how-to-tab-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 0.35rem 0.6rem;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--dim);
-      cursor: pointer;
-      transition: all 0.15s ease;
-      flex-grow: 1;
-      text-align: center;
-    }
-    @media (min-width: 520px) {
-      .how-to-tab-btn {
-        padding: 0.35rem 0.75rem;
-        font-size: 12px;
-        flex-grow: 0;
-      }
-    }
-    .how-to-tab-btn:hover { color: var(--fg); border-color: var(--dim); }
-    .how-to-tab-btn.active {
-      color: var(--bg);
-      background: var(--accent);
-      border-color: var(--accent);
-    }
-    
-    .how-to-tab-panel { 
-      display: none; 
+    .howto-section .tab-nav { margin-top: 0.75rem; }
+    .howto-section .tab-panel {
       background: rgba(0, 0, 0, 0.2);
       border: 1px solid var(--border);
       border-radius: 4px;
       padding: 0.85rem;
       margin-top: 0.5rem;
     }
-    @media (min-width: 640px) {
-      .how-to-tab-panel { padding: 1rem; }
+    @media (min-width: 640px) { .howto-section .tab-panel { padding: 1rem; } }
+    .howto-section .tab-btn {
+      border: 1px solid var(--border);
+      flex-grow: 1;
+      text-align: center;
+      font-size: 11px;
+      padding: 0.35rem 0.6rem;
     }
-    .how-to-tab-panel.active { display: block; }
-
-    /* Directory Fluid Auto Grid */
-    .directory-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 0.75rem;
-      margin-top: 1rem;
-    }
-    @media (min-width: 580px) {
-      .directory-grid {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      }
-    }
-    .dir-item {
-      border: 1px solid rgba(58, 47, 0, 0.6);
-      padding: 0.75rem;
-      border-radius: 4px;
-      background: rgba(255, 212, 0, 0.005);
-      transition: all 0.2s ease;
-    }
-    .dir-item:hover {
-      border-color: var(--accent);
-      background: var(--hover);
-    }
-    .dir-item a {
-      font-weight: 600;
-      display: inline-block;
-      margin-bottom: 0.15rem;
-    }
-    .dir-desc {
-      color: var(--dim);
-      font-size: 12px;
-      line-height: 1.4;
+    @media (min-width: 520px) {
+      .howto-section .tab-btn { flex-grow: 0; font-size: 12px; padding: 0.35rem 0.75rem; }
     }
   </style>
 </head>
-<body>
+<body class="page-howto">
 
-<div class="wrap">
-  
-  <!-- System Navigation Header -->
-  <div class="header">
+<div class="howto-wrap">
+
+  <div class="howto-header">
     <div class="header-left">
       <a href="/" class="back-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="15 18 9 12 15 6"/>
-        </svg> Return to Core
+        </svg> Home
       </a>
-      <span class="title">// SYS_INSTRUCTION_MANUAL</span>
+      <span class="page-title">How to Use</span>
     </div>
   </div>
 
-  <!-- Row 1: Shell Automation & Package Config -->
   <div class="cli-grid">
-    <div class="section">
-      <h2>Package Pipeline (npx)</h2>
-      <p>Inject MIDSKILLS protocols directly into your local execution runtime environments:</p>
+    <div class="howto-section card">
+      <h2>Install all skills</h2>
+      <p>Add the full MIDSKILLS package to your local agent environment:</p>
       <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
+        <button class="copy-btn" data-copy type="button">Copy</button>
         <code class="code">npx skills add Kali-Decoder/midnight-skills</code>
       </div>
-      <span class="sub-label">Enables local development clients to map resource abstractions via repository dependencies.</span>
+      <span class="sub-label">Works with Cursor, Claude Code, Copilot, and other skills-compatible tools.</span>
     </div>
 
-    <div class="section">
-      <h2>Automated Pull (curl)</h2>
-      <p>Download standard markdown definitions straight into an active workspace asset subfolder:</p>
+    <div class="howto-section card">
+      <h2>Download one skill</h2>
+      <p>Fetch a single skill file into your project:</p>
       <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
+        <button class="copy-btn" data-copy type="button">Copy</button>
         <code class="code">curl -fsSL https://midnight-skills.netlify.app/compact -o compact.SKILL.md</code>
       </div>
-      <span class="sub-label">Perfect for embedding specific contextual knowledge definitions within standalone CI pipelines.</span>
+      <span class="sub-label">Replace <code>compact</code> with any skill id (e.g. <code>1am-wallet</code>, <code>midnight-js</code>).</span>
     </div>
   </div>
 
-  <!-- Row 2: Deep LLM Context Matrix Integration Interface -->
-  <div class="section">
-    <h2>LLM Agent & Engine Injection Vectors</h2>
-    <p>Target precise behavioral definitions using contextual web endpoints inside prompt topologies:</p>
-    
-    <div class="how-to-tab-nav" role="tablist" aria-label="AI Platform Selection Links">
-      <button class="how-to-tab-btn active" data-tab="chatgpt">ChatGPT</button>
-      <button class="how-to-tab-btn" data-tab="claude">Claude Code</button>
-      <button class="how-to-tab-btn" data-tab="cursor">Cursor IDE</button>
-      <button class="how-to-tab-btn" data-tab="gemini">Gemini</button>
-      <button class="how-to-tab-btn" data-tab="copilot">GitHub Copilot</button>
+  <div class="howto-section card">
+    <h2>Use with AI tools</h2>
+    <p>Copy a prompt for your editor or chat tool — the agent will fetch skills from this site:</p>
+
+    <div class="tab-nav" role="tablist" aria-label="AI platform">
+      <button class="tab-btn active" data-tab="chatgpt" type="button">ChatGPT</button>
+      <button class="tab-btn" data-tab="claude" type="button">Claude Code</button>
+      <button class="tab-btn" data-tab="cursor" type="button">Cursor</button>
+      <button class="tab-btn" data-tab="gemini" type="button">Gemini</button>
+      <button class="tab-btn" data-tab="copilot" type="button">Copilot</button>
     </div>
 
-    <!-- Tab Panels Container Block -->
-    <div class="how-to-tab-panel active" data-tab="chatgpt">
-      <span class="sub-label" style="margin-bottom:0.5rem;">Requires active browsing or live internet crawling permissions:</span>
+    <div class="tab-panel active" data-tab="chatgpt">
+      <span class="sub-label" style="margin-bottom:0.5rem;">Requires browsing or web access enabled:</span>
       <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
+        <button class="copy-btn" data-copy type="button">Copy</button>
         <code class="code">Read https://midnight-skills.netlify.app and use the 1am-wallet and compact skills to explain how to integrate a wallet and deploy a contract on Midnight.</code>
       </div>
-      <p class="sub-label">Suggested progression prompts: "Breakdown dust-free handling loops" or "Expose zero-knowledge validation proofs."</p>
     </div>
 
-    <div class="how-to-tab-panel" data-tab="claude">
-      <span class="sub-label" style="margin-bottom:0.5rem;">Claude Code execution context allows active path resolving via URL fetching:</span>
+    <div class="tab-panel" data-tab="claude">
+      <span class="sub-label" style="margin-bottom:0.5rem;">Claude Code can fetch URLs directly:</span>
       <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
+        <button class="copy-btn" data-copy type="button">Copy</button>
         <code class="code">Read https://midnight-skills.netlify.app and apply the midnight-js and compact skills to my active folder layout.</code>
       </div>
-      <p class="sub-label">Claude maps out the parent hierarchy mapping schema automatically before running specialized logic injections.</p>
     </div>
 
-    <div class="how-to-tab-panel" data-tab="cursor">
-      <span class="sub-label" style="margin-bottom:0.5rem;">Inject inside active inline Composer panels or Sidebar panel chats:</span>
+    <div class="tab-panel" data-tab="cursor">
+      <span class="sub-label" style="margin-bottom:0.5rem;">Paste in Composer or the chat sidebar:</span>
       <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
+        <button class="copy-btn" data-copy type="button">Copy</button>
         <code class="code">Read https://midnight-skills.netlify.app and use the compact skill to write a bulletin board contract on Midnight.</code>
       </div>
-      <p class="sub-label">Ensure global index features or network documentation tracking modes are enabled inside workspace parameters.</p>
     </div>
 
-    <div class="how-to-tab-panel" data-tab="gemini">
-      <span class="sub-label" style="margin-bottom:0.5rem;">Optimal performance metrics verified inside Google AI Studio / Vertex Workbench layers:</span>
+    <div class="tab-panel" data-tab="gemini">
+      <span class="sub-label" style="margin-bottom:0.5rem;">Works in Google AI Studio and similar tools:</span>
       <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
+        <button class="copy-btn" data-copy type="button">Copy</button>
         <code class="code">Read https://midnight-skills.netlify.app and explain how Midnight combines public and private state with ZK proofs.</code>
       </div>
-      <p class="sub-label">The models interpret tracking arrays seamlessly to compile clean systemic answers.</p>
     </div>
 
-    <div class="how-to-tab-panel" data-tab="copilot">
-      <span class="sub-label" style="margin-bottom:0.5rem;">Utilize standard inline system extensions alongside enabled browser search integrations:</span>
+    <div class="tab-panel" data-tab="copilot">
+      <span class="sub-label" style="margin-bottom:0.5rem;">Use with Copilot Chat or inline assist:</span>
       <div class="copy-wrap">
-        <button class="copy-btn" data-copy>Copy</button>
+        <button class="copy-btn" data-copy type="button">Copy</button>
         <code class="code">Read https://midnight-skills.netlify.app/midnight-js and summarize the wallet setup and provider wiring in 5 bullet points.</code>
       </div>
-      <p class="sub-label">If automated crawling restrictions apply, access data endpoints directly and append text outputs to prompts manually.</p>
     </div>
   </div>
 
-  <!-- Row 3: Comprehensive Grid Directory Map -->
-  <div class="section">
-    <h2>Available Structural Skills Ecosystem</h2>
-    <p>Select a discrete node below to review individual definitions or configure isolated targeting references:</p>
-    
+  <div class="howto-section card">
+    <h2>All skills</h2>
+    <p>Browse the full catalog or open any skill in the reader:</p>
+
     <div class="directory-grid">
 <!-- SKILLS_REGISTRY:HOWTO_GRID -->
       <div class="dir-item">
@@ -417,57 +188,48 @@
     </div>
   </div>
 
-  <div class="section">
-    <h2>Contribute a Skill</h2>
-    <p>Want to add or improve a Midnight skill? Follow the registry workflow in <a href="CONTRIBUTING.md">CONTRIBUTING.md</a>:</p>
+  <div class="howto-section card">
+    <h2>Contribute a skill</h2>
+    <p>See <a href="CONTRIBUTING.md">CONTRIBUTING.md</a> for the full guide. Quick steps:</p>
     <div class="copy-wrap">
-      <button class="copy-btn" data-copy>Copy</button>
+      <button class="copy-btn" data-copy type="button">Copy</button>
       <code class="code"># 1. Create your-skill-name/SKILL.md
 # 2. Register in skills.json
 # 3. npm run sync:registry
 # 4. Open a PR on GitHub</code>
     </div>
-    <span class="sub-label">Skills must be Midnight-specific, agent-oriented, and synced via <code>skills.json</code> — never edit router tables by hand.</span>
+    <span class="sub-label">Always update <code>skills.json</code> and run the sync script — never edit router tables by hand.</span>
   </div>
 
 </div>
 
-<!-- System Navigation & Event Engines Scripting -->
 <script>
-  // UI Presentation State Swapping Logic (Tabs)
-  const tabButtons = document.querySelectorAll('.how-to-tab-btn');
-  const tabPanels = document.querySelectorAll('.how-to-tab-panel');
-
-  tabButtons.forEach(btn => {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const selectedTab = btn.dataset.tab;
-      tabButtons.forEach(b => b.classList.toggle('active', b === btn));
-      tabPanels.forEach(p => p.classList.toggle('active', p.dataset.tab === selectedTab));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tab === selectedTab));
     });
   });
 
-  // Safe Clipboard Copy Operation Pipeline
-  const copyButtons = document.querySelectorAll('[data-copy]');
-  copyButtons.forEach(btn => {
+  document.querySelectorAll('[data-copy]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const codeBlock = btn.parentElement.querySelector('.code');
       if (!codeBlock) return;
       const textToCapture = codeBlock.textContent.trim();
-      
+
       try {
         await navigator.clipboard.writeText(textToCapture);
-      } catch (err) {
-        // Fallback engine handling deprecated browser states gracefully
+      } catch {
         const fallbackTextArea = document.createElement('textarea');
         fallbackTextArea.value = textToCapture;
-        fallbackTextArea.style.position = 'fixed'; 
+        fallbackTextArea.style.position = 'fixed';
         document.body.appendChild(fallbackTextArea);
         fallbackTextArea.select();
         document.execCommand('copy');
         document.body.removeChild(fallbackTextArea);
       }
-      
-      // Update interactive feedback states temporarily
+
       btn.classList.add('copied');
       const standardLabel = btn.textContent;
       btn.textContent = 'Copied!';

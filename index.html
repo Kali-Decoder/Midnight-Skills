@@ -9,440 +9,9 @@
   <meta property="og:description" content="Skills for understanding and building privacy-preserving apps on Midnight.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <style>
-    :root {
-      --bg: #0b0b0b;
-      --fg: #fff6bf;
-      --dim: #cbbf76;
-      --accent: #ffd400;
-      --border: #3a2f00;
-      --hover: #151200;
-      --card-bg: rgba(255, 212, 0, 0.015);
-      --glow: rgba(255, 212, 0, 0.15);
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    html, body {
-      height: 100%;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--fg);
-      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    
-    /* Core layout split containing absolute framing centers */
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      padding: 1.5rem;
-    }
-    
-    .main-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      flex: 1;
-      max-width: 960px;
-      width: 100%;
-      margin: 0 auto;
-      text-align: center;
-      padding-top: 1rem;
-    }
-
-    .discovery {
-      width: 100%;
-      margin-top: 1rem;
-      text-align: left;
-    }
-
-    .path-tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
-    .path-tab {
-      background: transparent;
-      border: 1px solid var(--border);
-      padding: 0.35rem 0.85rem;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--dim);
-      cursor: pointer;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-    .path-tab:hover { color: var(--fg); border-color: var(--accent); }
-    .path-tab.active {
-      color: var(--bg);
-      background: var(--accent);
-      border-color: var(--accent);
-    }
-
-    .path-panel { display: none; }
-    .path-panel.active { display: block; }
-
-    .path-steps {
-      list-style: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--card-bg);
-      overflow: hidden;
-    }
-    .path-step {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border);
-      transition: background 0.15s ease;
-    }
-    .path-step:last-child { border-bottom: none; }
-    .path-step:hover { background: var(--hover); }
-    .path-step-num {
-      flex-shrink: 0;
-      width: 1.5rem;
-      height: 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--bg);
-      background: var(--accent);
-      border-radius: 3px;
-    }
-    .path-step-body a {
-      font-weight: 600;
-      font-size: 13px;
-    }
-    .path-step-body p {
-      color: var(--dim);
-      font-size: 12px;
-      margin-top: 0.15rem;
-    }
-
-    .skill-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.75rem;
-      width: 100%;
-    }
-    .skill-card {
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.85rem 1rem;
-      background: var(--card-bg);
-      transition: all 0.2s ease;
-      text-decoration: none;
-      color: inherit;
-      display: block;
-    }
-    .skill-card:hover {
-      border-color: var(--accent);
-      background: var(--hover);
-      text-decoration: none;
-      color: var(--fg);
-      box-shadow: 0 0 12px var(--glow);
-    }
-    .skill-card-name {
-      font-weight: 600;
-      font-size: 13px;
-      color: var(--accent);
-      margin-bottom: 0.25rem;
-    }
-    .skill-card-desc {
-      color: var(--dim);
-      font-size: 11px;
-      line-height: 1.4;
-    }
-    .skill-card-badge {
-      display: inline-block;
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--bg);
-      background: var(--accent);
-      padding: 0.1rem 0.35rem;
-      border-radius: 2px;
-      margin-top: 0.4rem;
-    }
-    
-    a { color: var(--accent); text-decoration: none; transition: color 0.15s ease; }
-    a:hover { text-decoration: underline; color: #fff; }
-
-    /* ASCII Vector Wrapper Frame */
-    .ascii {
-      color: var(--accent);
-      font-size: 11px;
-      line-height: 1.2;
-      white-space: pre;
-      margin-bottom: 1.5rem;
-      letter-spacing: 0.3px;
-      user-select: none;
-      opacity: 0;
-      display: inline-block;
-      text-align: left;
-    }
-    .ascii .ch {
-      display: inline;
-    }
-
-    /* Core Typographic Information Panels */
-    .tagline-container {
-      min-height: 50px;
-      margin-bottom: 2rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-    }
-    .tagline {
-      color: var(--fg);
-      font-size: 14px;
-      max-width: 600px;
-      text-align: center;
-    }
-    .cursor {
-      display: inline-block;
-      width: 8px;
-      height: 1.2em;
-      background: var(--accent);
-      vertical-align: text-bottom;
-      animation: blink 1s step-end infinite;
-      margin-left: 4px;
-      box-shadow: 0 0 8px var(--accent);
-    }
-    @keyframes blink { 50% { opacity: 0; } }
-
-    h2 {
-      color: var(--accent);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      margin: 1.5rem 0 1rem 0;
-      padding-bottom: 0.4rem;
-      border-bottom: 1px solid var(--border);
-      font-weight: 600;
-      width: 100%;
-      text-align: left;
-    }
-
-    /* Tabs Layout Engine */
-    .how-to-tabs { 
-      margin-top: 0.5rem; 
-      width: 100%; 
-      margin-bottom: 2rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--card-bg);
-      padding: 1rem;
-    }
-    .how-to-tab-nav {
-      display: flex;
-      justify-content: flex-start;
-      gap: 0.5rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .how-to-tab-btn {
-      background: transparent;
-      border: 1px solid transparent;
-      padding: 0.4rem 1rem;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--dim);
-      cursor: pointer;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-    .how-to-tab-btn:hover { color: var(--fg); background: var(--hover); }
-    .how-to-tab-btn.active {
-      color: var(--bg);
-      background: var(--accent);
-      border-color: var(--accent);
-      box-shadow: 0 0 10px var(--glow);
-    }
-    .how-to-tab-panel {
-      display: none;
-    }
-    .how-to-tab-panel.active { display: block; }
-    
-    .how-to-tab-panel code {
-      display: block;
-      font-family: inherit;
-      font-size: 14px;
-      color: var(--fg);
-      background: #040404;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 1rem;
-      text-align: left;
-      white-space: pre-wrap;
-      word-break: break-all;
-      cursor: pointer;
-      position: relative;
-      transition: all 0.15s ease;
-    }
-    .how-to-tab-panel code:hover {
-      border-color: var(--accent);
-      background: var(--hover);
-    }
-    .how-to-tab-panel code::after {
-      content: 'CLICK TO COPY';
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 10px;
-      color: var(--dim);
-      letter-spacing: 1px;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-    .how-to-tab-panel code:hover::after { opacity: 1; }
-    .how-to-tab-panel code.copied {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(255, 212, 0, 0.02);
-    }
-
-    /* Native Providers Alignment Layout Matrix */
-    .providers {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 2rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.75rem 1.25rem;
-      width: 100%;
-      background: rgba(255, 212, 0, 0.005);
-    }
-    .providers-label {
-      color: var(--dim);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      width: 100%;
-      margin-bottom: 0.25rem;
-      text-align: center;
-    }
-    @media (min-width: 600px) {
-      .providers-label { width: auto; margin-bottom: 0; padding-right: 0.5rem; text-align: left; }
-    }
-    .provider-container {
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    .provider-logo {
-      width: 22px;
-      height: 22px;
-      opacity: 0.5;
-      filter: grayscale(1);
-      transition: all 0.2s cubic-bezier(0.1, 0.8, 0.2, 1);
-    }
-    .provider-logo:hover {
-      opacity: 1;
-      filter: grayscale(0);
-      transform: scale(1.15);
-    }
-
-    /* Pinned Bottom Footer Matrix Layout */
-    .footer {
-      color: var(--dim);
-      font-size: 11px;
-      margin-top: auto;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-      width: 100%;
-      max-width: 960px;
-      margin-left: auto;
-      margin-right: auto;
-      flex-shrink: 0;
-      text-align: center;
-    }
-
-    /* Defensive Disclaimer Interface Modal Overlay */
-    .disclaimer-backdrop {
-      display: flex;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(4px);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-    }
-    .disclaimer-backdrop.hidden { display: none; }
-    .disclaimer-box {
-      background: #060606;
-      border: 1px solid var(--accent);
-      box-shadow: 0 0 30px var(--glow);
-      border-radius: 6px;
-      max-width: 500px;
-      width: 100%;
-      padding: 2rem;
-    }
-    .disclaimer-title {
-      color: var(--accent);
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 1rem;
-    }
-    .disclaimer-text {
-      color: #fff6bf;
-      font-size: 13px;
-      line-height: 1.6;
-      margin-bottom: 1.5rem;
-      text-align: left;
-    }
-    .disclaimer-btn {
-      display: block;
-      width: 100%;
-      background: var(--hover);
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 600;
-      padding: 0.6rem 1rem;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .disclaimer-btn:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 15px var(--glow); }
-
-    /* Core Scrollable Viewport Fallbacks */
-    @media (max-height: 740px) {
-      html, body { overflow: auto; height: auto; }
-      .footer { margin-top: 2rem; }
-    }
-    @media (max-width: 600px) {
-      html, body { overflow: auto; height: auto; }
-      body { padding: 1rem; }
-      .ascii { font-size: 6.5px; letter-spacing: 0.1px; margin-bottom: 1rem; }
-      .how-to-tab-panel code::after { display: none; }
-      .footer { margin-top: 2rem; }
-    }
-  </style>
+  <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body class="page-home">
 
 <!-- Main Structural Centered Alignment Content Element Wrapper -->
 <div class="main-container">
@@ -463,23 +32,22 @@
     <p class="tagline" id="typist-target"><span class="cursor"></span></p>
   </div>
 
-  <h2>Active Context Injection Endpoints</h2>
+  <h2 class="section-heading">Get Started</h2>
   <div class="how-to-tabs">
-    <div class="how-to-tab-nav">
-      <button class="how-to-tab-btn active" data-tab="skills">CLI Configuration</button>
-      <button class="how-to-tab-btn" data-tab="agent">LLM Agent Directive</button>
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="skills" type="button">Install skills</button>
+      <button class="tab-btn" data-tab="agent" type="button">Agent prompt</button>
     </div>
-    <div class="how-to-tab-panel active" data-tab="skills">
-      <code id="snippet-skills">npx skills add Kali-Decoder/Midnight-skills</code>
+    <div class="tab-panel active" data-tab="skills">
+      <code class="snippet-code" id="snippet-skills">npx skills add Kali-Decoder/Midnight-skills</code>
     </div>
-    <div class="how-to-tab-panel" data-tab="agent">
-      <code id="snippet-agent">Read this site and summarize what Midnight is and why it exists (use the why-midnight skill).</code>
+    <div class="tab-panel" data-tab="agent">
+      <code class="snippet-code" id="snippet-agent">Read this site and summarize what Midnight is and why it exists (use the why-midnight skill).</code>
     </div>
   </div>
 
-  <!-- Ecosystem Integrations Alignment Layout -->
   <div class="providers">
-    <span class="providers-label">Engine Compatibility:</span>
+    <span class="providers-label">Works with</span>
     <div class="provider-container">
       <img class="provider-logo" src="logos/cursor.png" alt="Cursor" title="Cursor IDE Integration">
       <img class="provider-logo" src="logos/claude.png" alt="Claude Code" title="Claude Code Shell">
@@ -492,11 +60,11 @@
   </div>
 
   <div class="discovery" id="discovery">
-    <h2>Learning Paths</h2>
+    <h2 class="section-heading">Learning Paths</h2>
     <div class="path-tabs" id="path-tabs" role="tablist"></div>
     <div id="path-panels"></div>
 
-    <h2 style="margin-top: 2rem;">Featured Skills</h2>
+    <h2 class="section-heading" style="margin-top: 2rem;">Featured Skills</h2>
     <div class="skill-grid" id="skill-grid">
       <p style="color: var(--dim); font-size: 12px;">Loading skills…</p>
     </div>
@@ -504,19 +72,17 @@
 
 </div>
 
-<!-- Structural System Pinned Bottom Footnotes Container -->
-<div class="footer">
-  MIT License · <a href="skill.html?name=why-midnight" target="_blank" rel="noopener">Browse Skill Nodes</a> · <a href="howto.html" target="_blank" rel="noopener">Usage Manual</a> · <a href="CONTRIBUTING.md" target="_blank" rel="noopener">Contribute</a> · <a href="analytics.html" target="_blank" rel="noopener">System Metrics Log</a>
+<div class="site-footer">
+  MIT License · <a href="skill.html?name=why-midnight">Browse skills</a> · <a href="howto.html">How to use</a> · <a href="CONTRIBUTING.md">Contribute</a> · <a href="analytics.html">Analytics</a>
   <br>
-  <span style="opacity: 0.65;">Operational tracing captures public GitHub identifiers dynamically.</span>
+  <span style="opacity: 0.65;">Anonymous usage analytics may record public GitHub usernames.</span>
 </div>
 
-<!-- Compliant Safety Warning Layer Overlay -->
 <div id="disclaimer" class="disclaimer-backdrop" aria-hidden="false">
   <div class="disclaimer-box" role="alertdialog" aria-modal="true">
-    <div class="disclaimer-title">// SYSTEM_COMPLIANCE_WARNING</div>
-    <p class="disclaimer-text">Do not inject or execute code structural variations generated by context-aware AI coding models inside non-isolated production architecture layers without performing dedicated cryptographic evaluation and security architecture audits.</p>
-    <button type="button" class="disclaimer-btn" id="disclaimer-accept">Acknowledge Constraint Matrix</button>
+    <div class="disclaimer-title">Before you use AI-generated code</div>
+    <p class="disclaimer-text">Skills and examples on this site are for development guidance. Review and test any generated code before using it in production, especially for cryptography and smart contracts.</p>
+    <button type="button" class="disclaimer-btn" id="disclaimer-accept">Got it</button>
   </div>
 </div>
 
@@ -644,22 +210,21 @@ disclaimerAccept.addEventListener('click', () => {
 });
 
 // Interactive Tab State Swapper Handling
-document.querySelectorAll('.how-to-tab-btn').forEach(btn => {
+document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const selectedTab = btn.dataset.tab;
-    document.querySelectorAll('.how-to-tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.how-to-tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     
     btn.classList.add('active');
-    const targetedPanel = document.querySelector('.how-to-tab-panel[data-tab="' + selectedTab + '"]');
+    const targetedPanel = document.querySelector('.tab-panel[data-tab="' + selectedTab + '"]');
     targetedPanel.classList.add('active');
     
     gsap.fromTo(targetedPanel, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.2 });
   });
 });
 
-// Dynamic Code Fragment Clipboard Hook Controllers
-document.querySelectorAll('.how-to-tab-panel code').forEach(code => {
+document.querySelectorAll('.snippet-code').forEach(code => {
   const absoluteSnippetString = code.textContent;
   let resetTimer;
   
@@ -678,7 +243,7 @@ document.querySelectorAll('.how-to-tab-panel code').forEach(code => {
     }
     
     clearTimeout(resetTimer);
-    code.textContent = '// DATA BUFFER TRANSLATED SUCCESSFULLY -> COPIED TO CLIPBOARD';
+    code.textContent = 'Copied to clipboard';
     code.classList.add('copied');
     
     resetTimer = setTimeout(() => { 
