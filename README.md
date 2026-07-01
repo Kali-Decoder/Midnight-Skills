@@ -28,16 +28,20 @@ Knowledge skills for AI agents building on Midnight Network. Each skill is a sta
 
 ## Architecture
 
-- **Frontend:** Static HTML landing page (`index.html`)
-- **API:** Vercel serverless functions (`api/`)
-- **Database:** MongoDB (anonymous download tracking)
-- **Skills:** Markdown files served via Vercel routes through a tracking function
+<!-- SKILLS_REGISTRY:ARCHITECTURE -->
+- **Site:** [MIDSKILLS](https://midnight-skills.netlify.app) — static HTML, CSS, and JavaScript
+- **Hosting:** [Netlify](https://www.netlify.com) (static deploy + serverless functions in `netlify/functions/`)
+- **API:** `/api/*` → Netlify functions (skill fetch, analytics, stats); `api/` also supports Vercel-style deployment
+- **Database:** MongoDB (optional download tracking); Supabase (optional analytics)
+- **Skills:** Markdown files served statically and via `/api/skill`
+<!-- /SKILLS_REGISTRY:ARCHITECTURE -->
 
 ## Prerequisites
 
 - Node.js >= 22
-- A MongoDB database (Atlas or self-hosted)
-- A [Vercel](https://vercel.com) account for deployment
+- Optional: MongoDB (Atlas or self-hosted) for download tracking
+- Optional: Supabase for analytics (`/api/track`, `/api/analytics`)
+- A [Netlify](https://www.netlify.com) account for deployment (recommended)
 
 ## Setup
 
@@ -54,9 +58,9 @@ cp .env.example .env
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `MONGODB_URI` | Yes | MongoDB connection string |
+| `MONGODB_URI` | No | MongoDB connection string (optional download tracking) |
 | `MONGODB_DB` | No | Database name (default: `midnight-skills`) |
-| `STATS_SECRET` | Yes | Secret key to access `/api/stats` |
+| `STATS_SECRET` | No | Secret key to access `/api/stats` |
 | `SUPABASE_URL` | No | Supabase project URL (enables `/api/track` + `/api/analytics`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | No | Supabase service role key (server-side only) |
 | `ANALYTICS_SECRET` | No | (Deprecated) `/api/analytics` is public now |
@@ -69,19 +73,23 @@ Create a MongoDB database (Atlas or self-hosted). The app will create the
 
 ## Deployment
 
-The site deploys to Vercel. Push to `main` to trigger a deploy.
+<!-- SKILLS_REGISTRY:DEPLOYMENT -->
+The site deploys to **Netlify** at [midnight-skills.netlify.app](https://midnight-skills.netlify.app). Push to `main` to trigger a deploy.
 
-Ensure `MONGODB_URI` and `STATS_SECRET` are set in your Vercel project environment variables.
+Set environment variables in your Netlify project (Site settings → Environment variables). MongoDB and Supabase are optional — the static site and skill browser work without them.
+
+For Vercel-style hosting, the `api/` folder can be used instead; set the same environment variables there.
+<!-- /SKILLS_REGISTRY:DEPLOYMENT -->
 
 ### Optional: Supabase Analytics
 
 - Apply `supabase/analytics_schema.sql` in your Supabase SQL editor.
-- Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Vercel.
+- Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Netlify (or Vercel).
 - Open `analytics.html` to view usage.
 
 ## Skill registry
 
-`skills.json` is the **single source of truth** for which skills exist, their metadata, learning paths, and featured flags. The site (`skill.html`, `index.html`) and npm package list are generated from it.
+`skills.json` is the **single source of truth** for site metadata, skills, learning paths, and featured flags. The site (`skill.html`, `index.html`), `meta.js`, and npm package list are synced from it via `npm run sync:registry`.
 
 **Add or change a skill:**
 

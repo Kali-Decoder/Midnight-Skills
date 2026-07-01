@@ -4,11 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Browse Skills — MIDSKILLS</title>
-<meta name="description" content="Browse Midnight Network developer skills for AI agents.">
+<meta name="description" content="Browse and read Midnight Network developer skills for AI agents — Compact, wallets, SDK, templates, and privacy patterns.">
+<meta name="keywords" content="Midnight Network, Compact, AI agent skills, developer documentation, zk-SNARKs, dApp">
+<meta name="author" content="Tusharpamnani, Kali-Decoder">
+<meta name="theme-color" content="#070b10">
+<meta name="robots" content="index, follow">
+<link rel="icon" href="/logos/pi.svg" type="image/svg+xml">
+<link rel="canonical" href="https://midnight-skills.netlify.app/skill.html">
+<meta property="og:site_name" content="MIDSKILLS">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Browse Skills — MIDSKILLS">
+<meta property="og:description" content="Browse and read Midnight Network developer skills for AI agents.">
+<meta property="og:url" content="https://midnight-skills.netlify.app/skill.html">
+<meta property="og:image" content="https://midnight-skills.netlify.app/logos/pi.svg">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Browse Skills — MIDSKILLS">
+<meta name="twitter:description" content="Browse and read Midnight Network developer skills for AI agents.">
+<meta name="twitter:image" content="https://midnight-skills.netlify.app/logos/pi.svg">
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/skill.css">
+<script src="/meta.js" defer></script>
 </head>
-<body class="page-skill" data-nav-active="skills" data-site-footer="on">
+<body class="page-skill" data-nav-active="skills" data-site-footer="on" data-site-meta="auto" data-page-title="Browse Skills" data-page-description="Browse and read Midnight Network developer skills for AI agents — Compact, wallets, SDK, templates, and privacy patterns." data-page-path="/skill.html">
 
 <div class="header">
   <span class="page-title" id="skill-title">Browse Skills</span>
@@ -186,6 +203,15 @@ function loadSkill(id) {
   document.title = skill.name + ' — MIDSKILLS';
   titleEl.textContent = skill.name;
   copyLabel.textContent = 'Copy skill URL';
+
+  if (window.SiteMeta) {
+    SiteMeta.apply({
+      title: skill.name,
+      description: skill.desc,
+      path: '/skill.html?name=' + encodeURIComponent(id),
+      type: 'article',
+    });
+  }
 
   document.querySelectorAll('.sidebar-item').forEach((el) => {
     el.classList.toggle('active', el.dataset.skill === id);

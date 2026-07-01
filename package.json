@@ -1,7 +1,7 @@
 {
   "name": "midnight-skills",
   "version": "1.0.0",
-  "description": "Skills for building confidential apps on Midnight Network. Guides LLMs through contracts, tests, and private token workflows.",
+  "description": "Open knowledge skills for AI agents building privacy-preserving apps on Midnight Network — Compact contracts, wallet integration, SDK guides, and runnable templates.",
   "author": {
     "name": "Tusharpamnani",
     "url": "https://github.com/tusharpamnani"
@@ -25,7 +25,10 @@
     "web3",
     "blockchain",
     "confidential",
-    "privacy"
+    "privacy",
+    "dapp",
+    "zero-knowledge",
+    "ai-agents"
   ],
   "skills": [
     "./why-midnight",

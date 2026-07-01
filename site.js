@@ -42,8 +42,9 @@
       parts.push('<a href="' + item.href + '">' + item.label + '</a>');
     });
     footer.innerHTML =
-      parts.join(' · ') +
-      '<br><span class="text-muted" style="opacity:0.8;">Anonymous usage analytics may record public GitHub usernames.</span>';
+    parts.join(' · ') +
+    ' · <a href="https://github.com/Kali-Decoder/Midnight-skills" rel="noopener">GitHub</a>' +
+    '<br><span class="text-muted" style="opacity:0.8;">Anonymous usage analytics may record public GitHub usernames.</span>';
     return footer;
   }
 

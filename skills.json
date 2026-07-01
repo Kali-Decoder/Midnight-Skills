@@ -1,5 +1,30 @@
 {
   "version": 2,
+  "site": {
+    "name": "MIDSKILLS",
+    "tagline": "Knowledge Skills for AI Agents Building on Midnight Network",
+    "description": "Open knowledge skills for AI agents building privacy-preserving apps on Midnight Network — Compact contracts, wallet integration, SDK guides, and runnable templates.",
+    "url": "https://midnight-skills.netlify.app",
+    "repository": "https://github.com/Kali-Decoder/Midnight-skills",
+    "license": "MIT",
+    "themeColor": "#070b10",
+    "ogImage": "/logos/pi.svg",
+    "keywords": [
+      "midnight",
+      "compact",
+      "web3",
+      "blockchain",
+      "confidential",
+      "privacy",
+      "dapp",
+      "zero-knowledge",
+      "ai-agents"
+    ],
+    "authors": [
+      { "name": "Tusharpamnani", "url": "https://github.com/tusharpamnani" },
+      { "name": "Kali-Decoder", "url": "https://github.com/Kali-Decoder" }
+    ]
+  },
   "learningPaths": [
     {
       "id": "first-dapp",

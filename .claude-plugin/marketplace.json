@@ -5,14 +5,14 @@
   },
   "metadata": {
     "version": "1.0.0",
-    "description": "Skills for building confidential apps on Midnight Network. Guides LLMs through contracts, tests, and private token workflows."
+    "description": "Open knowledge skills for AI agents building privacy-preserving apps on Midnight Network — Compact contracts, wallet integration, SDK guides, and runnable templates."
   },
   "plugins": [
     {
       "name": "midnight-skills",
       "source": "./",
       "version": "1.0.0",
-      "description": "Skills for building confidential apps on Midnight Network. Guides LLMs through contracts, tests, and private token workflows.",
+      "description": "Open knowledge skills for AI agents building privacy-preserving apps on Midnight Network — Compact contracts, wallet integration, SDK guides, and runnable templates.",
       "author": {
         "name": "Tusharpamnani, Kali-Decoder"
       }
