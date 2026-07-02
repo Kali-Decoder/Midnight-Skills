@@ -5,7 +5,10 @@ import Link from "next/link";
 import { Container } from "@/components/layout/container";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { CopyCommand } from "@/components/shared/copy-command";
+import { SkillsCliInstall } from "@/components/shared/skills-cli-install";
+import { HeroSkillsAnimation } from "@/components/landing/hero-skills-animation";
 import { SKILLS_CLI_INSTALL_COMMAND } from "@/lib/constants";
+import type { HeroSkillItem } from "@/lib/hero-skill-types";
 import { cn } from "@/lib/utils";
 import { Terminal, MessageSquare, Rocket, ChevronRight, Play, Pause } from "lucide-react";
 
@@ -137,7 +140,7 @@ function TypingLine({
   );
 }
 
-export function HowToShowcase({ className }: { className?: string }) {
+export function HowToShowcase({ className, skills }: { className?: string; skills: HeroSkillItem[] }) {
   const reducedMotion = usePrefersReducedMotion();
   const [activeStep, setActiveStep] = useState(0);
   const [autoPlay, setAutoPlay] = useState(false);
@@ -158,23 +161,10 @@ export function HowToShowcase({ className }: { className?: string }) {
   return (
     <section className={cn("border-b border-[var(--brand-border)] bg-[var(--background)] py-10 sm:py-16", className)}>
       <Container>
-        <ScrollReveal>
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
-              How it works
-            </p>
-            <h2 className="mt-2 text-xl font-bold text-[var(--foreground)] sm:text-3xl">
-              Three steps to build on Midnight
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-[var(--muted-foreground)] sm:text-base">
-              Install skills once, prompt your agent, and ship privacy-preserving dApps with guided workflows.
-              Click a step to explore — or turn on auto-play.
-            </p>
-          </div>
-        </ScrollReveal>
+   
 
         <ScrollReveal delay={80}>
-          <div className="mx-auto mt-8 grid max-w-5xl gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-8 lg:items-start">
+          <div className="mx-auto mt-8 grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start">
             {/* Step list */}
             <div className="flex flex-col gap-2 sm:gap-3">
               {STEPS.map((s, i) => {

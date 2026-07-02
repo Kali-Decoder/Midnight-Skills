@@ -3,6 +3,7 @@ import { Container } from "@/components/layout/container";
 import { HowToShowcase } from "@/components/landing/how-to-showcase";
 import { CopyCommand } from "@/components/shared/copy-command";
 import { SupportedToolsGrid } from "@/components/shared/supported-tools-showcase";
+import { getFeaturedHeroSkills } from "@/lib/skills";
 import { SKILLS_CLI_INSTALL_COMMAND } from "@/lib/constants";
 
 const STEPS = [
@@ -29,9 +30,11 @@ const STEPS = [
 ];
 
 export default function GetStartedPage() {
+  const heroSkills = getFeaturedHeroSkills();
+
   return (
     <>
-      <HowToShowcase className="border-b-0" />
+      <HowToShowcase className="border-b-0" skills={heroSkills} />
 
       <Container className="safe-bottom py-8 sm:py-12">
         <div className="mx-auto max-w-2xl">

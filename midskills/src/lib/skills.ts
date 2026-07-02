@@ -6,6 +6,7 @@ import { parseFrontmatter } from "./parse-frontmatter";
 import { inferDifficulty, loadRegistry, type RegistrySkill } from "./registry";
 import { REPO_ROOT } from "./paths";
 import { resolveSkillTags } from "./tags";
+import type { HeroSkillItem } from "./hero-skill-types";
 import type { SkillProfile } from "./skill-types";
 
 export type { SkillProfile } from "./skill-types";
@@ -71,4 +72,17 @@ export function getSkillProfile(slug: string): SkillProfile | null {
   const entry = registry.skills.find((s) => s.id === slug);
   if (!entry || entry.enabled === false) return null;
   return readSkillProfile(entry);
+}
+
+export function getFeaturedHeroSkills(limit = 6): HeroSkillItem[] {
+  return getSkillProfiles()
+    .filter((p) => p.meta.featured)
+    .slice(0, limit)
+    .map((p) => ({
+      slug: p.slug,
+      name: p.meta.name,
+      category: p.meta.category,
+      difficulty: p.meta.difficulty,
+      tag: p.meta.skills[0] ?? "Midnight",
+    }));
 }

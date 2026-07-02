@@ -315,15 +315,69 @@ body {
   50% { opacity: 0; }
 }
 
+/* Hero skills carousel */
+.hero-skills-stack {
+  perspective: 1200px;
+}
+
+.hero-skill-card {
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.06);
+}
+
+.hero-skill-behind-1 {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.hero-skill-behind-2 {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.hero-skill-enter {
+  animation: hero-skill-in 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero-skills-live {
+  animation: hero-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes hero-skill-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px) !important;
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0) !important;
+  }
+}
+
+@keyframes hero-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+
+.landing-page section {
+  scroll-margin-top: calc(var(--header-height) + 1rem);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .howto-terminal,
   .howto-progress-bar,
-  .howto-cursor {
+  .howto-cursor,
+  .hero-skill-enter,
+  .hero-skills-live {
     animation: none !important;
   }
 
   .howto-step-active {
     transform: none;
+  }
+
+  .hero-skill-behind-1,
+  .hero-skill-behind-2 {
+    opacity: 0.6;
   }
 }
 
