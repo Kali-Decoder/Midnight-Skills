@@ -27,6 +27,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder. | `hello-world/` |
 | Build a privacy-preserving payment vault with 1AM wallet | `example-payment-dapp/` |
 | Build a time-lock vault dApp on Midnight | `example-locker-dapp/` |
+| Build a privacy-preserving leaderboard DApp on Midnight | `example-leaderboard-dapp/` |
 | Build NFTs (shielded + unshielded) with OpenZeppelin | `nft/` |
 | Token transfers, balance flows, multi-party txs | `token-transfers/` |
 <!-- /SKILLS_REGISTRY:TASK_TABLE -->
@@ -49,6 +50,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 
 ### [Example Hello World](/example-hello-world/SKILL.md)
 - Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.
+
+### [Example Leaderboard Dapp](/example-leaderboard-dapp/SKILL.md)
+- Arcade leaderboard with privacy modes, `persistentHash` owner commitments, and `verifyOwnership` ZK proofs.
+- Next.js + 1AM wallet template with indexer reads and low-level deploy/call.
 
 ### [Example Locker Dapp](/example-locker-dapp/SKILL.md)
 - Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth.

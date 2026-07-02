@@ -44,6 +44,7 @@
     "./example-hello-world",
     "./example-payment-dapp",
     "./example-locker-dapp",
+    "./example-leaderboard-dapp",
     "./nft",
     "./token-transfers"
   ],

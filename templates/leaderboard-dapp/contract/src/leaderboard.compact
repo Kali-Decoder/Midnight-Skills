@@ -1,0 +1,52 @@
+pragma language_version >= 0.23;
+
+import CompactStandardLibrary;
+
+struct ScoreEntry {
+  score: Uint<64>,
+  displayName: Bytes<32>,
+  ownerHash: Bytes<32>
+}
+
+export ledger scores: Map<Uint<64>, ScoreEntry>;
+export ledger nextId: Counter;
+
+witness localSecretKey(): Bytes<32>;
+witness getCustomName(): Bytes<32>;
+
+export circuit ownerCommitment(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "leaderboard:owner:"), sk]);
+}
+
+export circuit submitScore(
+  score: Uint<64>,
+  useCustomName: Boolean
+): [] {
+  const sk = localSecretKey();
+  const ownerHash = ownerCommitment(sk);
+
+  nextId.increment(1);
+  const entryId = disclose(nextId.read() as Uint<64>);
+
+  if (disclose(useCustomName)) {
+    const customName = getCustomName();
+    scores.insert(entryId, ScoreEntry {
+      score: disclose(score),
+      displayName: disclose(customName),
+      ownerHash: disclose(ownerHash)
+    });
+  } else {
+    scores.insert(entryId, ScoreEntry {
+      score: disclose(score),
+      displayName: disclose(persistentHash<Bytes<32>>(sk)),
+      ownerHash: disclose(ownerHash)
+    });
+  }
+}
+
+export circuit verifyOwnership(targetEntryId: Uint<64>): [] {
+  assert(scores.member(disclose(targetEntryId)), "entry not found");
+  const entry = scores.lookup(disclose(targetEntryId));
+  const callerHash = ownerCommitment(localSecretKey());
+  assert(callerHash == entry.ownerHash, "not the owner");
+}

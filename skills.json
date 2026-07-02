@@ -82,6 +82,7 @@
       "skills": [
         { "skillId": "example-payment-dapp", "summary": "Privacy-preserving payment vault" },
         { "skillId": "example-locker-dapp", "summary": "Time-lock vault with runnable template" },
+        { "skillId": "example-leaderboard-dapp", "summary": "Privacy-preserving arcade leaderboard with ZK ownership proofs" },
         { "skillId": "multinetwork", "summary": "One codebase, all networks" },
         { "skillId": "nft", "summary": "Shielded + unshielded NFTs" },
         { "skillId": "midnight-security", "summary": "Privacy audit checklist and leak patterns" }
@@ -293,6 +294,21 @@
         "Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth."
       ],
       "templatePath": "templates/locker-dapp"
+    },
+    {
+      "id": "example-leaderboard-dapp",
+      "name": "Example Leaderboard Dapp",
+      "path": "example-leaderboard-dapp/SKILL.md",
+      "description": "Privacy-preserving arcade leaderboard: submit scores with anonymous/public/custom names and prove ownership via ZK.",
+      "enabled": true,
+      "featured": true,
+      "category": "template",
+      "taskHint": "Build a privacy-preserving leaderboard DApp on Midnight",
+      "routerBullets": [
+        "Arcade leaderboard with privacy modes, `persistentHash` owner commitments, and `verifyOwnership` ZK proofs.",
+        "Next.js + 1AM wallet template with indexer reads and low-level deploy/call."
+      ],
+      "templatePath": "templates/leaderboard-dapp"
     },
     {
       "id": "nft",

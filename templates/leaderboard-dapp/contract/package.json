@@ -1,0 +1,12 @@
+{
+  "name": "@leaderboard/contract",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compact": "compact compile src/leaderboard.compact src/managed/leaderboard"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.16.0"
+  }
+}
