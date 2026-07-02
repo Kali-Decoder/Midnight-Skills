@@ -23,6 +23,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
 | Query blockchain data, watch contract state, subscribe to events | `midnight-indexer/` |
 | Privacy audit checklist, prevent data leaks, defensive Compact patterns | `midnight-security/` |
+| Build a voting/poll dApp on Midnight targeting Android | `android-example-voting/` |
 | Complete DApp reference: wallet, deploy, interact (use as template) | `example-counter/` |
 | Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder. | `hello-world/` |
 | Build a privacy-preserving payment vault with 1AM wallet | `example-payment-dapp/` |
@@ -31,14 +32,16 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Build NFTs (shielded + unshielded) with OpenZeppelin | `nft/` |
 | Token transfers, balance flows, multi-party txs | `token-transfers/` |
 <!-- /SKILLS_REGISTRY:TASK_TABLE -->
-
-
 ## Skills
 
 <!-- SKILLS_REGISTRY:SECTIONS -->
 ### [1AM Wallet](/1am-wallet/SKILL.md)
 - Detect, connect, and wire 1AM browser extension into frontend.
 - Provider setup, contract deployment, and dust-free transaction flow.
+
+### [Android Example Voting](/android-example-voting/SKILL.md)
+- Build a voting/poll dApp on Midnight using the Kuira Android SDK.
+- Compact smart contract, passkey-derived identity, embedded wallet, Compose UI, on-device ZK proving.
 
 ### [Compact](/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.

@@ -242,6 +242,20 @@
       ]
     },
     {
+      "id": "android-example-voting",
+      "name": "Android Example Voting",
+      "path": "android-example-voting/SKILL.md",
+      "description": "Build a voting/poll dApp on Midnight Network using the Kuira Android SDK — Compact smart contract with create/cast/close circuits, passkey-derived identity, embedded wallet, Compose UI, reactive ledger reads via observeLedger(), and on-device ZK proving.",
+      "enabled": true,
+      "featured": false,
+      "category": "template",
+      "taskHint": "Build a voting/poll dApp on Midnight targeting Android",
+      "routerBullets": [
+        "Build a voting/poll dApp on Midnight using the Kuira Android SDK.",
+        "Compact smart contract, passkey-derived identity, embedded wallet, Compose UI, on-device ZK proving."
+      ]
+    },
+    {
       "id": "example-counter",
       "name": "Example Counter",
       "path": "example-counter/SKILL.md",
