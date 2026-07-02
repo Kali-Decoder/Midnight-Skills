@@ -21,8 +21,14 @@
       "ai-agents"
     ],
     "authors": [
-      { "name": "Tusharpamnani", "url": "https://github.com/tusharpamnani" },
-      { "name": "Kali-Decoder", "url": "https://github.com/Kali-Decoder" }
+      {
+        "name": "Tusharpamnani",
+        "url": "https://github.com/tusharpamnani"
+      },
+      {
+        "name": "Kali-Decoder",
+        "url": "https://github.com/Kali-Decoder"
+      }
     ]
   },
   "learningPaths": [
@@ -30,20 +36,44 @@
       "id": "first-dapp",
       "title": "Build your first Midnight DApp",
       "steps": [
-        { "skillId": "why-midnight", "summary": "Privacy model and ZK basics" },
-        { "skillId": "react-wallet-connector", "summary": "Connect a wallet in React" },
-        { "skillId": "compact", "summary": "Write your first Compact contract" },
-        { "skillId": "hello-world", "summary": "Full stack hello-world + tests" },
-        { "skillId": "1am-wallet", "summary": "Deploy and call circuits via 1AM" }
+        {
+          "skillId": "why-midnight",
+          "summary": "Privacy model and ZK basics"
+        },
+        {
+          "skillId": "react-wallet-connector",
+          "summary": "Connect a wallet in React"
+        },
+        {
+          "skillId": "compact",
+          "summary": "Write your first Compact contract"
+        },
+        {
+          "skillId": "hello-world",
+          "summary": "Full stack hello-world + tests"
+        },
+        {
+          "skillId": "1am-wallet",
+          "summary": "Deploy and call circuits via 1AM"
+        }
       ]
     },
     {
       "id": "defi",
       "title": "DeFi primitives on Midnight",
       "steps": [
-        { "skillId": "token-transfers", "summary": "Shielded and unshielded NIGHT flows" },
-        { "skillId": "example-payment-dapp", "summary": "Privacy-preserving payment vault" },
-        { "skillId": "example-locker-dapp", "summary": "Time-lock vault (vesting, LP locks)" }
+        {
+          "skillId": "token-transfers",
+          "summary": "Shielded and unshielded NIGHT flows"
+        },
+        {
+          "skillId": "example-payment-dapp",
+          "summary": "Privacy-preserving payment vault"
+        },
+        {
+          "skillId": "example-locker-dapp",
+          "summary": "Time-lock vault (vesting, LP locks)"
+        }
       ]
     }
   ],
@@ -54,10 +84,22 @@
       "subtitle": "Learn the privacy model, Compact basics, and wallet connect",
       "color": "#7ec8e3",
       "skills": [
-        { "skillId": "why-midnight", "summary": "What Midnight is and how ZK privacy works" },
-        { "skillId": "compact", "summary": "Write your first .compact contract" },
-        { "skillId": "testing", "summary": "Debug compiler errors and sync toolchain versions" },
-        { "skillId": "react-wallet-connector", "summary": "Connect a wallet in React + Vite" }
+        {
+          "skillId": "why-midnight",
+          "summary": "What Midnight is and how ZK privacy works"
+        },
+        {
+          "skillId": "compact",
+          "summary": "Write your first .compact contract"
+        },
+        {
+          "skillId": "testing",
+          "summary": "Debug compiler errors and sync toolchain versions"
+        },
+        {
+          "skillId": "react-wallet-connector",
+          "summary": "Connect a wallet in React + Vite"
+        }
       ]
     },
     {
@@ -66,12 +108,30 @@
       "subtitle": "Deploy contracts, call circuits, and ship a full dApp",
       "color": "#ffd400",
       "skills": [
-        { "skillId": "hello-world", "summary": "Hello-world dApp with vitest + testkit" },
-        { "skillId": "1am-wallet", "summary": "1AM wallet, providers, dust-free deploy" },
-        { "skillId": "midnight-js", "summary": "SDK wiring, wallets, contract calls" },
-        { "skillId": "example-counter", "summary": "Complete counter dApp reference + CLI" },
-        { "skillId": "token-transfers", "summary": "Shielded and unshielded NIGHT flows" },
-        { "skillId": "midnight-indexer", "summary": "Query chain data and watch contract state" }
+        {
+          "skillId": "hello-world",
+          "summary": "Hello-world dApp with vitest + testkit"
+        },
+        {
+          "skillId": "1am-wallet",
+          "summary": "1AM wallet, providers, dust-free deploy"
+        },
+        {
+          "skillId": "midnight-js",
+          "summary": "SDK wiring, wallets, contract calls"
+        },
+        {
+          "skillId": "example-counter",
+          "summary": "Complete counter dApp reference + CLI"
+        },
+        {
+          "skillId": "token-transfers",
+          "summary": "Shielded and unshielded NIGHT flows"
+        },
+        {
+          "skillId": "midnight-indexer",
+          "summary": "Query chain data and watch contract state"
+        }
       ]
     },
     {
@@ -80,12 +140,30 @@
       "subtitle": "DeFi templates, multinet, NFTs, and privacy audits",
       "color": "#b8e986",
       "skills": [
-        { "skillId": "example-payment-dapp", "summary": "Privacy-preserving payment vault" },
-        { "skillId": "example-locker-dapp", "summary": "Time-lock vault with runnable template" },
-        { "skillId": "example-leaderboard-dapp", "summary": "Privacy-preserving arcade leaderboard with ZK ownership proofs" },
-        { "skillId": "multinetwork", "summary": "One codebase, all networks" },
-        { "skillId": "nft", "summary": "Shielded + unshielded NFTs" },
-        { "skillId": "midnight-security", "summary": "Privacy audit checklist and leak patterns" }
+        {
+          "skillId": "example-payment-dapp",
+          "summary": "Privacy-preserving payment vault"
+        },
+        {
+          "skillId": "example-locker-dapp",
+          "summary": "Time-lock vault with runnable template"
+        },
+        {
+          "skillId": "example-leaderboard-dapp",
+          "summary": "Privacy-preserving arcade leaderboard with ZK ownership proofs"
+        },
+        {
+          "skillId": "multinetwork",
+          "summary": "One codebase, all networks"
+        },
+        {
+          "skillId": "nft",
+          "summary": "Shielded + unshielded NFTs"
+        },
+        {
+          "skillId": "midnight-security",
+          "summary": "Privacy audit checklist and leak patterns"
+        }
       ]
     }
   ],
@@ -99,7 +177,8 @@
       "listInRouter": false,
       "listInPackage": false,
       "featured": false,
-      "category": "meta"
+      "category": "meta",
+      "tags": []
     },
     {
       "id": "why-midnight",
@@ -113,6 +192,11 @@
       "routerBullets": [
         "Data protection blockchain with public/private state, selective disclosure, and zk-SNARKs.",
         "Why it exists, how it works, and the privacy guarantees it provides."
+      ],
+      "tags": [
+        "Privacy",
+        "ZK-SNARKs",
+        "Architecture"
       ]
     },
     {
@@ -127,6 +211,11 @@
       "routerBullets": [
         "Detect, connect, and wire 1AM browser extension into frontend.",
         "Provider setup, contract deployment, and dust-free transaction flow."
+      ],
+      "tags": [
+        "1AM",
+        "Wallet",
+        "Dust-free"
       ]
     },
     {
@@ -141,6 +230,11 @@
       "routerBullets": [
         "Scaffold a React + Vite app with DApp Connector API wallet connection.",
         "`window.midnight` enumeration, connect/disconnect UI, unshielded address display."
+      ],
+      "tags": [
+        "React",
+        "DApp Connector",
+        "Wallet"
       ]
     },
     {
@@ -155,6 +249,11 @@
       "routerBullets": [
         "Scaffold React + Vite with Dynamic.xyz Midnight connectors.",
         "Unshielded, shielded, DUST surfaces, balances, send routing."
+      ],
+      "tags": [
+        "Dynamic.xyz",
+        "Wallet",
+        "DUST"
       ]
     },
     {
@@ -169,6 +268,11 @@
       "routerBullets": [
         "The four mandatory pieces of every contract, type system, circuits as constraints.",
         "Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns."
+      ],
+      "tags": [
+        "Compact",
+        "Circuits",
+        "Witnesses"
       ]
     },
     {
@@ -183,6 +287,11 @@
       "routerBullets": [
         "Static vs dynamic errors, reading compiler messages, `--skip-zk` dev loop.",
         "Version management across 6 components, common debugging patterns."
+      ],
+      "tags": [
+        "Testing",
+        "Compiler",
+        "Versions"
       ]
     },
     {
@@ -197,6 +306,11 @@
       "routerBullets": [
         "Unified provider builder, wallet abstraction, proof server routing.",
         "Contract registry, deploy scripts, DUST flow per network."
+      ],
+      "tags": [
+        "Multinetwork",
+        "Deploy",
+        "DUST"
       ]
     },
     {
@@ -211,6 +325,11 @@
       "routerBullets": [
         "TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).",
         "Contract deployment, circuit calls, DUST generation, private state, testkit."
+      ],
+      "tags": [
+        "SDK",
+        "Wallet",
+        "Deploy"
       ]
     },
     {
@@ -225,6 +344,11 @@
       "routerBullets": [
         "GraphQL queries and subscriptions, contract state reads, transaction lookups.",
         "Real-time event watching, offset/null bug workaround, TypeScript helpers."
+      ],
+      "tags": [
+        "Indexer",
+        "GraphQL",
+        "Events"
       ]
     },
     {
@@ -239,6 +363,11 @@
       "routerBullets": [
         "Privacy audit checklist, data leak patterns, commitment/nullifier design.",
         "Witness trust, front-running resistance, transaction semantics."
+      ],
+      "tags": [
+        "Security",
+        "Audit",
+        "Privacy"
       ]
     },
     {
@@ -248,11 +377,16 @@
       "description": "Build a voting/poll dApp on Midnight Network using the Kuira Android SDK — Compact smart contract with create/cast/close circuits, passkey-derived identity, embedded wallet, Compose UI, reactive ledger reads via observeLedger(), and on-device ZK proving.",
       "enabled": true,
       "featured": false,
-      "category": "template",
+      "category": "full-template",
       "taskHint": "Build a voting/poll dApp on Midnight targeting Android",
       "routerBullets": [
         "Build a voting/poll dApp on Midnight using the Kuira Android SDK.",
         "Compact smart contract, passkey-derived identity, embedded wallet, Compose UI, on-device ZK proving."
+      ],
+      "tags": [
+        "Android",
+        "Voting",
+        "Kuira"
       ]
     },
     {
@@ -262,11 +396,16 @@
       "description": "Complete Midnight DApp reference — headless wallet, CLI, counter contract, DUST generation, deploy, interaction.",
       "enabled": true,
       "featured": false,
-      "category": "template",
+      "category": "full-template",
       "taskHint": "Complete DApp reference: wallet, deploy, interact (use as template)",
       "routerBullets": [
         "Complete DApp reference: headless wallet, CLI, counter contract.",
         "DUST generation, deploy, interaction, standalone mode."
+      ],
+      "tags": [
+        "Counter",
+        "CLI",
+        "Headless"
       ]
     },
     {
@@ -276,10 +415,15 @@
       "description": "Build a complete Midnight Network hello-world DApp from scratch with Compact, vitest, and FluentWalletBuilder.",
       "enabled": true,
       "featured": false,
-      "category": "template",
+      "category": "full-template",
       "taskHint": "Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder.",
       "routerBullets": [
         "Build a complete Midnight Network hello-world DApp from scratch using Compact smart contract, headless Node.js tests with vitest, and testkit-js FluentWalletBuilder."
+      ],
+      "tags": [
+        "Hello world",
+        "Vitest",
+        "Testkit"
       ]
     },
     {
@@ -289,10 +433,15 @@
       "description": "Privacy-preserving payment vault: deposit/withdraw tNIGHT via Compact + 1AM wallet.",
       "enabled": true,
       "featured": false,
-      "category": "template",
+      "category": "full-template",
       "taskHint": "Build a privacy-preserving payment vault with 1AM wallet",
       "routerBullets": [
         "Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet."
+      ],
+      "tags": [
+        "Payment vault",
+        "1AM",
+        "tNIGHT"
       ]
     },
     {
@@ -302,12 +451,17 @@
       "description": "Time-lock vault dApp: lock unshielded NIGHT until a Unix deadline; beneficiary releases via blockTimeGte.",
       "enabled": true,
       "featured": true,
-      "category": "template",
+      "category": "full-template",
       "taskHint": "Build a time-lock vault dApp on Midnight",
       "routerBullets": [
         "Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth."
       ],
-      "templatePath": "templates/locker-dapp"
+      "templatePath": "templates/locker-dapp",
+      "tags": [
+        "Time-lock",
+        "Vault",
+        "NIGHT"
+      ]
     },
     {
       "id": "example-leaderboard-dapp",
@@ -316,13 +470,18 @@
       "description": "Privacy-preserving arcade leaderboard: submit scores with anonymous/public/custom names and prove ownership via ZK.",
       "enabled": true,
       "featured": true,
-      "category": "template",
+      "category": "full-template",
       "taskHint": "Build a privacy-preserving leaderboard DApp on Midnight",
       "routerBullets": [
         "Arcade leaderboard with privacy modes, `persistentHash` owner commitments, and `verifyOwnership` ZK proofs.",
         "Next.js + 1AM wallet template with indexer reads and low-level deploy/call."
       ],
-      "templatePath": "templates/leaderboard-dapp"
+      "templatePath": "templates/leaderboard-dapp",
+      "tags": [
+        "Leaderboard",
+        "ZK proofs",
+        "Arcade"
+      ]
     },
     {
       "id": "nft",
@@ -336,6 +495,11 @@
       "routerBullets": [
         "Build shielded and unshielded NFTs on Midnight.",
         "OpenZeppelin NonFungibleToken, mint, transfer, metadata, privacy patterns."
+      ],
+      "tags": [
+        "NFT",
+        "OpenZeppelin",
+        "Shielded"
       ]
     },
     {
@@ -350,6 +514,11 @@
       "routerBullets": [
         "Shielded and unshielded token transfers.",
         "Balance queries, multi-party flows, transaction semantics."
+      ],
+      "tags": [
+        "Tokens",
+        "Transfers",
+        "Shielded"
       ]
     }
   ]
