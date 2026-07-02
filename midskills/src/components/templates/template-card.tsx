@@ -15,32 +15,31 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { TemplateProfile } from "@/lib/template-types";
+import type { TemplateListItem } from "@/lib/template-types";
 import { DIFFICULTY_CONFIG } from "@/lib/constants";
 import { downloadMarkdown } from "@/lib/download";
 import { CopyCommand } from "@/components/shared/copy-command";
 
-const VISIBLE_FILES = 3;
 const VISIBLE_STACK = 4;
 
-export function TemplateCard({ template }: { template: TemplateProfile }) {
+export function TemplateCard({ template }: { template: TemplateListItem }) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const diffConfig = DIFFICULTY_CONFIG[template.difficulty] || DIFFICULTY_CONFIG.intermediate;
-  const visibleFiles = template.files.slice(0, VISIBLE_FILES);
-  const hiddenFileCount = template.files.length - visibleFiles.length;
+  const visibleFiles = template.keyFiles;
+  const hiddenFileCount = template.fileCount - visibleFiles.length;
   const visibleStack = template.tags.slice(0, VISIBLE_STACK);
   const hiddenStackCount = template.tags.length - visibleStack.length;
 
   function handleDownload() {
-    toast.info(`Downloading ${template.slug}-README.md...`);
-    downloadMarkdown(`${template.slug}-README.md`, template.readme || template.description);
+    toast.info(`Downloading ${template.slug}-preview.md...`);
+    downloadMarkdown(`${template.slug}-preview.md`, template.readmePreview || template.description);
     toast.success("Download started");
   }
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(template.readme || template.description);
+    await navigator.clipboard.writeText(template.readmePreview || template.description);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -48,7 +47,7 @@ export function TemplateCard({ template }: { template: TemplateProfile }) {
   return (
     <article className="group surface surface-hover flex h-full flex-col overflow-hidden">
       <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <Link href={`/templates/${template.slug}`} className="flex items-start gap-3 group/link">
+        <Link href={template.detailHref} className="flex items-start gap-3 group/link">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[color:var(--brand-border)] bg-white/60 text-[var(--foreground)]">
             <Layers className="h-4 w-4" />
           </div>
@@ -57,21 +56,27 @@ export function TemplateCard({ template }: { template: TemplateProfile }) {
               {template.name}
             </h3>
             <p className="mt-0.5 truncate font-mono text-[11px] text-[var(--muted-foreground)]">
-              {template.slug}/
+              {template.path}/
             </p>
           </div>
           <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-[var(--muted-foreground)]/40 transition-colors group-hover/link:text-[var(--foreground)]/70" />
         </Link>
 
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <span className="rounded-md bg-[color:var(--brand-soft)] px-2 py-[2px] text-[10px] font-medium text-[var(--foreground)]">
-            {template.category}
+          <span
+            className={
+              template.runnable
+                ? "rounded-md border border-emerald-200 bg-emerald-50 px-2 py-[2px] text-[10px] font-medium text-emerald-700"
+                : "rounded-md border border-[color:var(--brand-border)] bg-white/55 px-2 py-[2px] text-[10px] font-medium text-[var(--foreground)]"
+            }
+          >
+            {template.runnable ? "Runnable repo" : "Skill guide"}
           </span>
           <span className={`rounded-md px-2 py-[2px] text-[10px] font-medium ${diffConfig.bg} ${diffConfig.text}`}>
             {diffConfig.label}
           </span>
           <span className="rounded-md border border-[color:var(--brand-border)] bg-white/55 px-2 py-[2px] text-[10px] font-medium text-[var(--muted-foreground)]">
-            {template.files.length} {template.files.length === 1 ? "file" : "files"}
+            {template.fileCount} {template.fileCount === 1 ? "file" : "files"}
           </span>
         </div>
 
@@ -102,7 +107,7 @@ export function TemplateCard({ template }: { template: TemplateProfile }) {
           </div>
         )}
 
-        {template.files.length > 0 && (
+        {template.fileCount > 0 && (
           <div className="mt-auto pt-4">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
               Key files
@@ -164,22 +169,28 @@ export function TemplateCard({ template }: { template: TemplateProfile }) {
         </button>
       </div>
 
-      {expanded && template.readme && (
+      {expanded && template.readmePreview && (
         <div className="border-t border-[color:var(--brand-border)] p-4 sm:p-5">
           <div className="max-h-80 overflow-auto rounded-xl border border-[color:var(--brand-border)] bg-white/55 p-4 backdrop-blur sm:p-5">
             <div className="prose-content">
-              <Markdown remarkPlugins={[remarkGfm]}>{template.readme.slice(0, 3000)}</Markdown>
+              <Markdown remarkPlugins={[remarkGfm]}>{template.readmePreview}</Markdown>
             </div>
           </div>
           <div className="mt-3">
-            <p className="mb-1.5 text-[11px] font-semibold text-[var(--muted-foreground)]">Quick start</p>
-            <CopyCommand command={`cd ${template.path} && npm install && npm run compact && npm run dev`} />
+            <p className="mb-1.5 text-[11px] font-semibold text-[var(--muted-foreground)]">
+              {template.runnable ? "Quick start" : "Install skill"}
+            </p>
+            {template.runnable ? (
+              <CopyCommand command={`cd ${template.path} && npm install && npm run compact && npm run dev`} />
+            ) : (
+              <CopyCommand command={`cp -r ${template.path}/ .cursor/skills/`} />
+            )}
           </div>
           <Link
-            href={`/templates/${template.slug}`}
+            href={template.detailHref}
             className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--foreground)]/80"
           >
-            View full template
+            {template.runnable ? "View full template" : "Open skill guide"}
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </div>

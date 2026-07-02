@@ -1,3 +1,4 @@
+import "server-only";
 import fs from "fs";
 import path from "path";
 import { REPO_ROOT } from "./paths";

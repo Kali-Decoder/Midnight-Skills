@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getTemplateProfiles } from "@/lib/templates";
+import { getTemplateListItems } from "@/lib/templates";
 
 export async function GET() {
-  return NextResponse.json(getTemplateProfiles());
+  return NextResponse.json(getTemplateListItems());
 }

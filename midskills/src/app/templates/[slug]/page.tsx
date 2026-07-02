@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import { getTemplateProfile, getTemplateProfiles } from "@/lib/templates";
+import { getRunnableTemplateProfiles, getTemplateProfile } from "@/lib/templates";
 import { TemplateDetailContent } from "@/components/templates/template-detail-content";
 
 export async function generateStaticParams() {
-  return getTemplateProfiles().map((t) => ({ slug: t.slug }));
+  return getRunnableTemplateProfiles().map((t) => ({ slug: t.slug }));
 }
 
 export default async function TemplatePage({ params }: { params: Promise<{ slug: string }> }) {

@@ -163,8 +163,8 @@ function BrowseContent() {
               hint="Add the full MIDSKILLS package to your agent — no manual copy needed."
             />
           </div>
-          <div className="tools-showcase-dark border-t border-white/10 bg-[#0a0a0a] px-4 py-4 sm:px-5 sm:py-5">
-            <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-widest text-white/45">
+          <div className="border-t border-[color:var(--brand-border)] bg-[var(--brand-wash)] px-4 py-4 sm:px-5 sm:py-5">
+            <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
               Compatible tools
             </p>
             <SupportedToolsRow />

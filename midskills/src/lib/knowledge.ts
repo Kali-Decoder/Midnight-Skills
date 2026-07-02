@@ -1,3 +1,4 @@
+import "server-only";
 import fs from "fs";
 import path from "path";
 import { parseFrontmatter } from "./parse-frontmatter";

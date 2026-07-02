@@ -1,3 +1,5 @@
+"use client";
+
 import { SKILLS_CLI_INSTALL_COMMAND } from "@/lib/constants";
 import { CopyCommand } from "@/components/shared/copy-command";
 import { cn } from "@/lib/utils";

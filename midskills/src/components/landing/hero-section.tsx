@@ -18,9 +18,9 @@ const PILLARS = [
 
 export function SupportedToolsBanner() {
   return (
-    <section className="tools-showcase-dark border-b border-white/10 bg-[#0a0a0a] py-4 sm:py-5">
+    <section className="border-b border-[var(--brand-border)] bg-[var(--brand-wash)] py-4 sm:py-5">
       <Container>
-        <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-widest text-white/45">
+        <p className="mb-3 text-center text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
           Works with
         </p>
         <SupportedToolsMarquee />

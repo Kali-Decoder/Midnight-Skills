@@ -1,6 +1,7 @@
 import { BrandBanner } from "@/components/shared/brand-logo";
 import { HeroSection, SupportedToolsBanner } from "@/components/landing/hero-section";
 import { SupportedToolsSection } from "@/components/shared/supported-tools-showcase";
+import { HowToShowcase } from "@/components/landing/how-to-showcase";
 import { ValueProps } from "@/components/landing/value-props";
 import { FeaturedSkills } from "@/components/landing/featured-skills";
 import { HomeExpansion } from "@/components/landing/home-expansion";
@@ -8,7 +9,7 @@ import { EcosystemVision } from "@/components/landing/ecosystem-vision";
 import { FaqSection } from "@/components/landing/faq-section";
 import { Container } from "@/components/layout/container";
 import { getSkillProfiles } from "@/lib/skills";
-import { getTemplateProfiles } from "@/lib/templates";
+import { getTemplateCount } from "@/lib/templates";
 import { getKnowledgeArticles } from "@/lib/knowledge";
 import { getCollections } from "@/lib/collections";
 
@@ -23,13 +24,14 @@ export default function HomePage() {
       </section>
       <SupportedToolsBanner />
       <HeroSection />
+      <HowToShowcase />
       <ValueProps />
       <SupportedToolsSection />
       <HomeExpansion
         collections={collections}
         stats={{
           skills: getSkillProfiles().length,
-          templates: getTemplateProfiles().length,
+          templates: getTemplateCount(),
           knowledge: getKnowledgeArticles().length,
         }}
       />

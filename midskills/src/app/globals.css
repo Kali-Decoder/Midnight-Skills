@@ -210,7 +210,10 @@ body {
   .scroll-reveal,
   .tool-marquee-track,
   .faq-icon,
-  .faq-panel {
+  .faq-panel,
+  .howto-terminal,
+  .howto-progress-bar,
+  .howto-cursor {
     animation: none !important;
     transition: none !important;
     opacity: 1;
@@ -256,25 +259,72 @@ body {
   100% { transform: translateX(-50%); }
 }
 
-/* Provider / AI tool logos — white on dark showcase */
-.tools-showcase-dark .provider-logo {
-  opacity: 0.72;
-  filter: brightness(0) invert(1);
+/* Provider / AI tool logos */
+.provider-logo {
+  opacity: 0.55;
+  filter: grayscale(1);
   transition:
     opacity 0.2s ease,
+    filter 0.2s ease,
     transform 0.2s cubic-bezier(0.1, 0.8, 0.2, 1);
 }
 
-.tools-showcase-dark .group:hover .provider-logo,
-.tools-showcase-dark .provider-logo:hover {
+.group:hover .provider-logo,
+.provider-logo:hover {
   opacity: 1;
-  filter: brightness(0) invert(1);
+  filter: grayscale(0);
   transform: scale(1.08);
 }
 
-.tools-showcase-dark .tool-marquee {
-  mask-image: linear-gradient(to right, transparent, #0a0a0a 8%, #0a0a0a 92%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, #0a0a0a 8%, #0a0a0a 92%, transparent);
+/* How-to showcase */
+.howto-terminal {
+  animation: howto-terminal-in 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.howto-step-active {
+  transform: translateX(2px);
+}
+
+.howto-progress-bar {
+  animation: howto-progress var(--howto-step-ms, 5.2s) linear forwards;
+  transform-origin: left;
+}
+
+.howto-cursor {
+  animation: howto-blink 0.9s step-end infinite;
+}
+
+@keyframes howto-terminal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes howto-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes howto-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .howto-terminal,
+  .howto-progress-bar,
+  .howto-cursor {
+    animation: none !important;
+  }
+
+  .howto-step-active {
+    transform: none;
+  }
 }
 
 /* FAQ accordion */
