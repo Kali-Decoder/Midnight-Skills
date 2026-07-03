@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { Github } from "lucide-react";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { FloatingAvatars } from "@/components/splash/floating-avatars";
 import { CommunityPopup } from "@/components/splash/community-popup";
@@ -26,9 +26,9 @@ export function SplashScreen({
 
       <div className="splash-center-glow pointer-events-none absolute inset-0" aria-hidden />
 
-      <div className="splash-content relative z-10 flex w-full max-w-[min(100%,28rem)] flex-col items-center px-2 text-center sm:max-w-md sm:px-0 md:max-w-lg lg:max-w-xl">
+      <div className="splash-content relative z-10 flex w-full max-w-[min(100%,36rem)] flex-col items-center px-2 text-center sm:max-w-xl sm:px-0 md:max-w-2xl lg:max-w-3xl">
         <div className="splash-logo-enter mb-6 sm:mb-8">
-          <BrandLogo className="text-xl text-[#0a0a0a] sm:text-2xl md:text-3xl lg:text-[2rem]" />
+          <BrandLogo className="text-2xl text-[#0a0a0a] sm:text-3xl md:text-4xl lg:text-[2.5rem]" />
         </div>
 
         {loggedIn && sessionUser && (
@@ -51,15 +51,13 @@ export function SplashScreen({
           </p>
         )}
 
-        <p className="splash-copy-enter mb-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-neutral-400 sm:text-[10px] sm:tracking-[0.25em]">
+        <p className="splash-copy-enter mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400 sm:text-sm sm:tracking-[0.25em]">
           Midnight Skills Marketplace
         </p>
-        <h1 className="splash-copy-enter splash-copy-delay-1 splash-headline text-balance text-lg font-bold sm:text-xl md:text-2xl lg:text-[1.75rem]">
-          Privacy-preserving skills for AI agents
+        <h1 className="splash-copy-enter splash-copy-delay-1 splash-headline text-balance text-xl font-bold sm:text-2xl md:text-3xl lg:text-[2.25rem]">
+          One stop solution to build on Midnight only{" "}
+          <span className="text-[#2563eb]">MIDSKILLS</span>
         </h1>
-        <p className="splash-copy-enter splash-copy-delay-2 mt-2 max-w-[min(100%,20rem)] text-pretty text-xs leading-relaxed text-neutral-500 sm:mt-3 sm:max-w-sm sm:text-sm">
-          Compact contracts, wallet flows, and runnable dApp templates — curated on GitHub.
-        </p>
 
         {loggedIn ? (
           <Link
@@ -73,7 +71,7 @@ export function SplashScreen({
             href="/api/auth/github/start"
             className="splash-btn-enter splash-copy-delay-3 group mt-8 inline-flex h-11 w-full max-w-[min(100%,18rem)] items-center justify-center gap-2.5 rounded-full bg-[#0a0a0a] px-6 text-sm font-semibold text-white transition hover:bg-[#171717] sm:mt-10 sm:h-12 sm:max-w-xs sm:px-8 md:min-w-[240px] md:w-auto"
           >
-            <Image src="/logos/github.png" alt="" width={20} height={20} className="rounded-sm" />
+            <Github className="h-5 w-5 shrink-0" aria-hidden />
             Explore with GitHub
           </a>
         )}
