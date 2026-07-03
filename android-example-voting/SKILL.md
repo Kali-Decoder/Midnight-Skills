@@ -3,7 +3,7 @@ name: android-example-voting
 description: Build a voting/poll dApp on Midnight Network using the Kuira Android SDK — Compact smart contract with create/cast/close circuits, passkey-derived identity, embedded wallet, Compose UI, reactive ledger reads via observeLedger(), and on-device ZK proving. Use when building a poll or voting dApp targeting Android.
 ---
 
-# Kuira Voting dApp — Godmode Skill
+# Kuira Voting dApp
 
 This skill generates a runnable voting dApp for Midnight Network using
 the [Kuira Android SDK](https://kuiralabs.github.io/kuira-sdk-android/).
