@@ -6,6 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Container } from "@/components/layout/container";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { UserMenu } from "@/components/shared/user-menu";
+import type { SessionUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { isNavLinkActive, navTabClass } from "@/lib/tab-styles";
 
@@ -50,7 +52,7 @@ function NavLinks({
   );
 }
 
-export function Navbar() {
+export function Navbar({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -79,7 +81,7 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--brand-border)] bg-[var(--navbar-bg)] backdrop-blur-md">
       <Container className="flex h-14 items-center justify-between gap-2 sm:gap-3">
-        <Link href="/" className="min-w-0 shrink">
+        <Link href="/home" className="min-w-0 shrink">
           <BrandLogo className="text-base sm:text-lg md:text-xl" />
         </Link>
 
@@ -91,6 +93,17 @@ export function Navbar() {
           <nav className="hidden items-center gap-1 lg:flex">
             <NavLinks pathname={pathname} />
           </nav>
+
+          {user ? (
+            <UserMenu user={user} className="hidden sm:block" />
+          ) : (
+            <a
+              href="/api/auth/github/start"
+              className="btn-secondary hidden h-9 shrink-0 px-3 text-xs font-semibold sm:inline-flex"
+            >
+              Sign in
+            </a>
+          )}
 
           <ThemeToggle />
 
@@ -127,6 +140,18 @@ export function Navbar() {
               <nav className="flex flex-col gap-1">
                 <NavLinks pathname={pathname} onNavigate={closeMenu} />
               </nav>
+              <div className="mt-3 border-t border-[var(--brand-border)] pt-3">
+                {user ? (
+                  <UserMenu user={user} className="w-full" />
+                ) : (
+                  <a
+                    href="/api/auth/github/start"
+                    className="btn-secondary flex h-10 w-full items-center justify-center text-sm font-semibold"
+                  >
+                    Sign in with GitHub
+                  </a>
+                )}
+              </div>
             </Container>
           </div>
         </>

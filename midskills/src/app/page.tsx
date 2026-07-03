@@ -1,37 +1,35 @@
-import { HeroSection } from "@/components/landing/hero-section";
-import { SupportedToolsSection } from "@/components/shared/supported-tools-showcase";
-import { HowToShowcase } from "@/components/landing/how-to-showcase";
-import { ValueProps } from "@/components/landing/value-props";
-import { FeaturedSkills } from "@/components/landing/featured-skills";
-import { HomeExpansion } from "@/components/landing/home-expansion";
-import { EcosystemVision } from "@/components/landing/ecosystem-vision";
-import { FaqSection } from "@/components/landing/faq-section";
-import { getFeaturedHeroSkills, getSkillProfiles } from "@/lib/skills";
-import { getTemplateCount } from "@/lib/templates";
-import { getKnowledgeArticles } from "@/lib/knowledge";
-import { getCollections } from "@/lib/collections";
+import { SplashScreen } from "@/components/splash/splash-screen";
+import { getSessionUser } from "@/lib/auth";
+import { loadCommunityUsers } from "@/lib/community-users";
+import { loadRegistry } from "@/lib/registry";
 
-export default function HomePage() {
-  const collections = getCollections();
-  const heroSkills = getFeaturedHeroSkills();
+export const runtime = "nodejs";
+
+export default async function SplashPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ auth?: string }>;
+}) {
+  const site = loadRegistry().site;
+  const params = await searchParams;
+  const sessionUser = await getSessionUser();
+
+  const { communityUsers, communityTotal } = await loadCommunityUsers(100);
+
+  const authError =
+    params.auth === "error"
+      ? "GitHub sign-in failed. Try again."
+      : params.auth === "invalid_state"
+        ? "Sign-in expired. Please try again."
+        : null;
 
   return (
-    <div className="landing-page">
-      <HeroSection skills={heroSkills} />
-      <HowToShowcase skills={heroSkills} />
-      <ValueProps />
-      <SupportedToolsSection />
-      <HomeExpansion
-        collections={collections}
-        stats={{
-          skills: getSkillProfiles().length,
-          templates: getTemplateCount(),
-          knowledge: getKnowledgeArticles().length,
-        }}
-      />
-      <FeaturedSkills />
-      <EcosystemVision />
-      <FaqSection />
-    </div>
+    <SplashScreen
+      githubUrl={site?.repository ?? "https://github.com/Kali-Decoder/Midnight-skills"}
+      sessionUser={sessionUser}
+      communityUsers={communityUsers}
+      communityTotal={communityTotal}
+      authError={authError}
+    />
   );
 }

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Montserrat, Orbitron } from "next/font/google";
-import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ThemeModeNotice } from "@/components/shared/theme-mode-notice";
+import { LayoutShell } from "@/components/layout/layout-shell";
+import { NavbarWithAuth } from "@/components/layout/navbar-with-auth";
 import { Toaster } from "sonner";
 import { loadRegistry } from "@/lib/registry";
 import "./globals.css";
@@ -38,15 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <ThemeProvider>
-          <div className="pointer-events-none fixed inset-0 -z-10">
-            <div className="bg-grid bg-grid-fade absolute inset-0 opacity-30" />
-            <div className="bg-grid-dots bg-grid-fade absolute inset-0 opacity-30" />
-          </div>
-          <div className="flex min-h-dvh flex-col">
-            <Navbar />
-            <main className="safe-bottom min-w-0 flex-1 overflow-x-hidden">{children}</main>
-            <Footer />
-          </div>
+          <LayoutShell navbar={<NavbarWithAuth />}>{children}</LayoutShell>
           <Toaster />
           <ThemeModeNotice />
         </ThemeProvider>
