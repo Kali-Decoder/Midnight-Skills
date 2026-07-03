@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <div className="flex min-h-dvh flex-col">
             <Navbar />
-            <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+            <main className="safe-bottom min-w-0 flex-1 overflow-x-hidden">{children}</main>
             <Footer />
           </div>
           <Toaster />

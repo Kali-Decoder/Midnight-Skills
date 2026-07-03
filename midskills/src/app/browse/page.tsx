@@ -195,7 +195,7 @@ function BrowseContent() {
             </p>
           )}
 
-          <div className="relative w-full sm:max-w-[280px]">
+          <div className="relative w-full sm:max-w-xs md:max-w-sm lg:max-w-[280px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-foreground)]/60" />
             <input
               ref={searchRef}
@@ -205,11 +205,11 @@ function BrowseContent() {
                 setSearch(e.target.value);
                 updateURL(e.target.value, activeCategory, activeTag, activeCollectionId, activeDifficulty);
               }}
-              placeholder="Search..."
-              className="h-9 w-full rounded-lg border border-[color:var(--brand-border)] bg-white/70 pl-9 pr-14 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)]/60 outline-none backdrop-blur transition-all focus:border-[color:var(--brand-border)] focus:bg-white focus:ring-2 focus:ring-[color:var(--brand-soft)]"
+              placeholder="Search skills..."
+              className="input-field pl-9 pr-14"
             />
             {!search && (
-              <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-[color:var(--brand-border)] bg-white/60 px-1.5 py-0.5 text-[10px] font-medium text-[var(--muted-foreground)] sm:inline">
+              <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-[color:var(--brand-border)] bg-[var(--surface-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--muted-foreground)] sm:inline">
                 /
               </kbd>
             )}
@@ -317,7 +317,7 @@ function BrowseContent() {
         )}
 
         {activeCollection && (
-          <div className="mt-6 flex flex-col gap-3 rounded-xl border border-[color:var(--brand-border)] bg-white/60 px-4 py-3 backdrop-blur sm:mt-8 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col gap-3 rounded-xl border border-[color:var(--brand-border)] bg-[var(--surface-muted)] px-4 py-3 backdrop-blur sm:mt-8 sm:flex-row sm:items-center sm:justify-between">
             <p className="min-w-0 text-sm font-medium text-[var(--foreground)]">
               Showing <span className="font-semibold">{activeCollection.name}</span> (
               {activeCollection.skillSlugs.length}{" "}
@@ -336,7 +336,7 @@ function BrowseContent() {
           </div>
         )}
 
-        <div className="mt-6 grid items-stretch gap-4 sm:mt-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid items-stretch gap-4 sm:mt-8 sm:grid-cols-2 xl:grid-cols-3">
           {loading
             ? Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="surface flex h-full flex-col p-0">
@@ -344,13 +344,13 @@ function BrowseContent() {
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 animate-pulse rounded-lg bg-[color:var(--brand-soft)]" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 w-32 animate-pulse rounded bg-black/5" />
-                        <div className="h-3 w-20 animate-pulse rounded bg-black/5" />
+                        <div className="h-4 w-32 animate-pulse rounded bg-[color:var(--brand-soft)]" />
+                        <div className="h-3 w-20 animate-pulse rounded bg-[color:var(--brand-soft)]" />
                       </div>
                     </div>
                     <div className="mt-3 space-y-1.5">
-                      <div className="h-3 w-full animate-pulse rounded bg-black/5" />
-                      <div className="h-3 w-2/3 animate-pulse rounded bg-black/5" />
+                      <div className="h-3 w-full animate-pulse rounded bg-[color:var(--brand-soft)]" />
+                      <div className="h-3 w-2/3 animate-pulse rounded bg-[color:var(--brand-soft)]" />
                     </div>
                     <div className="mt-3 flex gap-1.5">
                       <div className="h-5 w-12 animate-pulse rounded-md bg-[color:var(--brand-soft)]" />

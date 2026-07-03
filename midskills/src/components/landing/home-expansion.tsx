@@ -129,7 +129,7 @@ export function HomeExpansion({ stats, collections }: HomeExpansionProps) {
     <>
       <section className="border-y border-[var(--brand-border)] bg-[var(--brand-wash)] py-6 sm:py-10">
         <Container>
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-4">
             {statItems.map((item, i) => (
               <ScrollReveal key={item.label} delay={i * 60}>
                 <div className="surface p-3 text-center sm:p-4">

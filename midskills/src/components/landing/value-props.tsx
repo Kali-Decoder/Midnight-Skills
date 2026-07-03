@@ -33,7 +33,7 @@ export function ValueProps() {
           </div>
         </ScrollReveal>
 
-        <div className="mt-8 grid gap-3 sm:mt-12 sm:grid-cols-3 sm:gap-4">
+        <div className="mt-8 grid gap-3 sm:mt-12 md:grid-cols-2 lg:grid-cols-3 lg:gap-4">
           {CARDS.map((c, i) => (
             <ScrollReveal key={c.title} delay={i * 100}>
               <div className="surface surface-hover h-full p-4 sm:p-5">

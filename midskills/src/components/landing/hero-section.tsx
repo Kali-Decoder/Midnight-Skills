@@ -62,7 +62,7 @@ export function HeroSection({ skills }: { skills: HeroSkillItem[] }) {
               </Link>
               <Link
                 href="/browse"
-                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-[color:var(--brand-border)] bg-white/60 px-6 text-sm font-medium text-[var(--foreground)] transition hover:bg-white/80 sm:w-auto"
+                className="btn-secondary h-11 w-full px-6 sm:w-auto"
               >
                 Browse skills
               </Link>
@@ -83,7 +83,7 @@ export function HeroSection({ skills }: { skills: HeroSkillItem[] }) {
         </div>
 
         {/* Steps */}
-        <div className="mx-auto mt-12 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 lg:mt-14">
+        <div className="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-3 sm:mt-12 sm:grid-cols-3 sm:gap-4 lg:mt-14">
           {STEPS.map((step, i) => (
             <div
               key={step.label}

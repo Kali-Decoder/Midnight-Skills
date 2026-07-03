@@ -6,12 +6,12 @@ import { getKnowledgeArticles } from "@/lib/knowledge";
 export default function KnowledgePage() {
   const articles = getKnowledgeArticles();
   return (
-    <Container className="safe-bottom py-8 sm:py-12">
+    <Container className="page-section safe-bottom">
       <PageHeader
         title="Knowledge Base"
         description="Shared references — provider wiring, version pins, and common gotchas for Midnight dApps."
       />
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
+      <div className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 xl:grid-cols-3">
         {articles.map((a) => (
           <KbCard key={a.slug} article={a} />
         ))}

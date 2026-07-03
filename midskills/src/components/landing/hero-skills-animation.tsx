@@ -32,7 +32,7 @@ export function HeroSkillsAnimation({ skills }: { skills: HeroSkillItem[] }) {
   }).filter(({ offset }) => offset < 3);
 
   return (
-    <div className="hero-skills-wrap mx-auto w-full max-w-[340px] lg:max-w-none">
+    <div className="hero-skills-wrap mx-auto w-full max-w-[min(100%,380px)] sm:max-w-md lg:max-w-none">
       <div className="mb-3 flex items-center justify-between px-1">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">
           Featured skills

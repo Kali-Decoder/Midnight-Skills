@@ -185,7 +185,7 @@ export function HowToShowcase({ className, skills }: { className?: string; skill
                         "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-colors",
                         isActive
                           ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--primary-foreground)]"
-                          : "border-[color:var(--brand-border)] bg-white/60 text-[var(--muted-foreground)]",
+                          : "border-[color:var(--brand-border)] bg-[var(--surface-muted)] text-[var(--muted-foreground)]",
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -222,7 +222,7 @@ export function HowToShowcase({ className, skills }: { className?: string; skill
 
             {/* Terminal */}
             <div className="howto-terminal surface overflow-hidden">
-              <div className="flex items-center gap-2 border-b border-[color:var(--brand-border)] bg-white/50 px-4 py-2.5">
+              <div className="flex items-center gap-2 border-b border-[color:var(--brand-border)] bg-[var(--surface-soft)] px-4 py-2.5">
                 <div className="flex gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
                   <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />

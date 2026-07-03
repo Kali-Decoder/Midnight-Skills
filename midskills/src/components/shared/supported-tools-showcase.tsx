@@ -23,7 +23,7 @@ function ToolIcon({ name, logo, size = 22 }: { name: string; logo: string; size?
 function ToolChip({ name, logo }: { name: string; logo: string }) {
   return (
     <span
-      className="chip flex shrink-0 items-center gap-2 border border-[color:var(--brand-border)] bg-white/60 px-3 py-1.5 text-[11px] text-[var(--foreground)]"
+      className="chip flex shrink-0 items-center gap-2 border border-[color:var(--brand-border)] bg-[var(--surface-muted)] px-3 py-1.5 text-[11px] text-[var(--foreground)]"
       title={name}
     >
       <ToolIcon name={name} logo={logo} size={18} />
@@ -56,14 +56,14 @@ export function SupportedToolsGrid({
   return (
     <div
       className={cn(
-        "grid grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4 lg:grid-cols-9",
+        "grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-9",
         className,
       )}
     >
       {SUPPORTED_AI_TOOLS.map((tool) => (
         <div
           key={tool.id}
-          className="group flex flex-col items-center gap-2 rounded-xl border border-[color:var(--brand-border)] bg-white/50 px-2 py-3 transition hover:border-[color-mix(in_oklab,var(--foreground),white_75%)] hover:bg-white/80"
+          className="group flex flex-col items-center gap-2 rounded-xl border border-[color:var(--brand-border)] bg-[var(--surface-muted)] px-2 py-3 transition hover:border-[color-mix(in_oklab,var(--foreground),var(--background)_75%)] hover:bg-[var(--surface-strong)]"
           title={tool.name}
         >
           <ToolIcon name={tool.name} logo={tool.logo} size={iconSize} />

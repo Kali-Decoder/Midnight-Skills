@@ -35,7 +35,7 @@ export function SkillCard({ profile }: { profile: SkillProfile }) {
     <div className="group surface surface-hover flex h-full flex-col">
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <Link href={`/browse/${profile.slug}`} className="flex items-center gap-3 group/link">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--brand-border)] bg-white/60 text-[var(--foreground)]">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--brand-border)] bg-[var(--surface-muted)] text-[var(--foreground)]">
             <FolderOpen className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
@@ -55,12 +55,12 @@ export function SkillCard({ profile }: { profile: SkillProfile }) {
           </span>
           <SecurityBadge allowedTools={profile.meta.allowedTools} />
           {profile.meta.templatePath && (
-            <span className="rounded-md border border-[color:var(--brand-border)] bg-white/55 px-2 py-[2px] text-[10px] font-medium text-[var(--foreground)]">
+            <span className="rounded-md border border-[color:var(--brand-border)] bg-[var(--surface-subtle)] px-2 py-[2px] text-[10px] font-medium text-[var(--foreground)]">
               Runnable
             </span>
           )}
           {profile.meta.version && (
-            <span className="rounded-md border border-[color:var(--brand-border)] bg-white/55 px-2 py-[2px] text-[10px] font-medium text-[var(--muted-foreground)]">
+            <span className="rounded-md border border-[color:var(--brand-border)] bg-[var(--surface-subtle)] px-2 py-[2px] text-[10px] font-medium text-[var(--muted-foreground)]">
               v{profile.meta.version}
             </span>
           )}
@@ -79,13 +79,13 @@ export function SkillCard({ profile }: { profile: SkillProfile }) {
                 <span
                   key={skill}
                   title={skill}
-                  className="max-w-[7rem] truncate rounded-md border border-[color:var(--brand-border)] bg-white/55 px-2 py-[3px] text-[10px] font-medium text-[var(--muted-foreground)] sm:max-w-[8rem] sm:text-[11px]"
+                  className="max-w-full truncate rounded-md border border-[color:var(--brand-border)] bg-[var(--surface-subtle)] px-2 py-[3px] text-[10px] font-medium text-[var(--muted-foreground)] sm:max-w-[9rem] sm:text-[11px]"
                 >
                   {skill}
                 </span>
               ))}
               {profile.meta.skills.length > 4 && (
-                <span className="rounded-md border border-[color:var(--brand-border)] bg-white/55 px-2 py-[3px] text-[10px] text-[var(--muted-foreground)] sm:text-[11px]">
+                <span className="rounded-md border border-[color:var(--brand-border)] bg-[var(--surface-subtle)] px-2 py-[3px] text-[10px] text-[var(--muted-foreground)] sm:text-[11px]">
                   +{profile.meta.skills.length - 4}
                 </span>
               )}
@@ -94,11 +94,11 @@ export function SkillCard({ profile }: { profile: SkillProfile }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 border-t border-[color:var(--brand-border)] px-4 py-2 sm:flex-nowrap sm:px-5">
-        <div className="flex flex-1 flex-wrap gap-1">
+      <div className="flex flex-wrap items-center gap-1 border-t border-[color:var(--brand-border)] px-4 py-2.5 sm:px-5">
+        <div className="flex min-w-0 flex-1 flex-wrap gap-1">
           <button
             onClick={() => void handleCopy()}
-            className="flex h-7 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium text-[var(--muted-foreground)] transition-all hover:bg-[color:var(--brand-soft)] hover:text-[var(--foreground)]"
+            className="flex h-8 min-w-[4.5rem] items-center justify-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium text-[var(--muted-foreground)] transition-all hover:bg-[color:var(--brand-soft)] hover:text-[var(--foreground)]"
             title="Copy instructions to clipboard"
             type="button"
           >
@@ -116,7 +116,7 @@ export function SkillCard({ profile }: { profile: SkillProfile }) {
           </button>
           <button
             onClick={() => void handleDownload()}
-            className="flex h-7 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium text-[var(--muted-foreground)] transition-all hover:bg-[color:var(--brand-soft)] hover:text-[var(--foreground)]"
+            className="flex h-8 min-w-[5.5rem] items-center justify-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium text-[var(--muted-foreground)] transition-all hover:bg-[color:var(--brand-soft)] hover:text-[var(--foreground)]"
             title="Download skill folder"
             type="button"
           >
@@ -126,7 +126,7 @@ export function SkillCard({ profile }: { profile: SkillProfile }) {
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex h-7 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+          className="flex h-8 min-w-[5rem] items-center justify-center gap-1 rounded-md px-2.5 text-[11px] font-medium text-[var(--muted-foreground)] transition-colors hover:bg-[color:var(--brand-soft)] hover:text-[var(--foreground)]"
           type="button"
         >
           {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -136,7 +136,7 @@ export function SkillCard({ profile }: { profile: SkillProfile }) {
 
       {expanded && (
         <div className="border-t border-[color:var(--brand-border)] p-4 sm:p-5">
-          <div className="max-h-80 overflow-auto rounded-xl border border-[color:var(--brand-border)] bg-white/55 p-4 backdrop-blur sm:p-5">
+          <div className="max-h-80 overflow-auto rounded-xl border border-[color:var(--brand-border)] bg-[var(--surface-muted)] p-4 backdrop-blur sm:p-5">
             <div className="prose-content">
               <Markdown remarkPlugins={[remarkGfm]}>{profile.body}</Markdown>
             </div>

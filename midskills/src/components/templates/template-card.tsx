@@ -48,7 +48,7 @@ export function TemplateCard({ template }: { template: TemplateListItem }) {
     <article className="group surface surface-hover flex h-full flex-col overflow-hidden">
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <Link href={template.detailHref} className="flex items-start gap-3 group/link">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[color:var(--brand-border)] bg-white/60 text-[var(--foreground)]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[color:var(--brand-border)] bg-[var(--surface-muted)] text-[var(--foreground)]">
             <Layers className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
@@ -67,7 +67,7 @@ export function TemplateCard({ template }: { template: TemplateListItem }) {
             className={
               template.runnable
                 ? "rounded-md border border-emerald-200 bg-emerald-50 px-2 py-[2px] text-[10px] font-medium text-emerald-700"
-                : "rounded-md border border-[color:var(--brand-border)] bg-white/55 px-2 py-[2px] text-[10px] font-medium text-[var(--foreground)]"
+                : "rounded-md border border-[color:var(--brand-border)] bg-[var(--surface-subtle)] px-2 py-[2px] text-[10px] font-medium text-[var(--foreground)]"
             }
           >
             {template.runnable ? "Runnable repo" : "Skill guide"}
@@ -75,7 +75,7 @@ export function TemplateCard({ template }: { template: TemplateListItem }) {
           <span className={`rounded-md px-2 py-[2px] text-[10px] font-medium ${diffConfig.bg} ${diffConfig.text}`}>
             {diffConfig.label}
           </span>
-          <span className="rounded-md border border-[color:var(--brand-border)] bg-white/55 px-2 py-[2px] text-[10px] font-medium text-[var(--muted-foreground)]">
+          <span className="rounded-md border border-[color:var(--brand-border)] bg-[var(--surface-subtle)] px-2 py-[2px] text-[10px] font-medium text-[var(--muted-foreground)]">
             {template.fileCount} {template.fileCount === 1 ? "file" : "files"}
           </span>
         </div>
@@ -93,13 +93,13 @@ export function TemplateCard({ template }: { template: TemplateListItem }) {
               {visibleStack.map((skill) => (
                 <span
                   key={skill}
-                  className="rounded-md border border-[color:var(--brand-border)] bg-white/55 px-2 py-[3px] text-[10px] font-medium text-[var(--muted-foreground)] sm:text-[11px]"
+                  className="rounded-md border border-[color:var(--brand-border)] bg-[var(--surface-subtle)] px-2 py-[3px] text-[10px] font-medium text-[var(--muted-foreground)] sm:text-[11px]"
                 >
                   {skill}
                 </span>
               ))}
               {hiddenStackCount > 0 && (
-                <span className="rounded-md border border-[color:var(--brand-border)] bg-white/55 px-2 py-[3px] text-[10px] text-[var(--muted-foreground)] sm:text-[11px]">
+                <span className="rounded-md border border-[color:var(--brand-border)] bg-[var(--surface-subtle)] px-2 py-[3px] text-[10px] text-[var(--muted-foreground)] sm:text-[11px]">
                   +{hiddenStackCount}
                 </span>
               )}
@@ -129,7 +129,7 @@ export function TemplateCard({ template }: { template: TemplateListItem }) {
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 border-t border-[color:var(--brand-border)] px-4 py-2 sm:flex-nowrap sm:px-5">
+      <div className="flex flex-wrap items-center gap-1 border-t border-[color:var(--brand-border)] px-4 py-2.5 sm:px-5">
         <div className="flex flex-1 flex-wrap gap-1">
           <button
             type="button"
@@ -171,7 +171,7 @@ export function TemplateCard({ template }: { template: TemplateListItem }) {
 
       {expanded && template.readmePreview && (
         <div className="border-t border-[color:var(--brand-border)] p-4 sm:p-5">
-          <div className="max-h-80 overflow-auto rounded-xl border border-[color:var(--brand-border)] bg-white/55 p-4 backdrop-blur sm:p-5">
+          <div className="max-h-80 overflow-auto rounded-xl border border-[color:var(--brand-border)] bg-[var(--surface-subtle)] p-4 backdrop-blur sm:p-5">
             <div className="prose-content">
               <Markdown remarkPlugins={[remarkGfm]}>{template.readmePreview}</Markdown>
             </div>
