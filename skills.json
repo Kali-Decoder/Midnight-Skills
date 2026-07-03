@@ -75,6 +75,40 @@
           "summary": "Time-lock vault (vesting, LP locks)"
         }
       ]
+    },
+    {
+      "id": "node-architecture",
+      "title": "Midnight node architecture",
+      "steps": [
+        {
+          "skillId": "midnight-consensus",
+          "summary": "AURA block production and GRANDPA finality"
+        },
+        {
+          "skillId": "midnight-cryptography",
+          "summary": "Node-level hashes and signature schemes"
+        },
+        {
+          "skillId": "midnight-onchain-logic",
+          "summary": "WASM runtime, FRAME pallets, pallet-midnight"
+        },
+        {
+          "skillId": "midnight-p2p-networking",
+          "summary": "libp2p discovery, transport, and gossip"
+        },
+        {
+          "skillId": "midnight-rpc",
+          "summary": "JSON-RPC for dApps, wallets, and explorers"
+        },
+        {
+          "skillId": "midnight-storage",
+          "summary": "ParityDB, Merkle trie, and state commitments"
+        },
+        {
+          "skillId": "midnight-transactions",
+          "summary": "Proof-based transaction lifecycle"
+        }
+      ]
     }
   ],
   "skillLevels": [
@@ -131,6 +165,14 @@
         {
           "skillId": "midnight-indexer",
           "summary": "Query chain data and watch contract state"
+        },
+        {
+          "skillId": "midnight-rpc",
+          "summary": "JSON-RPC contract and ledger queries"
+        },
+        {
+          "skillId": "midnight-transactions",
+          "summary": "Proof-based transaction pool and execution"
         }
       ]
     },
@@ -163,6 +205,14 @@
         {
           "skillId": "midnight-security",
           "summary": "Privacy audit checklist and leak patterns"
+        },
+        {
+          "skillId": "midnight-consensus",
+          "summary": "AURA + GRANDPA consensus on Partnerchain"
+        },
+        {
+          "skillId": "midnight-onchain-logic",
+          "summary": "Runtime pallets and pallet-midnight"
         }
       ]
     }
@@ -519,6 +569,146 @@
         "Tokens",
         "Transfers",
         "Shielded"
+      ]
+    },
+    {
+      "id": "midnight-consensus",
+      "name": "Midnight Consensus",
+      "path": "midnight-consensus/SKILL.md",
+      "description": "AURA block production, GRANDPA finality, and Cardano Partnerchain validator selection with SPO stake delegation.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Understand Midnight consensus — AURA, GRANDPA, and Partnerchain validators",
+      "routerBullets": [
+        "Modified Substrate consensus: AURA for block production, GRANDPA for finality.",
+        "Custom validator set with Cardano SPO delegation and optional permissioned validators."
+      ],
+      "tags": [
+        "Consensus",
+        "AURA",
+        "GRANDPA",
+        "Partnerchain"
+      ]
+    },
+    {
+      "id": "midnight-cryptography",
+      "name": "Midnight Cryptography",
+      "path": "midnight-cryptography/SKILL.md",
+      "description": "Node cryptographic primitives — Blake2-256, sr25519, ECDSA, Ed25519, and twoxhash storage keys.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Explain Midnight node cryptography — hashes and signature schemes",
+      "routerBullets": [
+        "Blake2-256 for block hashes; twoxhash for trie storage keys.",
+        "sr25519 (AURA), ECDSA (Partnerchain), Ed25519 (GRANDPA + libp2p)."
+      ],
+      "tags": [
+        "Cryptography",
+        "Blake2",
+        "Signatures",
+        "Node"
+      ]
+    },
+    {
+      "id": "midnight-onchain-logic",
+      "name": "Onchain Logic and State",
+      "path": "midnight-onchain-logic/SKILL.md",
+      "description": "WASM runtime, FRAME pallets, pallet-midnight ledger state machine, and proof-based state transitions.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Explain Midnight on-chain logic — runtime, pallets, and pallet-midnight",
+      "routerBullets": [
+        "Polkadot SDK WASM runtime with FRAME pallets including pallet-midnight.",
+        "Proof verification, ZSwap and contract ops, Patricia-Merkle state commitments."
+      ],
+      "tags": [
+        "Runtime",
+        "FRAME",
+        "pallet-midnight",
+        "WASM"
+      ]
+    },
+    {
+      "id": "midnight-p2p-networking",
+      "name": "P2P Networking",
+      "path": "midnight-p2p-networking/SKILL.md",
+      "description": "libp2p peer discovery, TCP/WebSocket transport, Noise encryption, Yamux multiplexing, and gossip protocols.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Configure or debug Midnight P2P networking and peer discovery",
+      "routerBullets": [
+        "Bootstrap, mDNS, and Kademlia DHT discovery strategies.",
+        "Noise + Yamux upgrades; Ping, Request-Response, and Notification substreams."
+      ],
+      "tags": [
+        "P2P",
+        "libp2p",
+        "Networking",
+        "Discovery"
+      ]
+    },
+    {
+      "id": "midnight-rpc",
+      "name": "RPC Interface",
+      "path": "midnight-rpc/SKILL.md",
+      "description": "JSON-RPC methods for contract state, ZSwap chain state, ledger version, Polkadot SDK defaults, and Partnerchain RPCs.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Query Midnight node RPC — contract state, ZSwap, and ledger methods",
+      "routerBullets": [
+        "Custom midnight_* JSON-RPC methods for contract and ledger state.",
+        "Polkadot SDK defaults, Partnerchain RPCs, and validator RPC security."
+      ],
+      "tags": [
+        "RPC",
+        "JSON-RPC",
+        "Node",
+        "API"
+      ]
+    },
+    {
+      "id": "midnight-storage",
+      "name": "Storage",
+      "path": "midnight-storage/SKILL.md",
+      "description": "ParityDB backend, Patricia-Merkle trie state commitments, and twoxhash storage key generation.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Explain Midnight on-chain storage — ParityDB, trie, and state roots",
+      "routerBullets": [
+        "ParityDB key-value store with Patricia-Merkle trie state commitments.",
+        "twoxhash for fast storage keys; inclusion proofs for on-chain data."
+      ],
+      "tags": [
+        "Storage",
+        "ParityDB",
+        "Merkle trie",
+        "State"
+      ]
+    },
+    {
+      "id": "midnight-transactions",
+      "name": "Transactions",
+      "path": "midnight-transactions/SKILL.md",
+      "description": "Proof-based unsigned ledger transactions, pool validation, runtime verification, and state commit lifecycle.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Explain Midnight transaction lifecycle — proofs, pool, and execution",
+      "routerBullets": [
+        "Unsigned proof-embedded transactions from the Midnight Ledger.",
+        "Pool well-formedness → runtime proof verification → state commit."
+      ],
+      "tags": [
+        "Transactions",
+        "Proofs",
+        "ZSwap",
+        "Lifecycle"
       ]
     }
   ]

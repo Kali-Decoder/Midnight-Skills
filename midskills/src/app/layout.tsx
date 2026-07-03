@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Montserrat, Orbitron } from "next/font/google";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ThemeModeNotice } from "@/components/shared/theme-mode-notice";
 import { Toaster } from "sonner";
 import { loadRegistry } from "@/lib/registry";
 import "./globals.css";
@@ -28,18 +30,26 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${orbitron.variable}`}>
+    <html lang="en" className={`${montserrat.variable} ${orbitron.variable}`} suppressHydrationWarning>
       <body className="antialiased">
-        <div className="pointer-events-none fixed inset-0 -z-10">
-          <div className="bg-grid bg-grid-fade absolute inset-0 opacity-30" />
-          <div className="bg-grid-dots bg-grid-fade absolute inset-0 opacity-30" />
-        </div>
-        <div className="flex min-h-dvh flex-col">
-          <Navbar />
-          <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
-          <Footer />
-        </div>
-        <Toaster />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("midskills-theme");if(t==="dark"||t==="light"){document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;}}catch(e){}})();`,
+          }}
+        />
+        <ThemeProvider>
+          <div className="pointer-events-none fixed inset-0 -z-10">
+            <div className="bg-grid bg-grid-fade absolute inset-0 opacity-30" />
+            <div className="bg-grid-dots bg-grid-fade absolute inset-0 opacity-30" />
+          </div>
+          <div className="flex min-h-dvh flex-col">
+            <Navbar />
+            <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+            <Footer />
+          </div>
+          <Toaster />
+          <ThemeModeNotice />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -51,7 +51,7 @@ export function HeroSkillsAnimation({ skills }: { skills: HeroSkillItem[] }) {
               key={skill.slug}
               href={`/browse/${skill.slug}`}
               className={cn(
-                "hero-skill-card surface absolute inset-x-0 block p-4 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:p-5",
+                "hero-skill-card surface group absolute inset-x-0 block p-4 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:p-5",
                 offset === 0 && "hero-skill-active z-30 opacity-100",
                 offset === 1 && "hero-skill-behind-1 z-20",
                 offset === 2 && "hero-skill-behind-2 z-10",
@@ -68,13 +68,13 @@ export function HeroSkillsAnimation({ skills }: { skills: HeroSkillItem[] }) {
               }}
             >
               <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--brand-border)] bg-white/70">
+                <div className="hero-skill-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--brand-border)]">
                   <FolderOpen className="h-4 w-4 text-[var(--foreground)]" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate text-sm font-semibold text-[var(--foreground)]">{skill.name}</h3>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    <span className="rounded-md bg-[color:var(--brand-soft)] px-1.5 py-0.5 text-[10px] font-medium">
+                    <span className="hero-skill-category rounded-md bg-[color:var(--brand-soft)] px-1.5 py-0.5 text-[10px] font-medium">
                       {skill.category}
                     </span>
                     <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${diff.bg} ${diff.text}`}>

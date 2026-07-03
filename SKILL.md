@@ -31,6 +31,13 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Build a privacy-preserving leaderboard DApp on Midnight | `example-leaderboard-dapp/` |
 | Build NFTs (shielded + unshielded) with OpenZeppelin | `nft/` |
 | Token transfers, balance flows, multi-party txs | `token-transfers/` |
+| Understand Midnight consensus — AURA, GRANDPA, and Partnerchain validators | `midnight-consensus/` |
+| Explain Midnight node cryptography — hashes and signature schemes | `midnight-cryptography/` |
+| Explain Midnight on-chain logic — runtime, pallets, and pallet-midnight | `midnight-onchain-logic/` |
+| Configure or debug Midnight P2P networking and peer discovery | `midnight-p2p-networking/` |
+| Query Midnight node RPC — contract state, ZSwap, and ledger methods | `midnight-rpc/` |
+| Explain Midnight on-chain storage — ParityDB, trie, and state roots | `midnight-storage/` |
+| Explain Midnight transaction lifecycle — proofs, pool, and execution | `midnight-transactions/` |
 <!-- /SKILLS_REGISTRY:TASK_TABLE -->
 ## Skills
 
@@ -68,6 +75,14 @@ This file will guide to the right skill with the latest knowledge about Midnight
 - GraphQL queries and subscriptions, contract state reads, transaction lookups.
 - Real-time event watching, offset/null bug workaround, TypeScript helpers.
 
+### [Midnight Consensus](/midnight-consensus/SKILL.md)
+- Modified Substrate consensus: AURA for block production, GRANDPA for finality.
+- Custom validator set with Cardano SPO delegation and optional permissioned validators.
+
+### [Midnight Cryptography](/midnight-cryptography/SKILL.md)
+- Blake2-256 for block hashes; twoxhash for trie storage keys.
+- sr25519 (AURA), ECDSA (Partnerchain), Ed25519 (GRANDPA + libp2p).
+
 ### [Midnight.js](/midnight-js/SKILL.md)
 - TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).
 - Contract deployment, circuit calls, DUST generation, private state, testkit.
@@ -80,13 +95,29 @@ This file will guide to the right skill with the latest knowledge about Midnight
 - Build shielded and unshielded NFTs on Midnight.
 - OpenZeppelin NonFungibleToken, mint, transfer, metadata, privacy patterns.
 
+### [Onchain Logic and State](/midnight-onchain-logic/SKILL.md)
+- Polkadot SDK WASM runtime with FRAME pallets including pallet-midnight.
+- Proof verification, ZSwap and contract ops, Patricia-Merkle state commitments.
+
+### [P2P Networking](/midnight-p2p-networking/SKILL.md)
+- Bootstrap, mDNS, and Kademlia DHT discovery strategies.
+- Noise + Yamux upgrades; Ping, Request-Response, and Notification substreams.
+
 ### [React Wallet Connector](/react-wallet-connector/SKILL.md)
 - Scaffold a React + Vite app with DApp Connector API wallet connection.
 - `window.midnight` enumeration, connect/disconnect UI, unshielded address display.
 
+### [RPC Interface](/midnight-rpc/SKILL.md)
+- Custom midnight_* JSON-RPC methods for contract and ledger state.
+- Polkadot SDK defaults, Partnerchain RPCs, and validator RPC security.
+
 ### [Security](/security/SKILL.md)
 - Privacy audit checklist, data leak patterns, commitment/nullifier design.
 - Witness trust, front-running resistance, transaction semantics.
+
+### [Storage](/midnight-storage/SKILL.md)
+- ParityDB key-value store with Patricia-Merkle trie state commitments.
+- twoxhash for fast storage keys; inclusion proofs for on-chain data.
 
 ### [Testing](/testing/SKILL.md)
 - Static vs dynamic errors, reading compiler messages, `--skip-zk` dev loop.
@@ -95,6 +126,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Token Transfers](/token-transfers/SKILL.md)
 - Shielded and unshielded token transfers.
 - Balance queries, multi-party flows, transaction semantics.
+
+### [Transactions](/midnight-transactions/SKILL.md)
+- Unsigned proof-embedded transactions from the Midnight Ledger.
+- Pool well-formedness → runtime proof verification → state commit.
 
 ### [Why Midnight](/why-midnight/SKILL.md)
 - Data protection blockchain with public/private state, selective disclosure, and zk-SNARKs.

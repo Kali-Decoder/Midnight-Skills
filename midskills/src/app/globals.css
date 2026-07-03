@@ -26,6 +26,54 @@
   --grid-dot: rgb(0 0 0 / 0.04);
   --bg-grad-top: #ffffff;
   --bg-grad-bottom: #ffffff;
+  --surface: rgb(255 255 255 / 0.7);
+  --surface-muted: rgb(255 255 255 / 0.6);
+  --surface-subtle: rgb(255 255 255 / 0.55);
+  --surface-soft: rgb(255 255 255 / 0.5);
+  --surface-strong: rgb(255 255 255 / 0.8);
+  --shadow-soft: rgb(0 0 0 / 0.04);
+  --shadow-hover: rgb(0 0 0 / 0.08);
+  --navbar-bg: rgb(255 255 255 / 0.92);
+  --hero-skill-surface: rgb(255 255 255 / 0.82);
+  --hero-skill-icon: rgb(255 255 255 / 0.9);
+  --hero-skill-stack-bg: transparent;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-mint-rgb: 10 10 10;
+  --background: #0a0a0a;
+  --foreground: #f5f5f5;
+  --card: #141414;
+  --card-foreground: #f5f5f5;
+  --muted: #1a1a1a;
+  --muted-foreground: #a3a3a3;
+  --primary: #f5f5f5;
+  --primary-foreground: #0a0a0a;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #f5f5f5;
+  --accent: #1a1a1a;
+  --accent-foreground: #f5f5f5;
+  --border: #262626;
+  --brand: #f5f5f5;
+  --brand-soft: #1a1a1a;
+  --brand-wash: #0a0a0a;
+  --brand-border: #262626;
+  --grid-line: rgb(255 255 255 / 0.06);
+  --grid-dot: rgb(255 255 255 / 0.04);
+  --bg-grad-top: #0a0a0a;
+  --bg-grad-bottom: #111111;
+  --surface: rgb(255 255 255 / 0.06);
+  --surface-muted: rgb(255 255 255 / 0.08);
+  --surface-subtle: rgb(255 255 255 / 0.06);
+  --surface-soft: rgb(255 255 255 / 0.05);
+  --surface-strong: rgb(255 255 255 / 0.12);
+  --shadow-soft: rgb(0 0 0 / 0.35);
+  --shadow-hover: rgb(0 0 0 / 0.5);
+  --navbar-bg: rgb(10 10 10 / 0.92);
+  --hero-skill-surface: rgb(22 22 22 / 0.96);
+  --hero-skill-icon: rgb(255 255 255 / 0.1);
+  --hero-skill-stack-bg: rgb(255 255 255 / 0.03);
 }
 
 * {
@@ -70,8 +118,8 @@ body {
 .surface {
   border: 1px solid var(--brand-border);
   border-radius: 1rem;
-  background: rgb(255 255 255 / 0.7);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  background: var(--surface);
+  box-shadow: 0 1px 2px var(--shadow-soft);
   backdrop-filter: blur(12px);
 }
 
@@ -81,8 +129,8 @@ body {
 
 .surface-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
-  border-color: color-mix(in oklab, var(--foreground), white 75%);
+  box-shadow: 0 4px 12px var(--shadow-hover);
+  border-color: color-mix(in oklab, var(--foreground), var(--background) 75%);
 }
 
 .chip {
@@ -91,10 +139,10 @@ body {
   gap: 0.5rem;
   border-radius: 999px;
   border: 1px solid var(--brand-border);
-  background: rgb(255 255 255 / 0.55);
+  background: var(--surface-subtle);
   font-size: 0.6875rem;
   font-weight: 600;
-  color: color-mix(in oklab, var(--foreground), white 20%);
+  color: color-mix(in oklab, var(--foreground), var(--background) 20%);
 }
 
 .text-shimmer {
@@ -123,7 +171,7 @@ body {
     prose-strong:text-[var(--foreground)]
     prose-a:text-[var(--foreground)] prose-a:underline prose-a:underline-offset-2
     prose-code:rounded prose-code:bg-[color:var(--brand-soft)] prose-code:px-1 prose-code:py-0.5 prose-code:font-semibold prose-code:text-[var(--foreground)] prose-code:before:content-none prose-code:after:content-none
-    prose-pre:bg-white/70 prose-pre:border prose-pre:border-[color:var(--brand-border)] prose-pre:rounded-lg
+    prose-pre:bg-[var(--surface)] prose-pre:border prose-pre:border-[color:var(--brand-border)] prose-pre:rounded-lg
     prose-li:text-[var(--muted-foreground)]
     prose-th:text-[var(--foreground)] prose-td:text-[var(--muted-foreground)];
 }
@@ -318,10 +366,25 @@ body {
 /* Hero skills carousel */
 .hero-skills-stack {
   perspective: 1200px;
+  border-radius: 1rem;
+  background: var(--hero-skill-stack-bg);
 }
 
 .hero-skill-card {
-  box-shadow: 0 8px 30px rgb(0 0 0 / 0.06);
+  box-shadow: 0 8px 30px var(--shadow-hover);
+  background: var(--hero-skill-surface) !important;
+  border-color: var(--brand-border);
+}
+
+.hero-skill-active {
+  border-color: color-mix(in oklab, var(--foreground), var(--background) 80%);
+}
+
+[data-theme="dark"] .hero-skill-active {
+  border-color: color-mix(in oklab, var(--foreground), transparent 55%);
+  box-shadow:
+    0 16px 40px rgb(0 0 0 / 0.55),
+    0 0 0 1px rgb(255 255 255 / 0.08);
 }
 
 .hero-skill-behind-1 {
@@ -332,6 +395,26 @@ body {
 .hero-skill-behind-2 {
   opacity: 0.4;
   pointer-events: none;
+}
+
+[data-theme="dark"] .hero-skill-behind-1 {
+  opacity: 0.9;
+}
+
+[data-theme="dark"] .hero-skill-behind-2 {
+  opacity: 0.68;
+}
+
+[data-theme="dark"] .hero-skills-stack {
+  border: 1px solid var(--brand-border);
+}
+
+.hero-skill-icon {
+  background: var(--hero-skill-icon);
+}
+
+.hero-skill-category {
+  color: var(--foreground);
 }
 
 .hero-skill-enter {
@@ -383,7 +466,121 @@ body {
 
 /* FAQ accordion */
 .faq-item-open {
-  border-color: color-mix(in oklab, var(--foreground), white 75%);
+  border-color: color-mix(in oklab, var(--foreground), var(--background) 75%);
+}
+
+/* Theme-aware surface utilities */
+.bg-surface-muted {
+  background-color: var(--surface-muted);
+}
+
+.bg-surface-subtle {
+  background-color: var(--surface-subtle);
+}
+
+.bg-surface-soft {
+  background-color: var(--surface-soft);
+}
+
+.bg-surface-strong {
+  background-color: var(--surface-strong);
+}
+
+[data-theme="dark"] .bg-white\/60,
+[data-theme="dark"] .bg-white\/55,
+[data-theme="dark"] .bg-white\/50,
+[data-theme="dark"] .bg-white\/70,
+[data-theme="dark"] .bg-white\/75,
+[data-theme="dark"] .bg-white\/80,
+[data-theme="dark"] .bg-white\/85 {
+  background-color: var(--surface-muted) !important;
+}
+
+[data-theme="dark"] .hover\:bg-white\/75:hover,
+[data-theme="dark"] .hover\:bg-white\/80:hover,
+[data-theme="dark"] .hover\:bg-white\/85:hover {
+  background-color: var(--surface-strong) !important;
+}
+
+[data-theme="dark"] .text-emerald-600 {
+  color: #34d399;
+}
+
+[data-theme="dark"] .text-red-600 {
+  color: #f87171;
+}
+
+[data-theme="dark"] .bg-emerald-50 {
+  background-color: rgb(16 185 129 / 0.15);
+}
+
+[data-theme="dark"] .bg-red-50 {
+  background-color: rgb(248 113 113 / 0.15);
+}
+
+[data-theme="dark"] .text-gray-900 {
+  color: var(--foreground);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--foreground), transparent 25%);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle-thumb {
+    transition: none !important;
+  }
+
+  .theme-notice-card {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.theme-notice-overlay {
+  background: rgb(0 0 0 / 0.18);
+  backdrop-filter: blur(2px);
+}
+
+[data-theme="dark"] .theme-notice-overlay {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.theme-notice-card {
+  min-width: min(100%, 18rem);
+  box-shadow: 0 20px 50px var(--shadow-hover);
+}
+
+.theme-notice-visible {
+  animation: theme-notice-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.theme-notice-hidden {
+  animation: theme-notice-out 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes theme-notice-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes theme-notice-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(-6px);
+  }
 }
 
 .faq-answer {

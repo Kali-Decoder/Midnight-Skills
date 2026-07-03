@@ -40,14 +40,21 @@
     "./midnight-js",
     "./indexer",
     "./security",
-    "./example-counter",
     "./android-example-voting",
+    "./example-counter",
     "./example-hello-world",
     "./example-payment-dapp",
     "./example-locker-dapp",
     "./example-leaderboard-dapp",
     "./nft",
-    "./token-transfers"
+    "./token-transfers",
+    "./midnight-consensus",
+    "./midnight-cryptography",
+    "./midnight-onchain-logic",
+    "./midnight-p2p-networking",
+    "./midnight-rpc",
+    "./midnight-storage",
+    "./midnight-transactions"
   ],
   "private": true,
   "scripts": {
