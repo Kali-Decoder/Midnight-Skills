@@ -1,5 +1,6 @@
 ---
 name: example-leaderboard-dapp
+author: Kali-Decoder
 description: >
   Build a privacy-preserving arcade leaderboard DApp on Midnight Network — players submit
   click-challenge scores with anonymous, public, or custom display names, and prove entry

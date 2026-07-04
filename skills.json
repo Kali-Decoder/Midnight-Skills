@@ -131,6 +131,10 @@
           "summary": "Write your first .compact contract"
         },
         {
+          "skillId": "example-private-party-dapp",
+          "summary": "Private party tutorial: privacy boundary + persistentCommit"
+        },
+        {
           "skillId": "testing",
           "summary": "Debug compiler errors and sync toolchain versions"
         },
@@ -201,6 +205,10 @@
         {
           "skillId": "example-leaderboard-dapp",
           "summary": "Privacy-preserving arcade leaderboard with ZK ownership proofs"
+        },
+        {
+          "skillId": "example-private-party-dapp",
+          "summary": "Private RSVP party with unshielded privacy boundary + 1AM frontend"
         },
         {
           "skillId": "example-zk-loan-application",
@@ -302,6 +310,7 @@
     {
       "id": "dynamic-midnight-wallet",
       "name": "Dynamic Midnight Wallet",
+      "author": "Kali-Decoder",
       "path": "dynamic-midnight-wallet/SKILL.md",
       "description": "Scaffold React + Vite with Dynamic.xyz Midnight wallet — unshielded, shielded, and DUST surfaces.",
       "enabled": false,
@@ -528,6 +537,7 @@
     {
       "id": "example-leaderboard-dapp",
       "name": "Example Leaderboard Dapp",
+      "author": "Kali-Decoder",
       "path": "example-leaderboard-dapp/SKILL.md",
       "description": "Privacy-preserving arcade leaderboard: submit scores with anonymous/public/custom names and prove ownership via ZK.",
       "enabled": true,
@@ -546,8 +556,32 @@
       ]
     },
     {
+      "id": "example-private-party-dapp",
+      "name": "Example Private Party Dapp",
+      "author": "Kali-Decoder",
+      "path": "example-private-party-dapp/SKILL.md",
+      "description": "Private party RSVP dApp: persistentCommit guest list, DApp-specific public keys, unshielded NIGHT privacy boundary, Next.js + 1AM wallet.",
+      "enabled": true,
+      "featured": true,
+      "category": "full-template",
+      "taskHint": "Build a private party RSVP dApp with privacy boundary on Midnight",
+      "routerBullets": [
+        "Private RSVP with `persistentCommit` and DApp-specific public keys — no witnesses.",
+        "Unshielded NIGHT check-in crosses the privacy boundary; Next.js + 1AM frontend template.",
+        "Official vitest devnet test harness in `example-private-party` repo."
+      ],
+      "templatePath": "templates/private-party-dapp",
+      "tags": [
+        "Private party",
+        "RSVP",
+        "Privacy boundary",
+        "persistentCommit"
+      ]
+    },
+    {
       "id": "example-zk-loan-application",
       "name": "Example ZK Loan Application",
+      "author": "Kali-Decoder",
       "path": "example-zk-loan-application/SKILL.md",
       "description": "Zero-knowledge loan dApp: privately evaluate credit data with Schnorr attestation, record only loan outcomes on-chain.",
       "enabled": true,

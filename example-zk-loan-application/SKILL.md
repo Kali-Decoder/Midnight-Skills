@@ -1,5 +1,6 @@
 ---
 name: example-zk-loan-application
+author: Kali-Decoder
 description: >
   Build a zero-knowledge loan application on Midnight Network — privately evaluate credit score,
   income, and employment tenure inside a Compact circuit with Schnorr attestation, record only

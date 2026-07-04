@@ -2,6 +2,8 @@
 
 Runnable reference for the [example-leaderboard-dapp](../../example-leaderboard-dapp/SKILL.md) skill.
 
+**Creator:** [Kali-Decoder](https://github.com/Kali-Decoder)
+
 Privacy-preserving arcade leaderboard: submit scores with anonymous, public, or custom display names; prove entry ownership with zero-knowledge proofs.
 
 ## Quick start

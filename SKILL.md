@@ -29,6 +29,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Build a privacy-preserving payment vault with 1AM wallet | `example-payment-dapp/` |
 | Build a time-lock vault dApp on Midnight | `example-locker-dapp/` |
 | Build a privacy-preserving leaderboard DApp on Midnight | `example-leaderboard-dapp/` |
+| Build a private party RSVP dApp with privacy boundary on Midnight | `example-private-party-dapp/` |
 | Build a ZK loan application with attestation on Midnight | `example-zk-loan-application/` |
 | Build NFTs (shielded + unshielded) with OpenZeppelin | `nft/` |
 | Token transfers, balance flows, multi-party txs | `token-transfers/` |
@@ -71,6 +72,11 @@ This file will guide to the right skill with the latest knowledge about Midnight
 
 ### [Example Payment Dapp](/example-payment-dapp/SKILL.md)
 - Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet.
+
+### [Example Private Party Dapp](/example-private-party-dapp/SKILL.md)
+- Private RSVP with `persistentCommit` and DApp-specific public keys — no witnesses.
+- Unshielded NIGHT check-in crosses the privacy boundary; Next.js + 1AM frontend template.
+- Official vitest devnet test harness in `example-private-party` repo.
 
 ### [Example ZK Loan Application](/example-zk-loan-application/SKILL.md)
 - Private credit scoring with Schnorr attestation — score, income, and tenure never touch the ledger.

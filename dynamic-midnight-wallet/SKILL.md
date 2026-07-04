@@ -4,6 +4,7 @@ description: >
   DISABLED ON PLATFORM — skill file retained for future release. Do not surface
   in MIDSKILLS index until re-enabled. Scaffold a React + Vite app with Dynamic.xyz
   Midnight wallet connection via @dynamic-labs/midnight.
+author: Kali-Decoder
 disable-model-invocation: true
 ---
 
