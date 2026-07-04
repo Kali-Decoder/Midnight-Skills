@@ -1006,11 +1006,10 @@ a per-instance class. The `ADMIN_SECRET` is hardcoded as
 same APK uses the same admin secret. Anyone who decompiles the APK
 gets the admin key for every deployed poll.
 
-**`WitnessResult(null, ADMIN_SECRET)`**: The first parameter is a
-callback function (`(suspend () -> WitnessResult)?`). It's `null`
-here because the witness value is static. If you need dynamic values
-(e.g., from user input), you'd pass a lambda that returns a
-`WitnessResult` when called.
+**`WitnessResult(null, ADMIN_SECRET)`**: The first parameter is
+`privateState: Any?`—here `null` because no private state is needed.
+The second is the witness byte array. `WitnessResult` wraps both into
+a single object returned by the witness function.
 
 **`MidnightContract.create(sdk.config) { ... }`** DSL builder:
 - `name`: used as a key for the contract JS asset lookup
@@ -1407,7 +1406,7 @@ fun VotingScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "Tifosi",
+                text = "Voting",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -1431,72 +1430,648 @@ and provides send/receive/dust registration.
 **`WindowInsets.safeDrawing`** ensures the content avoids display
 cutouts and system bars.
 
-### 8.4) `ui/VotingCard.kt` (skeleton)
+### 8.4) `ui/VotingCard.kt`
 
-The actual `VotingCard.kt` is 597 lines. Key sections:
+```kotlin
+package com.kuiralabs.starter.counter.ui
 
-| State | What renders |
-|-------|-------------|
-| `NotReady` | "Forge a sigil above, then fund the wallet" |
-| `ReadyToDeploy` | "Wallet ready" + [Deploy contract] button |
-| `Deployed` (pre-createPoll) | Create poll form (question + options + submit) |
-| `Deployed` (post-createPoll) | Poll results: progress bars per option, vote/close |
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.midnight.kuira.dapp.ContractCallProgressBar
 
-Core composable sections:
-- **Header** — title + `StatusBadge` (Not Ready / Ready / Closed / Voted)
-- **AddressSection** — truncated hex address in a compact card
-- **CreatePollSection** — two `OutlinedTextField`s + `createPoll` Button
-- **PollResultsSection** — question headline, status chips, vote count
-- **OptionCard** — label, tally, `LinearProgressIndicator`, percentage
-- **ContractCallProgressBar** — uses the SDK's built-in when `callStage` is not null
+@Composable
+fun VotingCard(
+    modifier: Modifier = Modifier,
+    viewModel: VotingViewModel = hiltViewModel(),
+) {
+    val state by viewModel.state.collectAsState()
+    val busy by viewModel.busy.collectAsState()
+    val callStage by viewModel.callStage.collectAsState()
+    val error by viewModel.error.collectAsState()
+    val question by viewModel.question.collectAsState()
+    val options by viewModel.options.collectAsState()
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Header(state)
+
+            when (val s = state) {
+                VotingUiState.NotReady -> NotReadyBody()
+                VotingUiState.ReadyToDeploy -> ReadyToDeployBody(busy = busy, onDeploy = viewModel::deploy)
+                is VotingUiState.Deployed -> DeployedBody(
+                    state = s, busy = busy,
+                    question = question, onQuestionChange = viewModel::updateQuestion,
+                    options = options, onOptionsChange = viewModel::updateOptions,
+                    onCreatePoll = viewModel::createPoll, onCastVote = viewModel::castVote,
+                    onClosePoll = viewModel::closePoll, onDeployNew = viewModel::deploy,
+                    onDisconnect = viewModel::disconnect,
+                )
+            }
+
+            if (busy) {
+                if (callStage == null) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) { CircularProgressIndicator() }
+                } else {
+                    ContractCallProgressBar(
+                        stage = callStage,
+                        accent = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            val err = error
+            if (err != null) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = err,
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Header(state: VotingUiState) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = "Voting",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        StatusBadge(state)
+    }
+}
+
+@Composable
+private fun StatusBadge(state: VotingUiState) {
+    val (label, dotColor) = when (state) {
+        VotingUiState.NotReady -> "Not connected" to MaterialTheme.colorScheme.error
+        VotingUiState.ReadyToDeploy -> "Ready" to MaterialTheme.colorScheme.tertiary
+        is VotingUiState.Deployed -> "Active" to MaterialTheme.colorScheme.primary
+    }
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = dotColor.copy(alpha = 0.12f),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(8.dp).clip(CircleShape).background(dotColor)
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = dotColor,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NotReadyBody() {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = "Forge a sigil above, then fund the wallet and register dust.",
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ReadyToDeployBody(busy: Boolean, onDeploy: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = "Wallet ready. Deploy a new voting contract to the current network.",
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        }
+        Button(
+            onClick = onDeploy, enabled = !busy,
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
+        ) { Text(text = "Deploy contract") }
+    }
+}
+
+@Composable
+private fun DeployedBody(
+    state: VotingUiState.Deployed, busy: Boolean,
+    question: String, onQuestionChange: (String) -> Unit,
+    options: String, onOptionsChange: (String) -> Unit,
+    onCreatePoll: () -> Unit, onCastVote: (Int) -> Unit,
+    onClosePoll: () -> Unit, onDeployNew: () -> Unit, onDisconnect: () -> Unit,
+) {
+    AddressSection(state.address)
+
+    if (state.pollQuestion.isNullOrBlank()) {
+        CreatePollSection(
+            question = question, onQuestionChange = onQuestionChange,
+            options = options, onOptionsChange = onOptionsChange,
+            onCreatePoll = onCreatePoll, busy = busy,
+        )
+    } else {
+        PollResultsSection(
+            question = state.pollQuestion ?: "",
+            options = state.pollOptions ?: emptyList(),
+            tallies = state.tallies ?: listOf(0, 0, 0, 0),
+            totalVotes = state.voteCount ?: 0,
+            hasVoted = state.hasVoted, pollClosed = state.pollClosed == true,
+            onCastVote = onCastVote, onClosePoll = onClosePoll, busy = busy,
+        )
+    }
+
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedButton(
+            onClick = onDeployNew, enabled = !busy,
+            modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp),
+        ) { Text(text = "Deploy new") }
+        OutlinedButton(
+            onClick = onDisconnect, enabled = !busy,
+            modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp),
+        ) { Text(text = "Disconnect") }
+    }
+
+    Text(
+        text = "Results update live from chain.",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun AddressSection(address: String) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = "Contract",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = address,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CreatePollSection(
+    question: String, onQuestionChange: (String) -> Unit,
+    options: String, onOptionsChange: (String) -> Unit,
+    onCreatePoll: () -> Unit, busy: Boolean,
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Create a poll",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "No poll exists yet. Fill in the details below to create one.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedTextField(
+                value = question, onValueChange = onQuestionChange,
+                label = { Text("Poll question") },
+                placeholder = { Text("e.g. What's the best programming language?") },
+                singleLine = true, shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = options, onValueChange = onOptionsChange,
+                label = { Text("Options") },
+                placeholder = { Text("e.g. Rust, TypeScript, Kotlin, Go") },
+                supportingText = { Text("Comma-separated, max 4 options") },
+                singleLine = true, shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                onClick = onCreatePoll,
+                enabled = !busy && question.isNotBlank() && options.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp),
+            ) { Text(text = "Create poll") }
+        }
+    }
+}
+
+@Composable
+private fun PollResultsSection(
+    question: String, options: List<String>, tallies: List<Long>,
+    totalVotes: Long, hasVoted: Boolean, pollClosed: Boolean,
+    onCastVote: (Int) -> Unit, onClosePoll: () -> Unit, busy: Boolean,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = question,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (pollClosed) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                ) {
+                    Text(
+                        text = "Closed",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                }
+            }
+            if (hasVoted && !pollClosed) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                ) {
+                    Text(
+                        text = "You voted",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+            }
+            if (totalVotes > 0) {
+                Text(
+                    text = "$totalVotes vote${if (totalVotes != 1L) \"s\" else \"\"}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+            }
+        }
+
+        val maxTally = tallies.maxOrNull()?.coerceAtLeast(1) ?: 1
+        options.forEachIndexed { idx, option ->
+            val tally = tallies.getOrElse(idx) { 0L }
+            val fraction = if (totalVotes > 0) tally.toFloat() / totalVotes else 0f
+            OptionCard(
+                label = option, tally = tally, fraction = fraction,
+                totalVotes = totalVotes,
+                isWinning = tally > 0 && tally == tallies.maxOrNull(),
+                canVote = !hasVoted && !pollClosed && !busy,
+                onVote = { onCastVote(idx) },
+            )
+        }
+
+        if (!pollClosed) {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "Admin",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Button(
+                        onClick = onClosePoll, enabled = !busy,
+                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
+                    ) { Text(text = "Close poll") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OptionCard(
+    label: String, tally: Long, fraction: Float,
+    totalVotes: Long, isWinning: Boolean, canVote: Boolean, onVote: () -> Unit,
+) {
+    val bgColor = when {
+        isWinning && tally > 0 -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        canVote -> MaterialTheme.colorScheme.surface
+        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+    }
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = bgColor,
+        tonalElevation = if (canVote) 1.dp else 0.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (canVote) Modifier.clickable(onClick = onVote) else Modifier),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = if (tally > 0) "$tally" else "0",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isWinning && tally > 0)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            LinearProgressIndicator(
+                progress = { fraction },
+                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                color = if (isWinning && tally > 0)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = if (totalVotes > 0) "${(fraction * 100).toInt()}%" else "-",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (canVote) {
+                    Text(
+                        text = "Tap to vote",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                if (isWinning && tally > 0) {
+                    Text(
+                        text = "Leading",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+    }
+}
+```
 
 ### 8.5) Theme files
 
-**`ui/theme/Color.kt`** — Ferrari-inspired palette:
+**`ui/theme/Color.kt`** — example palette:
+
 ```kotlin
 package com.kuiralabs.starter.counter.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val TifosiRed = Color(0xFFD32F2F)
-val TifosiYellow = Color(0xFFFFC107)
-val TifosiBlack = Color(0xFF212121)
-val TifosiWhite = Color(0xFFFFFFFF)
-val TifosiDarkSurface = Color(0xFF1E1E1E)
-val TifosiGray = Color(0xFF9E9E9E)
+val PrimaryRed = Color(0xFFDC0000)
+val DarkRed = Color(0xFF8B0000)
+val LightRed = Color(0xFFFF4D4D)
+val LightRedBg = Color(0xFFFFDAD4)
+
+val AccentYellow = Color(0xFFFFD700)
+val DarkYellow = Color(0xFF9A8200)
+val LightYellow = Color(0xFFFFF8D4)
+
+val NearBlack = Color(0xFF0D0D0D)
+val DarkSurface = Color(0xFF1A1A1A)
+val SurfaceVariant = Color(0xFF2D2D2D)
+val OutlineColor = Color(0xFF6B6B6B)
+val OnSurfaceVariantColor = Color(0xFFC4C4C4)
+
+val AccentGreen = Color(0xFF00D2A0)
+val DarkGreen = Color(0xFF003828)
+
+val White = Color(0xFFF5F5F5)
 ```
 
-**`ui/theme/Type.kt`** — typography definitions (standard Material 3
-type scale using default fonts).
+**`ui/theme/Type.kt`** — Material 3 type scale:
 
-**`ui/theme/Theme.kt`** — `TifosiTheme` composable:
 ```kotlin
 package com.kuiralabs.starter.counter.ui.theme
 
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
+val VoteTypography = Typography(
+    headlineLarge = TextStyle(
+        fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 34.sp,
+    ),
+    headlineMedium = TextStyle(
+        fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 30.sp,
+    ),
+    headlineSmall = TextStyle(
+        fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp,
+    ),
+    titleLarge = TextStyle(
+        fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 24.sp,
+    ),
+    titleMedium = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp,
+    ),
+    titleSmall = TextStyle(
+        fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp,
+    ),
+    bodyLarge = TextStyle(
+        fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp,
+    ),
+    bodyMedium = TextStyle(
+        fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp,
+    ),
+    bodySmall = TextStyle(
+        fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp,
+    ),
+    labelLarge = TextStyle(
+        fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp,
+    ),
+    labelMedium = TextStyle(
+        fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp,
+    ),
+    labelSmall = TextStyle(
+        fontWeight = FontWeight.Medium, fontSize = 10.sp, lineHeight = 14.sp,
+    ),
+)
+```
+
+**`ui/theme/Theme.kt`** — `VoteTheme` composable:
+
+```kotlin
+package com.kuiralabs.starter.counter.ui.theme
+
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
-private val KuiraDarkColorScheme = darkColorScheme(
-    primary = TifosiRed,
-    secondary = TifosiYellow,
-    background = TifosiBlack,
-    surface = TifosiDarkSurface,
-    onPrimary = TifosiWhite,
-    onSecondary = TifosiBlack,
-    onBackground = TifosiWhite,
-    onSurface = TifosiWhite,
+private val VoteDarkColorScheme = darkColorScheme(
+    primary = PrimaryRed,
+    onPrimary = White,
+    primaryContainer = DarkRed,
+    onPrimaryContainer = LightRedBg,
+    secondary = AccentYellow,
+    onSecondary = NearBlack,
+    secondaryContainer = DarkYellow,
+    onSecondaryContainer = LightYellow,
+    tertiary = AccentGreen,
+    onTertiary = NearBlack,
+    tertiaryContainer = DarkGreen,
+    onTertiaryContainer = AccentGreen,
+    background = NearBlack,
+    onBackground = White,
+    surface = DarkSurface,
+    onSurface = White,
+    surfaceVariant = SurfaceVariant,
+    onSurfaceVariant = OnSurfaceVariantColor,
+    outline = OutlineColor,
+    outlineVariant = SurfaceVariant,
+    error = Color(0xFFCF6679),
+    onError = NearBlack,
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
 )
 
 @Composable
-fun TifosiTheme(content: @Composable () -> Unit) {
+fun VoteTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
     MaterialTheme(
-        colorScheme = KuiraDarkColorScheme,
-        typography = Typography,
+        colorScheme = VoteDarkColorScheme,
+        typography = VoteTypography,
         content = content,
     )
 }
 ```
+
+The theme is dark-only. All three files are required — omitting any
+one breaks the build.
 
 ### 8.6) `MainActivity.kt`
 
@@ -1511,7 +2086,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.kuiralabs.starter.counter.ui.VotingScreen
-import com.kuiralabs.starter.counter.ui.theme.TifosiTheme
+import com.kuiralabs.starter.counter.ui.theme.VoteTheme
 import com.midnight.kuira.dapp.wallet.WalletAppShell
 import com.midnight.kuira.sdk.walletruntime.WalletNotifications
 import com.midnight.kuira.sdk.walletruntime.SessionLock
@@ -1532,7 +2107,7 @@ class MainActivity : AppCompatActivity() {
         }
         setContent {
             WalletAppShell {
-                TifosiTheme {
+                VoteTheme {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         VotingScreen()
                     }
