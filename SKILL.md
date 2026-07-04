@@ -29,6 +29,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Build a privacy-preserving payment vault with 1AM wallet | `example-payment-dapp/` |
 | Build a time-lock vault dApp on Midnight | `example-locker-dapp/` |
 | Build a privacy-preserving leaderboard DApp on Midnight | `example-leaderboard-dapp/` |
+| Build a ZK loan application with attestation on Midnight | `example-zk-loan-application/` |
 | Build NFTs (shielded + unshielded) with OpenZeppelin | `nft/` |
 | Token transfers, balance flows, multi-party txs | `token-transfers/` |
 | Understand Midnight consensus — AURA, GRANDPA, and Partnerchain validators | `midnight-consensus/` |
@@ -70,6 +71,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 
 ### [Example Payment Dapp](/example-payment-dapp/SKILL.md)
 - Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet.
+
+### [Example ZK Loan Application](/example-zk-loan-application/SKILL.md)
+- Private credit scoring with Schnorr attestation — score, income, and tenure never touch the ledger.
+- Monorepo: Compact contract + attestation API + CLI; optional Next.js + 1AM frontend (leaderboard-dapp pattern).
 
 ### [Indexer](/indexer/SKILL.md)
 - GraphQL queries and subscriptions, contract state reads, transaction lookups.
