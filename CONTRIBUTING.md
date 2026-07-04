@@ -1,6 +1,6 @@
 # Contributing to MIDSKILLS
 
-Thank you for helping improve Midnight developer skills. This repo is a **knowledge package for AI agents** — skills are markdown files that LLMs fetch and follow. The website is secondary; quality and accuracy of `SKILL.md` files matter most.
+Thank you for helping improve Midnight developer skills. This repo is a **knowledge package for AI agents** — skills are markdown files that LLMs fetch and follow. Quality and accuracy of `SKILL.md` files matter most. The MIDSKILLS Next.js UI consumes this registry at build time.
 
 ## Ways to contribute
 
@@ -10,8 +10,8 @@ Thank you for helping improve Midnight developer skills. This repo is a **knowle
 | **Improve an existing skill** | Edit that skill's `SKILL.md` (fix errors, update versions, add gotchas) |
 | **Add shared reference code** | `references/` (provider wiring, gotchas, version pins) |
 | **Add a runnable template** | `templates/<name>/` + link via `templatePath` in `skills.json` |
-| **Fix registry / site drift** | `skills.json` + `npm run sync:registry` |
-| **Docs & typos** | `README.md`, `howto.html`, `CONTRIBUTING.md` |
+| **Fix registry drift** | `skills.json` + `npm run sync:registry` |
+| **Docs & typos** | `README.md`, `CONTRIBUTING.md` |
 
 Open a [GitHub issue](https://github.com/Kali-Decoder/Midnight-skills/issues) first if your skill is large, overlaps an existing skill, or you're unsure it fits.
 
@@ -51,9 +51,8 @@ Each skill should help an LLM **complete a task end-to-end**:
 
 **Never** hand-edit generated registry blocks in:
 
-- `SKILL.md` / `AGENTS.md` / `CLAUDE.md` (between `<!-- SKILLS_REGISTRY:... -->` markers)
+- `SKILL.md` / `AGENTS.md` / `CLAUDE.md` / `llms.txt` (between `<!-- SKILLS_REGISTRY:... -->` markers)
 - `README.md` skills table
-- `howto.html` skill grid
 - `package.json` `"skills"` array
 
 Always update `skills.json` and run `npm run sync:registry`.
@@ -191,7 +190,7 @@ This updates router files, README table, howto grid, and `package.json`. The scr
 
 ### Step 5 — Verify locally
 
-- Open `skill.html?name=your-skill-name` — skill loads in sidebar and renders
+- Run the MIDSKILLS dev server (`cd midskills && pnpm dev`) and open `/browse/your-skill-name`
 - Check homepage if `featured: true`
 - Skim generated router section in `SKILL.md` for your entry
 
@@ -212,7 +211,7 @@ This updates router files, README table, howto grid, and `package.json`. The scr
 
 - [ ] `your-skill-name/SKILL.md` exists with valid YAML frontmatter
 - [ ] Entry added to `skills.json` with unique `id`
-- [ ] `npm run sync:registry` run; committed synced files (`SKILL.md` router blocks, `README.md`, `howto.html`, `package.json`)
+- [ ] `npm run sync:registry` run; committed synced files (`SKILL.md` router blocks, `README.md`, `package.json`)
 - [ ] No secrets or credentials in the diff
 - [ ] Code examples use current Midnight SDK patterns (low-level deploy/call where required)
 - [ ] Troubleshooting or gotchas section included for non-trivial skills
@@ -273,7 +272,7 @@ Reviews may request changes or suggest merging into an existing skill.
 ## Questions?
 
 - [Open an issue](https://github.com/Kali-Decoder/Midnight-skills/issues) for skill proposals
-- Browse existing skills in [`skills.json`](skills.json) and [`skill.html`](skill.html) before writing
+- Browse existing skills in [`skills.json`](skills.json) and the MIDSKILLS `/browse` page before writing
 - Read [`testing/`](testing/SKILL.md) for toolchain version alignment
 
 Thank you for making Midnight easier to build on.

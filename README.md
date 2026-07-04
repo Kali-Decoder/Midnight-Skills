@@ -1,8 +1,8 @@
 # Midnight Skills
 
-This project extends the Midnight Network with additional developer tooling.
+Public skills registry for AI agents building on Midnight Network. Each skill is a standalone `SKILL.md` that agents fetch and follow.
 
-Knowledge skills for AI agents building on Midnight Network. Each skill is a standalone markdown file that agents fetch and read into their context.
+The **MIDSKILLS** marketplace UI is a separate Next.js app (`midskills/` during migration). This repository is the source of truth for skill content and the published registry bundle.
 
 ## Skills
 
@@ -38,80 +38,50 @@ Knowledge skills for AI agents building on Midnight Network. Each skill is a sta
 ## Architecture
 
 <!-- SKILLS_REGISTRY:ARCHITECTURE -->
-- **Site:** [MIDSKILLS](https://midnight-skills.netlify.app) — static HTML, CSS, and JavaScript
-- **Hosting:** [Netlify](https://www.netlify.com) (static deploy + serverless functions in `netlify/functions/`)
-- **API:** `/api/*` → Netlify functions (skill fetch, analytics, stats); `api/` also supports Vercel-style deployment
-- **Database:** MongoDB (optional download tracking); Supabase (optional analytics)
-- **Skills:** Markdown files served statically and via `/api/skill`
+- **Registry:** `skills.json` — single source of truth for skills, learning paths, and site metadata
+- **Content:** Skill folders, `references/`, and `templates/` in this repository
+- **CI:** GitHub Actions validate on PR; publish a versioned registry bundle on release tags
+- **UI:** [MIDSKILLS](https://midnight-skills.netlify.app) Next.js app (separate repo) consumes the published registry at build time
+- **Agents:** Install skill folders via npm package or fetch from GitHub
 <!-- /SKILLS_REGISTRY:ARCHITECTURE -->
+
+## Repository layout
+
+```
+skills.json          # Registry manifest
+SKILL.md             # Router skill for agents
+compact/             # Example skill folder
+references/          # Shared docs (provider wiring, gotchas)
+templates/           # Runnable dApp templates
+scripts/             # validate, sync, package registry
+midskills/           # Next.js UI (standalone — publish as private repo; see midskills/README.md)
+```
 
 ## Prerequisites
 
 - Node.js >= 22
-- Optional: MongoDB (Atlas or self-hosted) for download tracking
-- Optional: Supabase for analytics (`/api/track`, `/api/analytics`)
-- A [Netlify](https://www.netlify.com) account for deployment (recommended)
 
-## Setup
+## Local commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Set environment variables (see .env.example)
-cp .env.example .env
-# Edit .env with your values
+npm run validate:registry   # Check skills.json + on-disk paths
+npm run sync:registry       # Update router docs, README table, package.json
+npm run package:registry    # Build dist/registry/ + tarball (for UI consumers)
 ```
 
-### Environment Variables
+## Publish registry
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `MONGODB_URI` | No | MongoDB connection string (optional download tracking) |
-| `MONGODB_DB` | No | Database name (default: `midnight-skills`) |
-| `STATS_SECRET` | No | Secret key to access `/api/stats` |
-| `SUPABASE_URL` | No | Supabase project URL (enables `/api/track` + `/api/analytics`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | No | Supabase service role key (server-side only) |
-| `ANALYTICS_SECRET` | No | (Deprecated) `/api/analytics` is public now |
-| `ANALYTICS_IP_SALT` | No | Salt for daily IP hashing (recommended) |
+<!-- SKILLS_REGISTRY:REGISTRY -->
+1. Edit `skills.json` and skill folders
+2. Run `npm run validate:registry`
+3. Run `npm run sync:registry` to update router docs and `package.json`
+4. Open a PR — CI validates the registry
+5. Tag `v*` on `main` to publish `midnight-skills-registry-<version>.tar.gz` as a GitHub Release asset
+<!-- /SKILLS_REGISTRY:REGISTRY -->
 
-### Database Setup
+**Shared dApp references** live in `references/` — provider wiring and gotchas used by payment, locker, and wallet skills.
 
-Create a MongoDB database (Atlas or self-hosted). The app will create the
-`skill_downloads` collection automatically on first insert.
-
-## Deployment
-
-<!-- SKILLS_REGISTRY:DEPLOYMENT -->
-The site deploys to **Netlify** at [midnight-skills.netlify.app](https://midnight-skills.netlify.app). Push to `main` to trigger a deploy.
-
-Set environment variables in your Netlify project (Site settings → Environment variables). MongoDB and Supabase are optional — the static site and skill browser work without them.
-
-For Vercel-style hosting, the `api/` folder can be used instead; set the same environment variables there.
-<!-- /SKILLS_REGISTRY:DEPLOYMENT -->
-
-### Optional: Supabase Analytics
-
-- Apply `supabase/analytics_schema.sql` in your Supabase SQL editor.
-- Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Netlify (or Vercel).
-- Open `analytics.html` to view usage.
-
-## Skill registry
-
-`skills.json` is the **single source of truth** for site metadata, skills, learning paths, and featured flags. The site (`skill.html`, `index.html`), `meta.js`, and npm package list are synced from it via `npm run sync:registry`.
-
-**Add or change a skill:**
-
-1. Edit `skills.json` (add entry with `id`, `name`, `path`, `description`, `enabled`, etc.)
-2. Create or update the skill folder and `SKILL.md`
-3. Run `npm run sync:registry` to update `SKILL.md` router, `README.md`, `howto.html`, and `package.json` skills list
-4. Commit both `skills.json` and the synced files
-
-**Shared dApp references** live in `references/` — provider wiring and gotchas used by `example-payment-dapp`, `example-locker-dapp`, and `1am-wallet` skills.
-
-**Runnable template:** `templates/locker-dapp/` — copy and run for the locker dApp skill.
-
-**Skill journey map:** `skillLevels` in `skills.json` drives the animated beginner → intermediate → advanced mind map on the homepage.
+**Runnable templates** live in `templates/` — linked from skills via `templatePath` in `skills.json`.
 
 ## Contributing
 

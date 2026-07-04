@@ -1,4 +1,4 @@
-import { getMongoClient, getMongoDbName, resetMongoClient } from "@/lib/mongo";
+import { getMongoClient, getMongoDbName, resetMongoClient, tryQuickMongo } from "@/lib/mongo";
 
 export type UserRecord = {
   githubId: number;
@@ -86,4 +86,36 @@ export async function listUsers(limit = 50): Promise<UserRecord[]> {
     }
   }
   throw lastError;
+}
+
+export async function listUsersQuick(limit = 50): Promise<UserRecord[] | null> {
+  return tryQuickMongo(async (client) => {
+    const col = client.db(getMongoDbName()).collection<UserDoc>("users");
+    return col
+      .find(
+        {},
+        {
+          projection: {
+            _id: 0,
+            githubId: 1,
+            login: 1,
+            name: 1,
+            avatarUrl: 1,
+            githubProfile: 1,
+            lastSeenAt: 1,
+            firstSeenAt: 1,
+          },
+        },
+      )
+      .sort({ lastSeenAt: -1 })
+      .limit(limit)
+      .toArray();
+  });
+}
+
+export async function countUsersQuick(): Promise<number | null> {
+  return tryQuickMongo(async (client) => {
+    const col = client.db(getMongoDbName()).collection<UserDoc>("users");
+    return col.countDocuments({});
+  });
 }

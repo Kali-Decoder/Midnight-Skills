@@ -3,6 +3,19 @@ import fs from "fs";
 import path from "path";
 import { REPO_ROOT } from "./paths";
 
+function registryPath(): string {
+  return path.join(REPO_ROOT, "skills.json");
+}
+
+function assertRegistryExists(): void {
+  const file = registryPath();
+  if (!fs.existsSync(file)) {
+    throw new Error(
+      `Skills registry not found at ${file}. Run "pnpm fetch:registry" (or set registry-version.txt) before starting the app.`,
+    );
+  }
+}
+
 export interface Registry {
   version: number;
   site?: {
@@ -52,7 +65,8 @@ let cached: Registry | null = null;
 
 export function loadRegistry(): Registry {
   if (cached) return cached;
-  const raw = fs.readFileSync(path.join(REPO_ROOT, "skills.json"), "utf-8");
+  assertRegistryExists();
+  const raw = fs.readFileSync(registryPath(), "utf-8");
   cached = JSON.parse(raw) as Registry;
   return cached;
 }

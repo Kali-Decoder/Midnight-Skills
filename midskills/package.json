@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "fetch:registry": "node scripts/fetch-registry.mjs",
+    "predev": "node scripts/fetch-registry.mjs",
+    "prebuild": "node scripts/fetch-registry.mjs",
     "dev": "next dev",
     "dev:clean": "rm -rf .next && next dev",
     "build": "next build",

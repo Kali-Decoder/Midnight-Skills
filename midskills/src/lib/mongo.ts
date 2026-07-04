@@ -71,3 +71,27 @@ export async function getMongoClient(): Promise<MongoClient> {
 
   return globalThis.__msMongoClientPromise;
 }
+
+const QUICK_CLIENT_OPTIONS: MongoClientOptions = {
+  serverSelectionTimeoutMS: 3000,
+  connectTimeoutMS: 3000,
+  socketTimeoutMS: 5000,
+  maxPoolSize: 1,
+  autoSelectFamily: false,
+};
+
+/** Short-lived connection for splash/community reads — does not block on a slow Atlas handshake. */
+export async function tryQuickMongo<T>(fn: (client: MongoClient) => Promise<T>): Promise<T | null> {
+  const uri = process.env.MONGODB_URI?.trim();
+  if (!uri) return null;
+
+  const client = new MongoClient(normalizeMongoUri(uri), QUICK_CLIENT_OPTIONS);
+  try {
+    await client.connect();
+    return await fn(client);
+  } catch {
+    return null;
+  } finally {
+    await client.close().catch(() => undefined);
+  }
+}

@@ -1,0 +1,36 @@
+name: Validate registry
+
+on:
+  pull_request:
+    paths:
+      - "skills.json"
+      - "**/SKILL.md"
+      - "references/**"
+      - "templates/**"
+      - "scripts/**"
+      - ".github/workflows/**"
+  push:
+    branches: [main]
+    paths:
+      - "skills.json"
+      - "**/SKILL.md"
+      - "references/**"
+      - "templates/**"
+      - "scripts/**"
+      - ".github/workflows/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate registry
+        run: npm run validate:registry
+
+      - name: Sync check (dry run)
+        run: npm run sync:registry

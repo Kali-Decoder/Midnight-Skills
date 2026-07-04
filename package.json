@@ -56,11 +56,9 @@
     "./midnight-storage",
     "./midnight-transactions"
   ],
-  "private": true,
   "scripts": {
-    "sync:registry": "node scripts/sync-skill-registry.mjs"
-  },
-  "dependencies": {
-    "mongodb": "^6.13.0"
+    "validate:registry": "node scripts/validate-registry.mjs",
+    "sync:registry": "node scripts/sync-skill-registry.mjs",
+    "package:registry": "node scripts/package-registry.mjs"
   }
 }

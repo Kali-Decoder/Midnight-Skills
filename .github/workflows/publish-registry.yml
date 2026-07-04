@@ -1,0 +1,33 @@
+name: Publish registry
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate registry
+        run: npm run validate:registry
+
+      - name: Package registry bundle
+        env:
+          REGISTRY_VERSION: ${{ github.ref_name }}
+        run: npm run package:registry
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/midnight-skills-registry-*.tar.gz
+          generate_release_notes: true
