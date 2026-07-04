@@ -73,6 +73,10 @@
         {
           "skillId": "example-locker-dapp",
           "summary": "Time-lock vault (vesting, LP locks)"
+        },
+        {
+          "skillId": "example-zk-loan-application",
+          "summary": "ZK credit scoring loan with Schnorr attestation"
         }
       ]
     },
@@ -191,8 +195,16 @@
           "summary": "Time-lock vault with runnable template"
         },
         {
+          "skillId": "example-zk-loan-application",
+          "summary": "Private credit scoring + attested ZK loan flow"
+        },
+        {
           "skillId": "example-leaderboard-dapp",
           "summary": "Privacy-preserving arcade leaderboard with ZK ownership proofs"
+        },
+        {
+          "skillId": "example-zk-loan-application",
+          "summary": "ZK credit scoring loan dApp with Schnorr attestation"
         },
         {
           "skillId": "multinetwork",
@@ -531,6 +543,26 @@
         "Leaderboard",
         "ZK proofs",
         "Arcade"
+      ]
+    },
+    {
+      "id": "example-zk-loan-application",
+      "name": "Example ZK Loan Application",
+      "path": "example-zk-loan-application/SKILL.md",
+      "description": "Zero-knowledge loan dApp: privately evaluate credit data with Schnorr attestation, record only loan outcomes on-chain.",
+      "enabled": true,
+      "featured": true,
+      "category": "full-template",
+      "taskHint": "Build a ZK loan application with attestation on Midnight",
+      "routerBullets": [
+        "Private credit scoring with Schnorr attestation — score, income, and tenure never touch the ledger.",
+        "Monorepo: Compact contract + attestation API + CLI; optional Next.js + 1AM frontend (leaderboard-dapp pattern)."
+      ],
+      "tags": [
+        "ZK Loan",
+        "Attestation",
+        "Schnorr",
+        "DeFi"
       ]
     },
     {

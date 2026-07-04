@@ -46,6 +46,7 @@
     "./example-payment-dapp",
     "./example-locker-dapp",
     "./example-leaderboard-dapp",
+    "./example-zk-loan-application",
     "./nft",
     "./token-transfers",
     "./midnight-consensus",
