@@ -241,7 +241,7 @@
     {
       "id": "midnightskill",
       "name": "Midnight Skills Router",
-      "path": "SKILL.md",
+      "path": ".agents/skills/midnightskill/SKILL.md",
       "description": "Root router skill for Midnight Network. Use this to select the right sub-skill.",
       "enabled": true,
       "listInRouter": false,
@@ -253,7 +253,7 @@
     {
       "id": "why-midnight",
       "name": "Why Midnight",
-      "path": "why-midnight/SKILL.md",
+      "path": ".agents/skills/why-midnight/SKILL.md",
       "description": "What Midnight is, why it exists, and how it works — public/private state, selective disclosure, and ZK proofs.",
       "enabled": true,
       "featured": true,
@@ -272,7 +272,7 @@
     {
       "id": "1am-wallet",
       "name": "1AM Wallet",
-      "path": "1am-wallet/SKILL.md",
+      "path": ".agents/skills/1am-wallet/SKILL.md",
       "description": "Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network.",
       "enabled": true,
       "featured": true,
@@ -291,7 +291,7 @@
     {
       "id": "react-wallet-connector",
       "name": "React Wallet Connector",
-      "path": "react-wallet-connector/SKILL.md",
+      "path": ".agents/skills/react-wallet-connector/SKILL.md",
       "description": "Scaffold a React + Vite app with DApp Connector API wallet connection, connect/disconnect UI, and unshielded address display.",
       "enabled": true,
       "featured": true,
@@ -311,7 +311,7 @@
       "id": "dynamic-midnight-wallet",
       "name": "Dynamic Midnight Wallet",
       "author": "Kali-Decoder",
-      "path": "dynamic-midnight-wallet/SKILL.md",
+      "path": ".agents/skills/dynamic-midnight-wallet/SKILL.md",
       "description": "Scaffold React + Vite with Dynamic.xyz Midnight wallet — unshielded, shielded, and DUST surfaces.",
       "enabled": false,
       "featured": false,
@@ -330,7 +330,7 @@
     {
       "id": "compact",
       "name": "Compact",
-      "path": "compact/SKILL.md",
+      "path": ".agents/skills/compact/SKILL.md",
       "description": "The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits.",
       "enabled": true,
       "featured": true,
@@ -349,7 +349,7 @@
     {
       "id": "testing",
       "name": "Testing",
-      "path": "testing/SKILL.md",
+      "path": ".agents/skills/testing/SKILL.md",
       "description": "Debug Compact contracts and manage toolchain versions. Static vs dynamic errors, version sync, common traps.",
       "enabled": true,
       "featured": false,
@@ -368,7 +368,7 @@
     {
       "id": "multinetwork",
       "name": "Multinetwork",
-      "path": "multinetwork/SKILL.md",
+      "path": ".agents/skills/multinetwork/SKILL.md",
       "description": "Build a single dApp that deploys across all networks (localnet, preview, preprod, mainnet) from one codebase.",
       "enabled": true,
       "featured": false,
@@ -387,7 +387,7 @@
     {
       "id": "midnight-js",
       "name": "Midnight.js",
-      "path": "midnight-js/SKILL.md",
+      "path": ".agents/skills/midnight-js/SKILL.md",
       "description": "TypeScript SDK — provider wiring, wallet SDK, contract deployment, DUST flow, testkit.",
       "enabled": true,
       "featured": false,
@@ -406,7 +406,7 @@
     {
       "id": "midnight-indexer",
       "name": "Indexer",
-      "path": "indexer/SKILL.md",
+      "path": ".agents/skills/indexer/SKILL.md",
       "description": "Query and subscribe to Midnight blockchain data via Indexer GraphQL API v4.",
       "enabled": true,
       "featured": false,
@@ -425,7 +425,7 @@
     {
       "id": "midnight-security",
       "name": "Security",
-      "path": "security/SKILL.md",
+      "path": ".agents/skills/security/SKILL.md",
       "description": "Privacy audit checklist, data leak patterns, defensive Compact patterns.",
       "enabled": true,
       "featured": false,
@@ -444,7 +444,7 @@
     {
       "id": "android-example-voting",
       "name": "Android Example Voting",
-      "path": "android-example-voting/SKILL.md",
+      "path": ".agents/skills/android-example-voting/SKILL.md",
       "description": "Build a voting/poll dApp on Midnight Network using the Kuira Android SDK — Compact smart contract with create/cast/close circuits, passkey-derived identity, embedded wallet, Compose UI, reactive ledger reads via observeLedger(), and on-device ZK proving.",
       "enabled": true,
       "featured": false,
@@ -463,7 +463,7 @@
     {
       "id": "example-counter",
       "name": "Example Counter",
-      "path": "example-counter/SKILL.md",
+      "path": ".agents/skills/example-counter/SKILL.md",
       "description": "Complete Midnight DApp reference — headless wallet, CLI, counter contract, DUST generation, deploy, interaction.",
       "enabled": true,
       "featured": false,
@@ -482,7 +482,7 @@
     {
       "id": "hello-world",
       "name": "Example Hello World",
-      "path": "example-hello-world/SKILL.md",
+      "path": ".agents/skills/example-hello-world/SKILL.md",
       "description": "Build a complete Midnight Network hello-world DApp from scratch with Compact, vitest, and FluentWalletBuilder.",
       "enabled": true,
       "featured": false,
@@ -500,7 +500,7 @@
     {
       "id": "example-payment-dapp",
       "name": "Example Payment Dapp",
-      "path": "example-payment-dapp/SKILL.md",
+      "path": ".agents/skills/example-payment-dapp/SKILL.md",
       "description": "Privacy-preserving payment vault: deposit/withdraw tNIGHT via Compact + 1AM wallet.",
       "enabled": true,
       "featured": false,
@@ -518,7 +518,7 @@
     {
       "id": "example-locker-dapp",
       "name": "Example Locker Dapp",
-      "path": "example-locker-dapp/SKILL.md",
+      "path": ".agents/skills/example-locker-dapp/SKILL.md",
       "description": "Time-lock vault dApp: lock unshielded NIGHT until a Unix deadline; beneficiary releases via blockTimeGte.",
       "enabled": true,
       "featured": true,
@@ -538,7 +538,7 @@
       "id": "example-leaderboard-dapp",
       "name": "Example Leaderboard Dapp",
       "author": "Kali-Decoder",
-      "path": "example-leaderboard-dapp/SKILL.md",
+      "path": ".agents/skills/example-leaderboard-dapp/SKILL.md",
       "description": "Privacy-preserving arcade leaderboard: submit scores with anonymous/public/custom names and prove ownership via ZK.",
       "enabled": true,
       "featured": true,
@@ -559,7 +559,7 @@
       "id": "example-private-party-dapp",
       "name": "Example Private Party Dapp",
       "author": "Kali-Decoder",
-      "path": "example-private-party-dapp/SKILL.md",
+      "path": ".agents/skills/example-private-party-dapp/SKILL.md",
       "description": "Private party RSVP dApp: persistentCommit guest list, DApp-specific public keys, unshielded NIGHT privacy boundary, Next.js + 1AM wallet.",
       "enabled": true,
       "featured": true,
@@ -582,7 +582,7 @@
       "id": "example-zk-loan-application",
       "name": "Example ZK Loan Application",
       "author": "Kali-Decoder",
-      "path": "example-zk-loan-application/SKILL.md",
+      "path": ".agents/skills/example-zk-loan-application/SKILL.md",
       "description": "Zero-knowledge loan dApp: privately evaluate credit data with Schnorr attestation, record only loan outcomes on-chain.",
       "enabled": true,
       "featured": true,
@@ -602,7 +602,7 @@
     {
       "id": "nft",
       "name": "NFT",
-      "path": "nft/SKILL.md",
+      "path": ".agents/skills/nft/SKILL.md",
       "description": "Build shielded and unshielded NFTs on Midnight using OpenZeppelin Compact contracts.",
       "enabled": true,
       "featured": false,
@@ -621,7 +621,7 @@
     {
       "id": "token-transfers",
       "name": "Token Transfers",
-      "path": "token-transfers/SKILL.md",
+      "path": ".agents/skills/token-transfers/SKILL.md",
       "description": "Shielded and unshielded token transfers, balance queries, multi-party flows on Midnight.",
       "enabled": true,
       "featured": false,
@@ -640,7 +640,7 @@
     {
       "id": "midnight-consensus",
       "name": "Midnight Consensus",
-      "path": "midnight-consensus/SKILL.md",
+      "path": ".agents/skills/midnight-consensus/SKILL.md",
       "description": "AURA block production, GRANDPA finality, and Cardano Partnerchain validator selection with SPO stake delegation.",
       "enabled": true,
       "featured": false,
@@ -660,7 +660,7 @@
     {
       "id": "midnight-cryptography",
       "name": "Midnight Cryptography",
-      "path": "midnight-cryptography/SKILL.md",
+      "path": ".agents/skills/midnight-cryptography/SKILL.md",
       "description": "Node cryptographic primitives — Blake2-256, sr25519, ECDSA, Ed25519, and twoxhash storage keys.",
       "enabled": true,
       "featured": false,
@@ -680,7 +680,7 @@
     {
       "id": "midnight-onchain-logic",
       "name": "Onchain Logic and State",
-      "path": "midnight-onchain-logic/SKILL.md",
+      "path": ".agents/skills/midnight-onchain-logic/SKILL.md",
       "description": "WASM runtime, FRAME pallets, pallet-midnight ledger state machine, and proof-based state transitions.",
       "enabled": true,
       "featured": false,
@@ -700,7 +700,7 @@
     {
       "id": "midnight-p2p-networking",
       "name": "P2P Networking",
-      "path": "midnight-p2p-networking/SKILL.md",
+      "path": ".agents/skills/midnight-p2p-networking/SKILL.md",
       "description": "libp2p peer discovery, TCP/WebSocket transport, Noise encryption, Yamux multiplexing, and gossip protocols.",
       "enabled": true,
       "featured": false,
@@ -720,7 +720,7 @@
     {
       "id": "midnight-rpc",
       "name": "RPC Interface",
-      "path": "midnight-rpc/SKILL.md",
+      "path": ".agents/skills/midnight-rpc/SKILL.md",
       "description": "JSON-RPC methods for contract state, ZSwap chain state, ledger version, Polkadot SDK defaults, and Partnerchain RPCs.",
       "enabled": true,
       "featured": false,
@@ -740,7 +740,7 @@
     {
       "id": "midnight-storage",
       "name": "Storage",
-      "path": "midnight-storage/SKILL.md",
+      "path": ".agents/skills/midnight-storage/SKILL.md",
       "description": "ParityDB backend, Patricia-Merkle trie state commitments, and twoxhash storage key generation.",
       "enabled": true,
       "featured": false,
@@ -760,7 +760,7 @@
     {
       "id": "midnight-transactions",
       "name": "Transactions",
-      "path": "midnight-transactions/SKILL.md",
+      "path": ".agents/skills/midnight-transactions/SKILL.md",
       "description": "Proof-based unsigned ledger transactions, pool validation, runtime verification, and state commit lifecycle.",
       "enabled": true,
       "featured": false,

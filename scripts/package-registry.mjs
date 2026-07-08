@@ -45,7 +45,7 @@ function main() {
   writeFileSync(join(OUT_DIR, "skills.json"), readFileSync(join(ROOT, "skills.json")));
 
   const copied = new Set();
-  const queue = ["SKILL.md", "references", "templates"];
+  const queue = [".agents/skills/midnightskill/SKILL.md", "references", "templates"];
 
   for (const skill of registry.skills) {
     if (skill.path) {
