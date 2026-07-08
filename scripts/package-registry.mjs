@@ -74,12 +74,13 @@ function main() {
 
   writeFileSync(join(OUT_DIR, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 
-  const archivePath = join(ROOT, "dist", `midnight-skills-registry-${version}.tar.gz`);
-  mkdirSync(join(ROOT, "dist"), { recursive: true });
-  execSync(`tar -czf "${archivePath}" -C "${join(ROOT, "dist")}" registry`, { stdio: "inherit" });
+  const distDir = join(ROOT, "dist");
+  mkdirSync(distDir, { recursive: true });
+  const archiveName = `midnight-skills-registry-${version}.tar.gz`;
+  execSync(`tar -czf "${archiveName}" registry`, { cwd: distDir, stdio: "inherit" });
 
   console.log(`Packaged registry → ${relative(ROOT, OUT_DIR)}`);
-  console.log(`Archive → ${relative(ROOT, archivePath)}`);
+  console.log(`Archive → dist/${archiveName}`);
 }
 
 main();
