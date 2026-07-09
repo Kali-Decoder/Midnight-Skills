@@ -9,32 +9,32 @@ The **MIDSKILLS** marketplace UI is a separate Next.js app (`midskills/` during 
 | Skill | Description |
 |-------|-------------|
 <!-- SKILLS_REGISTRY:README_TABLE -->
-| [1AM Wallet](1am-wallet/SKILL.md) | Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network. |
-| [Android Example Voting](android-example-voting/SKILL.md) | Build a voting/poll dApp on Midnight Network using the Kuira Android SDK — Compact smart contract with create/cast/close circuits, passkey-derived identity, embedded wallet, Compose UI, reactive ledger reads via observeLedger(), and on-device ZK proving. |
-| [Compact](compact/SKILL.md) | The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits. |
-| [Example Counter](example-counter/SKILL.md) | Complete Midnight DApp reference — headless wallet, CLI, counter contract, DUST generation, deploy, interaction. |
-| [Example Hello World](example-hello-world/SKILL.md) | Build a complete Midnight Network hello-world DApp from scratch with Compact, vitest, and FluentWalletBuilder. |
-| [Example Leaderboard Dapp](example-leaderboard-dapp/SKILL.md) | Privacy-preserving arcade leaderboard: submit scores with anonymous/public/custom names and prove ownership via ZK. |
-| [Example Locker Dapp](example-locker-dapp/SKILL.md) | Time-lock vault dApp: lock unshielded NIGHT until a Unix deadline; beneficiary releases via blockTimeGte. |
-| [Example Payment Dapp](example-payment-dapp/SKILL.md) | Privacy-preserving payment vault: deposit/withdraw tNIGHT via Compact + 1AM wallet. |
-| [Example Private Party Dapp](example-private-party-dapp/SKILL.md) | Private party RSVP dApp: persistentCommit guest list, DApp-specific public keys, unshielded NIGHT privacy boundary, Next.js + 1AM wallet. |
-| [Example ZK Loan Application](example-zk-loan-application/SKILL.md) | Zero-knowledge loan dApp: privately evaluate credit data with Schnorr attestation, record only loan outcomes on-chain. |
-| [Indexer](indexer/SKILL.md) | Query and subscribe to Midnight blockchain data via Indexer GraphQL API v4. |
-| [Midnight Consensus](midnight-consensus/SKILL.md) | AURA block production, GRANDPA finality, and Cardano Partnerchain validator selection with SPO stake delegation. |
-| [Midnight Cryptography](midnight-cryptography/SKILL.md) | Node cryptographic primitives — Blake2-256, sr25519, ECDSA, Ed25519, and twoxhash storage keys. |
-| [Midnight.js](midnight-js/SKILL.md) | TypeScript SDK — provider wiring, wallet SDK, contract deployment, DUST flow, testkit. |
-| [Multinetwork](multinetwork/SKILL.md) | Build a single dApp that deploys across all networks (localnet, preview, preprod, mainnet) from one codebase. |
-| [NFT](nft/SKILL.md) | Build shielded and unshielded NFTs on Midnight using OpenZeppelin Compact contracts. |
-| [Onchain Logic and State](midnight-onchain-logic/SKILL.md) | WASM runtime, FRAME pallets, pallet-midnight ledger state machine, and proof-based state transitions. |
-| [P2P Networking](midnight-p2p-networking/SKILL.md) | libp2p peer discovery, TCP/WebSocket transport, Noise encryption, Yamux multiplexing, and gossip protocols. |
-| [React Wallet Connector](react-wallet-connector/SKILL.md) | Scaffold a React + Vite app with DApp Connector API wallet connection, connect/disconnect UI, and unshielded address display. |
-| [RPC Interface](midnight-rpc/SKILL.md) | JSON-RPC methods for contract state, ZSwap chain state, ledger version, Polkadot SDK defaults, and Partnerchain RPCs. |
-| [Security](security/SKILL.md) | Privacy audit checklist, data leak patterns, defensive Compact patterns. |
-| [Storage](midnight-storage/SKILL.md) | ParityDB backend, Patricia-Merkle trie state commitments, and twoxhash storage key generation. |
-| [Testing](testing/SKILL.md) | Debug Compact contracts and manage toolchain versions. Static vs dynamic errors, version sync, common traps. |
-| [Token Transfers](token-transfers/SKILL.md) | Shielded and unshielded token transfers, balance queries, multi-party flows on Midnight. |
-| [Transactions](midnight-transactions/SKILL.md) | Proof-based unsigned ledger transactions, pool validation, runtime verification, and state commit lifecycle. |
-| [Why Midnight](why-midnight/SKILL.md) | What Midnight is, why it exists, and how it works — public/private state, selective disclosure, and ZK proofs. |
+| [1AM Wallet](.agents/skills/1am-wallet/SKILL.md) | Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network. |
+| [Android Example Voting](.agents/skills/android-example-voting/SKILL.md) | Build a voting/poll dApp on Midnight Network using the Kuira Android SDK — Compact smart contract with create/cast/close circuits, passkey-derived identity, embedded wallet, Compose UI, reactive ledger reads via observeLedger(), and on-device ZK proving. |
+| [Compact](.agents/skills/compact/SKILL.md) | The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits. |
+| [Example Counter](.agents/skills/example-counter/SKILL.md) | Complete Midnight DApp reference — headless wallet, CLI, counter contract, DUST generation, deploy, interaction. |
+| [Example Hello World](.agents/skills/example-hello-world/SKILL.md) | Build a complete Midnight Network hello-world DApp from scratch with Compact, vitest, and FluentWalletBuilder. |
+| [Example Leaderboard Dapp](.agents/skills/example-leaderboard-dapp/SKILL.md) | Privacy-preserving arcade leaderboard: submit scores with anonymous/public/custom names and prove ownership via ZK. |
+| [Example Locker Dapp](.agents/skills/example-locker-dapp/SKILL.md) | Time-lock vault dApp: lock unshielded NIGHT until a Unix deadline; beneficiary releases via blockTimeGte. |
+| [Example Payment Dapp](.agents/skills/example-payment-dapp/SKILL.md) | Privacy-preserving payment vault: deposit/withdraw tNIGHT via Compact + 1AM wallet. |
+| [Example Private Party Dapp](.agents/skills/example-private-party-dapp/SKILL.md) | Private party RSVP dApp: persistentCommit guest list, DApp-specific public keys, unshielded NIGHT privacy boundary, Next.js + 1AM wallet. |
+| [Example ZK Loan Application](.agents/skills/example-zk-loan-application/SKILL.md) | Zero-knowledge loan dApp: privately evaluate credit data with Schnorr attestation, record only loan outcomes on-chain. |
+| [Indexer](.agents/skills/indexer/SKILL.md) | Query and subscribe to Midnight blockchain data via Indexer GraphQL API v4. |
+| [Midnight Consensus](.agents/skills/midnight-consensus/SKILL.md) | AURA block production, GRANDPA finality, and Cardano Partnerchain validator selection with SPO stake delegation. |
+| [Midnight Cryptography](.agents/skills/midnight-cryptography/SKILL.md) | Node cryptographic primitives — Blake2-256, sr25519, ECDSA, Ed25519, and twoxhash storage keys. |
+| [Midnight.js](.agents/skills/midnight-js/SKILL.md) | TypeScript SDK — provider wiring, wallet SDK, contract deployment, DUST flow, testkit. |
+| [Multinetwork](.agents/skills/multinetwork/SKILL.md) | Build a single dApp that deploys across all networks (localnet, preview, preprod, mainnet) from one codebase. |
+| [NFT](.agents/skills/nft/SKILL.md) | Build shielded and unshielded NFTs on Midnight using OpenZeppelin Compact contracts. |
+| [Onchain Logic and State](.agents/skills/midnight-onchain-logic/SKILL.md) | WASM runtime, FRAME pallets, pallet-midnight ledger state machine, and proof-based state transitions. |
+| [P2P Networking](.agents/skills/midnight-p2p-networking/SKILL.md) | libp2p peer discovery, TCP/WebSocket transport, Noise encryption, Yamux multiplexing, and gossip protocols. |
+| [React Wallet Connector](.agents/skills/react-wallet-connector/SKILL.md) | Scaffold a React + Vite app with DApp Connector API wallet connection, connect/disconnect UI, and unshielded address display. |
+| [RPC Interface](.agents/skills/midnight-rpc/SKILL.md) | JSON-RPC methods for contract state, ZSwap chain state, ledger version, Polkadot SDK defaults, and Partnerchain RPCs. |
+| [Security](.agents/skills/security/SKILL.md) | Privacy audit checklist, data leak patterns, defensive Compact patterns. |
+| [Storage](.agents/skills/midnight-storage/SKILL.md) | ParityDB backend, Patricia-Merkle trie state commitments, and twoxhash storage key generation. |
+| [Testing](.agents/skills/testing/SKILL.md) | Debug Compact contracts and manage toolchain versions. Static vs dynamic errors, version sync, common traps. |
+| [Token Transfers](.agents/skills/token-transfers/SKILL.md) | Shielded and unshielded token transfers, balance queries, multi-party flows on Midnight. |
+| [Transactions](.agents/skills/midnight-transactions/SKILL.md) | Proof-based unsigned ledger transactions, pool validation, runtime verification, and state commit lifecycle. |
+| [Why Midnight](.agents/skills/why-midnight/SKILL.md) | What Midnight is, why it exists, and how it works — public/private state, selective disclosure, and ZK proofs. |
 <!-- /SKILLS_REGISTRY:README_TABLE -->
 
 ## Architecture
