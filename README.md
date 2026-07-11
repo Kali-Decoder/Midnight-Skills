@@ -8,7 +8,6 @@ The **MIDSKILLS** marketplace UI is a separate Next.js app (`midskills/` during 
 
 | Skill | Description |
 |-------|-------------|
-<!-- SKILLS_REGISTRY:README_TABLE -->
 | [1AM Wallet](.agents/skills/1am-wallet/SKILL.md) | Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network. |
 | [Android Example Voting](.agents/skills/android-example-voting/SKILL.md) | Build a voting/poll dApp on Midnight Network using the Kuira Android SDK — Compact smart contract with create/cast/close circuits, passkey-derived identity, embedded wallet, Compose UI, reactive ledger reads via observeLedger(), and on-device ZK proving. |
 | [Compact](.agents/skills/compact/SKILL.md) | The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits. |
@@ -36,7 +35,6 @@ The **MIDSKILLS** marketplace UI is a separate Next.js app (`midskills/` during 
 | [Token Transfers](.agents/skills/token-transfers/SKILL.md) | Shielded and unshielded token transfers, balance queries, multi-party flows on Midnight. |
 | [Transactions](.agents/skills/midnight-transactions/SKILL.md) | Proof-based unsigned ledger transactions, pool validation, runtime verification, and state commit lifecycle. |
 | [Why Midnight](.agents/skills/why-midnight/SKILL.md) | What Midnight is, why it exists, and how it works — public/private state, selective disclosure, and ZK proofs. |
-<!-- /SKILLS_REGISTRY:README_TABLE -->
 
 ## Architecture
 
