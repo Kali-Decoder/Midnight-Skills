@@ -14,6 +14,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | I'm doing... | Fetch these skills |
 |--------------|-------------------|
 <!-- SKILLS_REGISTRY:TASK_TABLE -->
+| Set up Compact, Docker, and proof server before building | `midnight-environment-setup/` |
 | Understand Midnight's architecture, privacy model, and ZK approach | `why-midnight/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Build a React app with wallet connect/disconnect via DApp Connector API | `react-wallet-connector/` |
@@ -93,6 +94,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Midnight Cryptography](/.agents/skills/midnight-cryptography/SKILL.md)
 - Blake2-256 for block hashes; twoxhash for trie storage keys.
 - sr25519 (AURA), ECDSA (Partnerchain), Ed25519 (GRANDPA + libp2p).
+
+### [Midnight Environment Setup](/.agents/skills/midnight-environment-setup/SKILL.md)
+- Detect OS, shell, Docker, VS Code, and Compact; install missing tooling automatically.
+- Configure PATH, update compiler, start proof server, and verify the full dev stack.
 
 ### [Midnight.js](/.agents/skills/midnight-js/SKILL.md)
 - TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).

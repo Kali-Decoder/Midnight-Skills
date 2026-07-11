@@ -22,6 +22,7 @@ The **MIDSKILLS** marketplace UI is a separate Next.js app (`midskills/` during 
 | [Indexer](.agents/skills/indexer/SKILL.md) | Query and subscribe to Midnight blockchain data via Indexer GraphQL API v4. |
 | [Midnight Consensus](.agents/skills/midnight-consensus/SKILL.md) | AURA block production, GRANDPA finality, and Cardano Partnerchain validator selection with SPO stake delegation. |
 | [Midnight Cryptography](.agents/skills/midnight-cryptography/SKILL.md) | Node cryptographic primitives — Blake2-256, sr25519, ECDSA, Ed25519, and twoxhash storage keys. |
+| [Midnight Environment Setup](.agents/skills/midnight-environment-setup/SKILL.md) | Automatically prepare a Midnight dev environment — Compact, PATH, Docker, proof server, and VS Code extension. Run before building or deploying. |
 | [Midnight.js](.agents/skills/midnight-js/SKILL.md) | TypeScript SDK — provider wiring, wallet SDK, contract deployment, DUST flow, testkit. |
 | [Multinetwork](.agents/skills/multinetwork/SKILL.md) | Build a single dApp that deploys across all networks (localnet, preview, preprod, mainnet) from one codebase. |
 | [NFT](.agents/skills/nft/SKILL.md) | Build shielded and unshielded NFTs on Midnight using OpenZeppelin Compact contracts. |

@@ -37,6 +37,10 @@
       "title": "Build your first Midnight DApp",
       "steps": [
         {
+          "skillId": "midnight-environment-setup",
+          "summary": "Install Compact, Docker, and proof server"
+        },
+        {
           "skillId": "why-midnight",
           "summary": "Privacy model and ZK basics"
         },
@@ -122,6 +126,10 @@
       "subtitle": "Learn the privacy model, Compact basics, and wallet connect",
       "color": "#7ec8e3",
       "skills": [
+        {
+          "skillId": "midnight-environment-setup",
+          "summary": "Install Compact, Docker, proof server, and VS Code extension"
+        },
         {
           "skillId": "why-midnight",
           "summary": "What Midnight is and how ZK privacy works"
@@ -249,6 +257,27 @@
       "featured": false,
       "category": "meta",
       "tags": []
+    },
+    {
+      "id": "midnight-environment-setup",
+      "name": "Midnight Environment Setup",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/midnight-environment-setup/SKILL.md",
+      "description": "Automatically prepare a Midnight dev environment — Compact, PATH, Docker, proof server, and VS Code extension. Run before building or deploying.",
+      "enabled": true,
+      "featured": true,
+      "category": "foundation",
+      "taskHint": "Set up Compact, Docker, and proof server before building",
+      "routerBullets": [
+        "Detect OS, shell, Docker, VS Code, and Compact; install missing tooling automatically.",
+        "Configure PATH, update compiler, start proof server, and verify the full dev stack."
+      ],
+      "tags": [
+        "Setup",
+        "Compact",
+        "Docker",
+        "Proof Server"
+      ]
     },
     {
       "id": "why-midnight",
