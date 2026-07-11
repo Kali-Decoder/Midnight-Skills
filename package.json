@@ -48,6 +48,7 @@
     "./.agents/skills/example-locker-dapp",
     "./.agents/skills/example-leaderboard-dapp",
     "./.agents/skills/example-private-party-dapp",
+    "./.agents/skills/example-private-reserve-auction",
     "./.agents/skills/example-zk-loan-application",
     "./.agents/skills/nft",
     "./.agents/skills/token-transfers",

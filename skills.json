@@ -215,6 +215,10 @@
           "summary": "Privacy-preserving arcade leaderboard with ZK ownership proofs"
         },
         {
+          "skillId": "example-private-reserve-auction",
+          "summary": "Private reserve auction: hidden reserve, public bids, private bidder identities"
+        },
+        {
           "skillId": "example-private-party-dapp",
           "summary": "Private RSVP party with unshielded privacy boundary + 1AM frontend"
         },
@@ -604,6 +608,28 @@
         "Private party",
         "RSVP",
         "Privacy boundary",
+        "persistentCommit"
+      ]
+    },
+    {
+      "id": "example-private-reserve-auction",
+      "name": "Example Private Reserve Auction",
+      "author": "tusharpamnani",
+      "path": ".agents/skills/example-private-reserve-auction/SKILL.md",
+      "description": "Private reserve auction dApp: hidden reserve price, public bids, private bidder identities, persistentCommit, Map, Counter, receiveUnshielded/sendUnshielded privacy boundary, Next.js + 1AM wallet.",
+      "enabled": true,
+      "featured": true,
+      "category": "full-template",
+      "taskHint": "Build a private reserve auction dApp with hidden reserve price and private bidders",
+      "routerBullets": [
+        "Hidden reserve price via persistentCommit, public bids with private bidder identities.",
+        "Map/Counter tracking, auction auto-close, privacy boundary on claim via unshielded payment.",
+        "Next.js + 1AM wallet frontend with seller/bidder role cards and indexer polling."
+      ],
+      "tags": [
+        "Auction",
+        "Private auction",
+        "Reserve price",
         "persistentCommit"
       ]
     },
