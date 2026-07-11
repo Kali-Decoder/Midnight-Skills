@@ -40,11 +40,79 @@ function buildRouterSections(skills) {
     .join("\n\n");
 }
 
+const README_CATEGORY_ORDER = ["foundation", "wallet", "sdk", "domain", "full-template"];
+
+const README_CATEGORY_META = {
+  foundation: {
+    title: "Foundation",
+    subtitle: "Environment setup, privacy model, Compact language, and testing",
+  },
+  wallet: {
+    title: "Wallet & Integration",
+    subtitle: "1AM wallet and React connector flows",
+  },
+  sdk: {
+    title: "SDK & Data",
+    subtitle: "midnight-js, indexer, and security patterns",
+  },
+  domain: {
+    title: "Domain & Tokens",
+    subtitle: "NFTs, token transfers, and platform-specific guides",
+  },
+  "full-template": {
+    title: "Full dApp Templates",
+    subtitle: "End-to-end reference apps with contracts and frontends",
+  },
+};
+
 function buildReadmeTable(skills) {
-  return routerSkills(skills)
-    .sort(sortByName)
-    .map((s) => `| [${s.name}](${s.path}) | ${s.description} |`)
-    .join("\n");
+  const grouped = new Map();
+  for (const skill of routerSkills(skills)) {
+    const category = skill.category || "foundation";
+    if (!grouped.has(category)) grouped.set(category, []);
+    grouped.get(category).push(skill);
+  }
+
+  const sections = [];
+  for (const category of README_CATEGORY_ORDER) {
+    const items = grouped.get(category);
+    if (!items?.length) continue;
+    items.sort(sortByName);
+    const meta = README_CATEGORY_META[category] || { title: category, subtitle: "" };
+    const rows = items
+      .map((s) => `| [${s.name}](${s.path}) | ${s.description} |`)
+      .join("\n");
+    sections.push(
+      [
+        `<details>`,
+        `<summary><strong>${meta.title}</strong> — ${items.length} skill${items.length === 1 ? "" : "s"}${meta.subtitle ? ` · ${meta.subtitle}` : ""}</summary>`,
+        ``,
+        `| Skill | Description |`,
+        `|-------|-------------|`,
+        rows,
+        ``,
+        `</details>`,
+      ].join("\n"),
+    );
+  }
+
+  return sections.join("\n\n");
+}
+
+function buildReadmeLearningPaths(registry) {
+  const byId = new Map(registry.skills.map((s) => [s.id, s]));
+  return (registry.learningPaths || [])
+    .map((path) => {
+      const steps = (path.steps || [])
+        .map((step, index) => {
+          const skill = byId.get(step.skillId);
+          if (!skill) return `${index + 1}. **${step.skillId}** — ${step.summary}`;
+          return `${index + 1}. **[${skill.name}](${skill.path})** — ${step.summary}`;
+        })
+        .join("\n");
+      return `### ${path.title}\n\n${steps}`;
+    })
+    .join("\n\n");
 }
 
 function syncPackageJson(packageSkillDirs, site) {
@@ -145,6 +213,12 @@ function main() {
   const readmePath = join(ROOT, "README.md");
   let readme = readFileSync(readmePath, "utf-8");
   readme = replaceBlock(readme, "<!-- SKILLS_REGISTRY:README_TABLE -->", "<!-- /SKILLS_REGISTRY:README_TABLE -->", buildReadmeTable(registry.skills));
+  readme = replaceBlock(
+    readme,
+    "<!-- SKILLS_REGISTRY:LEARNING_PATHS -->",
+    "<!-- /SKILLS_REGISTRY:LEARNING_PATHS -->",
+    buildReadmeLearningPaths(registry),
+  );
   if (registry.site) {
     readme = replaceBlock(
       readme,
