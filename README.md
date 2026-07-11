@@ -8,6 +8,7 @@ The **MIDSKILLS** marketplace UI is a separate Next.js app (`midskills/` during 
 
 | Skill | Description |
 |-------|-------------|
+<!-- SKILLS_REGISTRY:README_TABLE -->
 | [1AM Wallet](.agents/skills/1am-wallet/SKILL.md) | Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network. |
 | [Android Example Voting](.agents/skills/android-example-voting/SKILL.md) | Build a voting/poll dApp on Midnight Network using the Kuira Android SDK — Compact smart contract with create/cast/close circuits, passkey-derived identity, embedded wallet, Compose UI, reactive ledger reads via observeLedger(), and on-device ZK proving. |
 | [Compact](.agents/skills/compact/SKILL.md) | The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits. |
@@ -17,6 +18,7 @@ The **MIDSKILLS** marketplace UI is a separate Next.js app (`midskills/` during 
 | [Example Locker Dapp](.agents/skills/example-locker-dapp/SKILL.md) | Time-lock vault dApp: lock unshielded NIGHT until a Unix deadline; beneficiary releases via blockTimeGte. |
 | [Example Payment Dapp](.agents/skills/example-payment-dapp/SKILL.md) | Privacy-preserving payment vault: deposit/withdraw tNIGHT via Compact + 1AM wallet. |
 | [Example Private Party Dapp](.agents/skills/example-private-party-dapp/SKILL.md) | Private party RSVP dApp: persistentCommit guest list, DApp-specific public keys, unshielded NIGHT privacy boundary, Next.js + 1AM wallet. |
+| [Example Private Reserve Auction](.agents/skills/example-private-reserve-auction/SKILL.md) | Private reserve auction dApp: hidden reserve price, public bids, private bidder identities, persistentCommit, Map, Counter, receiveUnshielded/sendUnshielded privacy boundary, Next.js + 1AM wallet. |
 | [Example ZK Loan Application](.agents/skills/example-zk-loan-application/SKILL.md) | Zero-knowledge loan dApp: privately evaluate credit data with Schnorr attestation, record only loan outcomes on-chain. |
 | [Indexer](.agents/skills/indexer/SKILL.md) | Query and subscribe to Midnight blockchain data via Indexer GraphQL API v4. |
 | [Midnight Consensus](.agents/skills/midnight-consensus/SKILL.md) | AURA block production, GRANDPA finality, and Cardano Partnerchain validator selection with SPO stake delegation. |
@@ -35,6 +37,7 @@ The **MIDSKILLS** marketplace UI is a separate Next.js app (`midskills/` during 
 | [Token Transfers](.agents/skills/token-transfers/SKILL.md) | Shielded and unshielded token transfers, balance queries, multi-party flows on Midnight. |
 | [Transactions](.agents/skills/midnight-transactions/SKILL.md) | Proof-based unsigned ledger transactions, pool validation, runtime verification, and state commit lifecycle. |
 | [Why Midnight](.agents/skills/why-midnight/SKILL.md) | What Midnight is, why it exists, and how it works — public/private state, selective disclosure, and ZK proofs. |
+<!-- /SKILLS_REGISTRY:README_TABLE -->
 
 ## Architecture
 

@@ -31,7 +31,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Build a time-lock vault dApp on Midnight | `example-locker-dapp/` |
 | Build a privacy-preserving leaderboard DApp on Midnight | `example-leaderboard-dapp/` |
 | Build a private party RSVP dApp with privacy boundary on Midnight | `example-private-party-dapp/` |
-| Build a private reserve auction dApp with hidden reserve price, public bids, and private bidder identities | `example-private-reserve-auction/` |
+| Build a private reserve auction dApp with hidden reserve price and private bidders | `example-private-reserve-auction/` |
 | Build a ZK loan application with attestation on Midnight | `example-zk-loan-application/` |
 | Build NFTs (shielded + unshielded) with OpenZeppelin | `nft/` |
 | Token transfers, balance flows, multi-party txs | `token-transfers/` |
@@ -81,7 +81,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 - Official vitest devnet test harness in `example-private-party` repo.
 
 ### [Example Private Reserve Auction](/.agents/skills/example-private-reserve-auction/SKILL.md)
-- Private reserve auction: hidden reserve price via `persistentCommit`, public bids, private bidder identities.
+- Hidden reserve price via persistentCommit, public bids with private bidder identities.
 - Map/Counter tracking, auction auto-close, privacy boundary on claim via unshielded payment.
 - Next.js + 1AM wallet frontend with seller/bidder role cards and indexer polling.
 
