@@ -63,7 +63,7 @@ Do not commit `.env`, API keys, mnemonics, or private keys. Use placeholders in 
 
 ### 6. License
 
-By contributing, you agree your contributions are licensed under the project's MIT License (see [README](README.md#license)).
+By contributing, you agree your contributions are licensed under the project's [MIT License](LICENSE).
 
 ---
 

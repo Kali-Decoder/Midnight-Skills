@@ -299,4 +299,6 @@ your-skill/SKILL.md  →  skills.json  →  npm run sync:registry  →  PR
 
 ## License
 
-MIT License — see [LICENSE](LICENSE). Copyright 2026 Tusharpamnani, Kali-Decoder.
+Released under the [MIT License](LICENSE).
+
+Copyright (c) 2026  Kali-Decoder , Tushar Pamnani.
