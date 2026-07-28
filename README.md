@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="logos/pi.svg" alt="Midnight Skills" width="72" />
+  <img src="logos/banner.png" alt="MIDSKILLS — The one-stop knowledge layer for building on Midnight Network" width="100%" />
+</p>
+
+<p align="center">
+  <img src="logos/logo.png" alt="Midnight Skills" width="96" />
 </p>
 
 <h1 align="center">Midnight Skills</h1>
@@ -9,8 +13,12 @@
 </p>
 
 <p align="center">
+  This project extends the Midnight Network with additional developer tooling.
+</p>
+
+<p align="center">
   <a href="https://midnight-skills.netlify.app"><img src="https://img.shields.io/badge/MIDSKILLS-Browse%20Skills-070b10?style=for-the-badge" alt="MIDSKILLS" /></a>
-  <a href="#license"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT License" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT License" /></a>
   <a href="https://docs.midnight.network"><img src="https://img.shields.io/badge/Docs-Midnight%20Network-7ec8e3?style=for-the-badge" alt="Midnight Docs" /></a>
 </p>
 
@@ -291,10 +299,4 @@ your-skill/SKILL.md  →  skills.json  →  npm run sync:registry  →  PR
 
 ## License
 
-MIT License — Copyright 2026 Tusharpamnani, Kali-Decoder
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+MIT License — see [LICENSE](LICENSE). Copyright 2026 Tusharpamnani, Kali-Decoder.
