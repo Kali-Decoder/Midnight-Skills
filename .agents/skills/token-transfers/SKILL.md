@@ -245,25 +245,33 @@ On `preview` and `mainnet`, 1AM ProofStation sponsors all fees. Users need zero 
 
 ## 5) Contract Tokens (FungibleToken Pattern)
 
-For application tokens, implement them in Compact. The standard pattern follows the OpenZeppelin Contracts for Compact library.
+For application tokens, implement them in Compact. For production use the OpenZeppelin Contracts for Compact library; the contract below is a minimal illustration of the account-model pattern.
+
+> **There is no `msg.sender` on Midnight.** A circuit cannot ask who called it. Identity has to be *proved*, and the only way to prove it is to derive the account from a secret the caller supplies as a witness: the circuit constrains `account == hash(domain, secretKey())`, so naming someone else's account means inverting a hash. **Never take the account itself from a witness** — a witness is the caller's own TypeScript, so `witness callerAddress(): Bytes<32>` returns whatever the caller wants and any account can be debited by anyone. See "Common Pitfalls" below.
 
 ### Minimal FungibleToken Contract
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version >= 0.23;
 
 import CompactStandardLibrary;
-
-// Either<ZswapCoinPublicKey, ContractAddress> = shielded wallet OR another contract
-// This is the standard recipient type for contract tokens
 
 export ledger name: Opaque<"string">;
 export ledger symbol: Opaque<"string">;
 export ledger decimals: Uint<8>;
 export ledger totalSupply: Uint<128>;
 export ledger balances: Map<Bytes<32>, Uint<128>>;
+export ledger minter: Bytes<32>;
 
-witness callerAddress(): Bytes<32>;
+// The caller's secret. Never disclosed — only its hash reaches the ledger.
+witness secretKey(): Bytes<32>;
+
+// An account id is the hash of a secret, so holding the secret IS the
+// authorisation. Domain-separated so the same secret cannot be replayed
+// as an identity in another contract.
+circuit accountOf(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "fungible:account:v1"), sk]);
+}
 
 constructor(
   _name: Opaque<"string">,
@@ -274,9 +282,20 @@ constructor(
   symbol = disclose(_symbol);
   decimals = disclose(_decimals);
   totalSupply = 0;
+  // Whoever deploys becomes the minter.
+  minter = disclose(accountOf(secretKey()));
+}
+
+// A holder needs their own id in order to be paid. It is public by
+// construction — it is a hash, and it reveals nothing about the secret.
+export circuit myAccount(): Bytes<32> {
+  return disclose(accountOf(secretKey()));
 }
 
 export circuit mint(to: Bytes<32>, amount: Uint<128>): [] {
+  // Without this, anyone can mint any amount and the supply means nothing.
+  assert(disclose(accountOf(secretKey())) == minter, "only the minter may mint");
+
   const recipient = disclose(to);
   const current = balances.member(recipient)
     ? balances.lookup(recipient)
@@ -286,25 +305,43 @@ export circuit mint(to: Bytes<32>, amount: Uint<128>): [] {
 }
 
 export circuit transfer(to: Bytes<32>, amount: Uint<128>): Boolean {
-  const sender = disclose(callerAddress());
+  // The sender is derived, never supplied: a caller can only ever spend from
+  // the account whose secret they hold.
+  const sender = disclose(accountOf(secretKey()));
   assert(balances.member(sender), "sender has no balance");
   const senderBal = balances.lookup(sender);
   assert(senderBal >= amount, "insufficient balance");
 
   balances.insert(sender, disclose((senderBal - amount) as Uint<128>));
 
-  const recipientBal = balances.member(disclose(to))
-    ? balances.lookup(disclose(to))
+  const recipient = disclose(to);
+  const recipientBal = balances.member(recipient)
+    ? balances.lookup(recipient)
     : 0;
-  balances.insert(disclose(to), disclose((recipientBal + amount) as Uint<128>));
+  balances.insert(recipient, disclose((recipientBal + amount) as Uint<128>));
 
   return true;
 }
 
 export circuit balanceOf(account: Bytes<32>): Uint<128> {
-  if (!balances.member(account)) { return 0; }
-  return balances.lookup(account);
+  // `account` is a circuit parameter, so it is a witness value until disclosed;
+  // passing it straight to a ledger op fails the disclosure check at compile time.
+  const a = disclose(account);
+  if (!balances.member(a)) { return 0; }
+  return balances.lookup(a);
 }
+```
+
+The matching witness implementation — the secret comes from the user's own private state and never leaves the device:
+
+```typescript
+// witnesses.ts
+export type TokenPrivateState = { secretKey: Uint8Array };
+
+export const witnesses = {
+  secretKey: ({ privateState }: WitnessContext<Ledger, TokenPrivateState>):
+    [TokenPrivateState, Uint8Array] => [privateState, privateState.secretKey],
+};
 ```
 
 ### OpenZeppelin FungibleToken (Full-Featured)
@@ -393,7 +430,7 @@ import { YourToken } from './managed/your-token';
 const stateRaw = await providers.publicDataProvider.queryContractState(contractAddress);
 if (stateRaw) {
   const ledgerState = YourToken.ledger(stateRaw.data);
-  const balance = ledgerState.balances.lookup(callerAddressBytes);
+  const balance = ledgerState.balances.lookup(myAccountBytes); // from myAccount()
   console.log('Balance:', balance);
 }
 ```
@@ -488,6 +525,12 @@ const DUST_PER_NIGHT_MAX = 5_000_000_000n; // Specks per Star at full cap
 ---
 
 ## 10) Common Pitfalls
+
+**Taking the caller's identity from a witness** — `witness callerAddress(): Bytes<32>` used as the account to debit is forgeable. A witness is the caller's own TypeScript, so the returned value is chosen by whoever builds the transaction; nothing in the circuit binds it to a key. Any account can then be drained by anyone. Derive the account from a secret instead — `accountOf(secretKey())` — so the circuit constrains it. The same applies to any authorisation check: compare *derived* identities, never a raw witness value.
+
+**Mint circuits with no authority check** — `export circuit mint(to, amount)` with no assert lets anyone mint unlimited supply. Record an authority at construction and `assert` against it.
+
+**Passing a circuit parameter straight to a ledger op** — parameters are witness values until disclosed, so `balances.member(account)` fails to compile with *"potential witness-value disclosure must be declared but is not"*. Bind `const a = disclose(account);` first.
 
 **Sending to shielded address from faucet** — faucets only support unshielded (`mn_addr_preprod1...`) addresses. Giving a shielded address gets zero tokens.
 
