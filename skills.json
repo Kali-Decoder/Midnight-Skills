@@ -831,7 +831,8 @@
         "ZSwap",
         "Lifecycle"
       ]
-    },{
+    },
+    {
       "id": "dust-sponsorship",
       "name": "DUST Sponsorship for DApps",
       "author": "atharvmore",
