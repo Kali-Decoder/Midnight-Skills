@@ -57,7 +57,7 @@ Midnight fees are paid in **DUST**, which is *generated* (not transferred) from 
 
 The hex string crossing the wire is a `FinalizedTransaction` — already bound and signed by the user. The sponsor can only add a DUST fee offer, nothing else.
 
-See [references/how-it-works.md](references/how-it-works.md) for the full technical explanation of the three security invariant layers, `tokenKindsToBalance` mechanics, and DUST economics.
+See the official [DUST Sponsorship Guide](https://docs.midnight.network/guides/dust-sponsorship) for the full technical explanation of the three security invariant layers, `tokenKindsToBalance` mechanics, and DUST economics.
 
 ---
 
