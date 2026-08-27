@@ -831,6 +831,24 @@
         "ZSwap",
         "Lifecycle"
       ]
+    },{
+      "id": "dust-sponsorship",
+      "name": "DUST Sponsorship for DApps",
+      "author": "atharvmore",
+      "path": ".agents/skills/dust-sponsorship/SKILL.md",
+      "description": "Implement gasless UX on Midnight where one wallet pays DUST fees for another.",
+      "enabled": true,
+      "featured": true,
+      "category": "domain",
+      "taskHint": "Implement gasless UX on Midnight where one wallet pays DUST fees for another",
+      "routerBullets": [
+        "Implement gasless UX on Midnight where one wallet pays DUST fees for another."
+      ],
+      "tags": [
+        "DUST",
+        "Sponsorship",
+        "Gasless"
+      ]
     }
   ]
 }
