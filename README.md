@@ -177,10 +177,11 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 </details>
 
 <details>
-<summary><strong>Domain & Tokens</strong> — 3 skills · NFTs, token transfers, and platform-specific guides</summary>
+<summary><strong>Domain & Tokens</strong> — 4 skills · NFTs, token transfers, and platform-specific guides</summary>
 
 | Skill | Description |
 |-------|-------------|
+| [DUST Sponsorship for DApps](.agents/skills/dust-sponsorship/SKILL.md) | Implement gasless UX on Midnight where one wallet pays DUST fees for another. |
 | [NFT](.agents/skills/nft/SKILL.md) | Build shielded and unshielded NFTs on Midnight using OpenZeppelin Compact contracts. |
 | [Security](.agents/skills/security/SKILL.md) | Privacy audit checklist, data leak patterns, defensive Compact patterns. |
 | [Token Transfers](.agents/skills/token-transfers/SKILL.md) | Shielded and unshielded token transfers, balance queries, multi-party flows on Midnight. |

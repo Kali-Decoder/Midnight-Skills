@@ -42,6 +42,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Query Midnight node RPC — contract state, ZSwap, and ledger methods | `midnight-rpc/` |
 | Explain Midnight on-chain storage — ParityDB, trie, and state roots | `midnight-storage/` |
 | Explain Midnight transaction lifecycle — proofs, pool, and execution | `midnight-transactions/` |
+| Implement gasless UX on Midnight where one wallet pays DUST fees for another | `dust-sponsorship/` |
 <!-- /SKILLS_REGISTRY:TASK_TABLE -->
 ## Skills
 
@@ -57,6 +58,9 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Compact](/.agents/skills/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.
 - Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns.
+
+### [DUST Sponsorship for DApps](/.agents/skills/dust-sponsorship/SKILL.md)
+- Implement gasless UX on Midnight where one wallet pays DUST fees for another.
 
 ### [Example Counter](/.agents/skills/example-counter/SKILL.md)
 - Complete DApp reference: headless wallet, CLI, counter contract.
