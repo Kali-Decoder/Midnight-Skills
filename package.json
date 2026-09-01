@@ -58,7 +58,8 @@
     "./.agents/skills/midnight-p2p-networking",
     "./.agents/skills/midnight-rpc",
     "./.agents/skills/midnight-storage",
-    "./.agents/skills/midnight-transactions"
+    "./.agents/skills/midnight-transactions",
+    "./.agents/skills/dust-sponsorship"
   ],
   "scripts": {
     "validate:registry": "node scripts/validate-registry.mjs",
