@@ -106,10 +106,11 @@ Curated sequences from `skills.json`. Follow a path end-to-end or jump to any st
 
 1. **[Midnight Environment Setup](.agents/skills/midnight-environment-setup/SKILL.md)** — Install Compact, Docker, and proof server
 2. **[Why Midnight](.agents/skills/why-midnight/SKILL.md)** — Privacy model and ZK basics
-3. **[React Wallet Connector](.agents/skills/react-wallet-connector/SKILL.md)** — Connect a wallet in React
-4. **[Compact](.agents/skills/compact/SKILL.md)** — Write your first Compact contract
-5. **[Example Hello World](.agents/skills/example-hello-world/SKILL.md)** — Full stack hello-world + tests
-6. **[1AM Wallet](.agents/skills/1am-wallet/SKILL.md)** — Deploy and call circuits via 1AM
+3. **[ZK vs FHE vs MPC](.agents/skills/zk-vs-fhe-vs-mpc/SKILL.md)** — ZK vs FHE vs MPC tradeoffs
+4. **[React Wallet Connector](.agents/skills/react-wallet-connector/SKILL.md)** — Connect a wallet in React
+5. **[Compact](.agents/skills/compact/SKILL.md)** — Write your first Compact contract
+6. **[Example Hello World](.agents/skills/example-hello-world/SKILL.md)** — Full stack hello-world + tests
+7. **[1AM Wallet](.agents/skills/1am-wallet/SKILL.md)** — Deploy and call circuits via 1AM
 
 ### DeFi primitives on Midnight
 
@@ -137,7 +138,7 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 
 <!-- SKILLS_REGISTRY:README_TABLE -->
 <details>
-<summary><strong>Foundation</strong> — 11 skills · Environment setup, privacy model, Compact language, and testing</summary>
+<summary><strong>Foundation</strong> — 12 skills · Environment setup, privacy model, Compact language, and testing</summary>
 
 | Skill | Description |
 |-------|-------------|
@@ -152,6 +153,7 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 | [Testing](.agents/skills/testing/SKILL.md) | Debug Compact contracts and manage toolchain versions. Static vs dynamic errors, version sync, common traps. |
 | [Transactions](.agents/skills/midnight-transactions/SKILL.md) | Proof-based unsigned ledger transactions, pool validation, runtime verification, and state commit lifecycle. |
 | [Why Midnight](.agents/skills/why-midnight/SKILL.md) | What Midnight is, why it exists, and how it works — public/private state, selective disclosure, and ZK proofs. |
+| [ZK vs FHE vs MPC](.agents/skills/zk-vs-fhe-vs-mpc/SKILL.md) | Compare ZK, FHE, and MPC for privacy-focused DApps — tradeoffs, platforms, and why Midnight uses zk-SNARKs. |
 
 </details>
 

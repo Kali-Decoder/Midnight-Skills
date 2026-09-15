@@ -33,6 +33,7 @@
   "skills": [
     "./.agents/skills/midnight-environment-setup",
     "./.agents/skills/why-midnight",
+    "./.agents/skills/zk-vs-fhe-vs-mpc",
     "./.agents/skills/1am-wallet",
     "./.agents/skills/react-wallet-connector",
     "./.agents/skills/compact",

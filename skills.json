@@ -45,6 +45,10 @@
           "summary": "Privacy model and ZK basics"
         },
         {
+          "skillId": "zk-vs-fhe-vs-mpc",
+          "summary": "ZK vs FHE vs MPC tradeoffs"
+        },
+        {
           "skillId": "react-wallet-connector",
           "summary": "Connect a wallet in React"
         },
@@ -300,6 +304,27 @@
         "Privacy",
         "ZK-SNARKs",
         "Architecture"
+      ]
+    },
+    {
+      "id": "zk-vs-fhe-vs-mpc",
+      "name": "ZK vs FHE vs MPC",
+      "path": ".agents/skills/zk-vs-fhe-vs-mpc/SKILL.md",
+      "description": "Compare ZK, FHE, and MPC for privacy-focused DApps — tradeoffs, platforms, and why Midnight uses zk-SNARKs.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Compare ZK vs FHE vs MPC for privacy-preserving computation",
+      "routerBullets": [
+        "Tradeoffs across zero-knowledge proofs, fully homomorphic encryption, and secure multi-party computation.",
+        "When each fits a privacy DApp, and why Midnight uses zk-SNARKs via Compact."
+      ],
+      "tags": [
+        "Privacy",
+        "ZK",
+        "FHE",
+        "MPC",
+        "Cryptography"
       ]
     },
     {

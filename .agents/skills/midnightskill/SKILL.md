@@ -16,6 +16,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 <!-- SKILLS_REGISTRY:TASK_TABLE -->
 | Set up Compact, Docker, and proof server before building | `midnight-environment-setup/` |
 | Understand Midnight's architecture, privacy model, and ZK approach | `why-midnight/` |
+| Compare ZK vs FHE vs MPC for privacy-preserving computation | `zk-vs-fhe-vs-mpc/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Build a React app with wallet connect/disconnect via DApp Connector API | `react-wallet-connector/` |
 | Write Compact smart contracts | `compact/` |
@@ -156,4 +157,8 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Why Midnight](/.agents/skills/why-midnight/SKILL.md)
 - Data protection blockchain with public/private state, selective disclosure, and zk-SNARKs.
 - Why it exists, how it works, and the privacy guarantees it provides.
+
+### [ZK vs FHE vs MPC](/.agents/skills/zk-vs-fhe-vs-mpc/SKILL.md)
+- Tradeoffs across zero-knowledge proofs, fully homomorphic encryption, and secure multi-party computation.
+- When each fits a privacy DApp, and why Midnight uses zk-SNARKs via Compact.
 <!-- /SKILLS_REGISTRY:SECTIONS -->
