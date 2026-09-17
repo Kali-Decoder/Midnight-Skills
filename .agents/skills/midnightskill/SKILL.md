@@ -24,6 +24,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Build a single dApp targeting all networks from one codebase | `multinetwork/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
 | Query blockchain data, watch contract state, subscribe to events | `midnight-indexer/` |
+| Integrate Ankr RPC for Midnight testnet and mainnet | `ankr-midnight/` |
 | Privacy audit checklist, prevent data leaks, defensive Compact patterns | `midnight-security/` |
 | Build a voting/poll dApp on Midnight targeting Android | `android-example-voting/` |
 | Complete DApp reference: wallet, deploy, interact (use as template) | `example-counter/` |
@@ -54,6 +55,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Android Example Voting](/.agents/skills/android-example-voting/SKILL.md)
 - Build a voting/poll dApp on Midnight using the Kuira Android SDK.
 - Compact smart contract, passkey-derived identity, embedded wallet, Compose UI, on-device ZK proving.
+
+### [Ankr Midnight RPC](/.agents/skills/ankr-midnight/SKILL.md)
+- Create Ankr project, copy HTTPS/WSS Midnight endpoints with API key.
+- JSON-RPC client for midnight_*, system_*, chain_*; wire into midnight-js node URL.
 
 ### [Compact](/.agents/skills/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.

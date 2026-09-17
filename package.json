@@ -1,6 +1,6 @@
 {
   "name": "midnight-skills",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Open knowledge skills for AI agents building privacy-preserving apps on Midnight Network — Compact contracts, wallet integration, SDK guides, and runnable templates.",
   "author": {
     "name": "Kali-Decoder",
@@ -41,6 +41,7 @@
     "./.agents/skills/multinetwork",
     "./.agents/skills/midnight-js",
     "./.agents/skills/indexer",
+    "./.agents/skills/ankr-midnight",
     "./.agents/skills/security",
     "./.agents/skills/android-example-voting",
     "./.agents/skills/example-counter",

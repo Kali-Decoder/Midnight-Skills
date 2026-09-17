@@ -481,6 +481,26 @@
       ]
     },
     {
+      "id": "ankr-midnight",
+      "name": "Ankr Midnight RPC",
+      "path": ".agents/skills/ankr-midnight/SKILL.md",
+      "description": "Use Ankr as Midnight testnet/mainnet RPC — API key endpoints, JSON-RPC client, and midnight_* operations (not Ankr.js Advanced API).",
+      "enabled": true,
+      "featured": false,
+      "category": "sdk",
+      "taskHint": "Integrate Ankr RPC for Midnight testnet and mainnet",
+      "routerBullets": [
+        "Create Ankr project, copy HTTPS/WSS Midnight endpoints with API key.",
+        "JSON-RPC client for midnight_*, system_*, chain_*; wire into midnight-js node URL."
+      ],
+      "tags": [
+        "Ankr",
+        "RPC",
+        "JSON-RPC",
+        "Provider"
+      ]
+    },
+    {
       "id": "midnight-security",
       "name": "Security",
       "path": ".agents/skills/security/SKILL.md",
