@@ -7,6 +7,7 @@ description: >
   Midnight JSON-RPC methods (midnight_*, system_*, chain_*, state_*). Use when
   the user asks about Ankr + Midnight, Ankr.js for Midnight, Ankr RPC endpoint,
   or replacing public Midnight RPC with Ankr.
+author: Kali-Decoder
 ---
 
 # Ankr + Midnight Network RPC

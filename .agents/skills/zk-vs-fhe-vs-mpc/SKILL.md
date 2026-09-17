@@ -5,6 +5,7 @@ description: >
   secure multi-party computation (MPC) for privacy-focused DApps. Use when the
   user asks ZK vs FHE vs MPC, which privacy tech to choose, how Midnight relates
   to FHE or MPC, or when comparing privacy-preserving computation approaches.
+author: Kali-Decoder
 ---
 
 # ZK vs FHE vs MPC

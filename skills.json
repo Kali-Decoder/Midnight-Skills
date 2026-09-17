@@ -309,6 +309,7 @@
     {
       "id": "zk-vs-fhe-vs-mpc",
       "name": "ZK vs FHE vs MPC",
+      "author": "Kali-Decoder",
       "path": ".agents/skills/zk-vs-fhe-vs-mpc/SKILL.md",
       "description": "Compare ZK, FHE, and MPC for privacy-focused DApps — tradeoffs, platforms, and why Midnight uses zk-SNARKs.",
       "enabled": true,
@@ -483,6 +484,7 @@
     {
       "id": "ankr-midnight",
       "name": "Ankr Midnight RPC",
+      "author": "Kali-Decoder",
       "path": ".agents/skills/ankr-midnight/SKILL.md",
       "description": "Use Ankr as Midnight testnet/mainnet RPC — API key endpoints, JSON-RPC client, and midnight_* operations (not Ankr.js Advanced API).",
       "enabled": true,
