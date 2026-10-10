@@ -12,7 +12,7 @@ This skill generates a complete, runnable Midnight DApp. It covers every file in
 - `docs.midnight.network/getting-started/hello-world` — official hello-world guide
 - `docs.midnight.network/relnotes/support-matrix` — authoritative version compatibility matrix
 
-**Package versions in this skill match the official compatibility matrix (May 2026).** Always cross-check against the support matrix before pinning versions — Midnight packages update frequently and version mismatches cause `ETARGET` errors at install time.
+**Package versions below are a dated snapshot (May 2026).** Resolve the current tested set from the [support matrix](https://docs.midnight.network/relnotes/support-matrix) before pinning — see `references/volatile.md`. Never install `@latest`.
 
 **Key architecture notes:**
 - Uses `@midnight-ntwrk/testkit-js` `FluentWalletBuilder` for wallet creation
@@ -715,7 +715,7 @@ Expected output:
 |---|---|---|
 | `compact: command not found` | PATH not set | `source $HOME/.local/bin/env` |
 | `Cannot find module '../../contracts/...'` | Contract not compiled yet | Run `compact compile` from `contracts/` first |
-| `ETARGET No matching version found` | Wrong package version | Use versions from this skill's `package.json` |
+| `ETARGET No matching version found` | Version not in the tested set | Resolve current versions from the support matrix — see `references/volatile.md`. Do not install `@latest`. |
 | `ECONNREFUSED 127.0.0.1:6300` | Proof server not running | `yarn env:up` |
 | `NODE_OPTIONS` error in test | Missing experimental flag | Ensure `NODE_OPTIONS='--experimental-vm-modules'` in test script |
 | `Wallet sync timeout` | Docker services not healthy | Verify `yarn env:up` finished — all 3 containers must be healthy |

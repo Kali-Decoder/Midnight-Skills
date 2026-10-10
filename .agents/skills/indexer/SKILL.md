@@ -11,6 +11,7 @@ The Midnight Indexer exposes a GraphQL API that indexes everything the chain pro
 - `docs.midnight.network/api-reference/midnight-indexer` — official v4 API reference
 - `github.com/midnightntwrk/midnight-indexer/blob/v4.0.1/indexer-api/graphql/schema-v4.graphql` — authoritative schema
 - `midnight.ts` in `webisoftSoftware/1AM-starter-template` — real-world patched implementation
+- `references/volatile.md` — resolve current `@midnight-ntwrk/*` and schema versions live
 
 ---
 

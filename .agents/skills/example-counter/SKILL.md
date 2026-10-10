@@ -13,7 +13,7 @@ This skill generates the complete, runnable `midnightntwrk/example-counter` refe
 - `docs.midnight.network/guides/interact-with-mn-app` — official interact guide
 - `docs.midnight.network/relnotes/support-matrix` — authoritative version compatibility matrix
 
-**Package versions match the official compatibility matrix (May 2026).** Always cross-check against the support matrix before pinning versions — Midnight packages update frequently and version mismatches cause `ETARGET` errors at install time.
+**Package versions below are a dated snapshot (May 2026).** Resolve the current tested set from the [support matrix](https://docs.midnight.network/relnotes/support-matrix) before pinning — see `references/volatile.md`. Never install `@latest`.
 
 ---
 
@@ -1632,7 +1632,7 @@ yarn validate
 | Error | Cause | Fix |
 |---|---|---|
 | `compact: command not found` | PATH not set | `source $HOME/.local/bin/env` |
-| `ETARGET No matching version found` | Wrong package version | Use versions from this skill's `package.json` |
+| `ETARGET No matching version found` | Version not in the tested set | Resolve current versions from the support matrix — see `references/volatile.md`. Do not install `@latest`. |
 | `ECONNREFUSED 127.0.0.1:6300` | Proof server not running | Start proof server: `docker compose -f proof-server.yml up` |
 | `WalletFacade.init is not a function` | Old WalletFacade usage | Use `WalletFacade.init()` static factory, not `new WalletFacade()` |
 | `MidnightBech32m.encode is not a function` | Missing address-format import | Import from `@midnight-ntwrk/wallet-sdk-address-format` |

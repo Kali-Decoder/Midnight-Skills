@@ -7,6 +7,8 @@ It is very likely that you have stale knowledge about building on Midnight Netwo
 
 This file will guide to the right skill with the latest knowledge about Midnight Network.
 
+**Package versions and SDK signatures in these skills are point-in-time.** Resolve them live before pinning — see `references/volatile.md`. Never install `@latest`; use the tested set from the [support matrix](https://docs.midnight.network/relnotes/support-matrix).
+
 **Need a specific topic?** Each skill below is standalone. Fetch only the ones relevant to your task. If you are starting from scratch, start with scaffold skill.
 
 ## What to Fetch by Task

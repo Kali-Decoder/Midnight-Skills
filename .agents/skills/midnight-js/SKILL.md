@@ -599,7 +599,9 @@ Proof server URL: `http://127.0.0.1:6300`
 
 ---
 
-## 14) Dependency Versions (Pinned — Official Counter Example)
+## 14) Dependency Versions (snapshot — not a pin)
+
+**These version numbers are a dated snapshot and drift.** Resolve the current tested set from the [support matrix](https://docs.midnight.network/relnotes/support-matrix) before installing — see `references/volatile.md`. The package *names* below are the useful part; never install `@latest`.
 
 ```json
 {
