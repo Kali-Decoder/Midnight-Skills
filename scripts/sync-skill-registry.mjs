@@ -203,6 +203,8 @@ function main() {
     for (const filePath of locations) {
       if (!existsSync(filePath)) continue;
       let content = readFileSync(filePath, "utf-8");
+      // Skip router files that don't opt in with markers (e.g. graft's AGENTS.md).
+      if (!content.includes("<!-- SKILLS_REGISTRY:TASK_TABLE -->")) continue;
       content = replaceBlock(content, "<!-- SKILLS_REGISTRY:TASK_TABLE -->", "<!-- /SKILLS_REGISTRY:TASK_TABLE -->", taskTable);
       content = replaceBlock(content, "<!-- SKILLS_REGISTRY:SECTIONS -->", "<!-- /SKILLS_REGISTRY:SECTIONS -->", routerSections);
       writeFileSync(filePath, content);
