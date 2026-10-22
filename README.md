@@ -158,11 +158,12 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 </details>
 
 <details>
-<summary><strong>Wallet & Integration</strong> — 2 skills · 1AM wallet and React connector flows</summary>
+<summary><strong>Wallet & Integration</strong> — 3 skills · 1AM wallet and React connector flows</summary>
 
 | Skill | Description |
 |-------|-------------|
 | [1AM Wallet](.agents/skills/1am-wallet/SKILL.md) | Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network. |
+| [Dynamic Midnight Wallet](.agents/skills/dynamic-midnight-wallet/SKILL.md) | Scaffold React + Vite with Dynamic.xyz Midnight wallets — external (1AM) and embedded MPC: unshielded, shielded, DUST, balances, send. |
 | [React Wallet Connector](.agents/skills/react-wallet-connector/SKILL.md) | Scaffold a React + Vite app with DApp Connector API wallet connection, connect/disconnect UI, and unshielded address display. |
 
 </details>

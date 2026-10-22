@@ -371,19 +371,20 @@
       "name": "Dynamic Midnight Wallet",
       "author": "Kali-Decoder",
       "path": ".agents/skills/dynamic-midnight-wallet/SKILL.md",
-      "description": "Scaffold React + Vite with Dynamic.xyz Midnight wallet — unshielded, shielded, and DUST surfaces.",
-      "enabled": false,
+      "description": "Scaffold React + Vite with Dynamic.xyz Midnight wallets — external (1AM) and embedded MPC: unshielded, shielded, DUST, balances, send.",
+      "enabled": true,
       "featured": false,
       "category": "wallet",
-      "taskHint": "Build a React app with Dynamic.xyz Midnight wallet (unshielded, shielded, DUST)",
+      "taskHint": "Integrate Dynamic.xyz Midnight wallets (external 1AM or embedded MPC)",
       "routerBullets": [
-        "Scaffold React + Vite with Dynamic.xyz Midnight connectors.",
-        "Unshielded, shielded, DUST surfaces, balances, send routing."
+        "DynamicContextProvider + MidnightWalletConnectors or DynamicWaasMidnightConnectors.",
+        "Three surfaces (unshielded, shielded, DUST), balances, sendBalance, registerDust."
       ],
       "tags": [
         "Dynamic.xyz",
         "Wallet",
-        "DUST"
+        "DUST",
+        "1AM"
       ]
     },
     {

@@ -1,6 +1,6 @@
 {
   "name": "midnight-skills",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Open knowledge skills for AI agents building privacy-preserving apps on Midnight Network — Compact contracts, wallet integration, SDK guides, and runnable templates.",
   "author": {
     "name": "Kali-Decoder",
@@ -36,6 +36,7 @@
     "./.agents/skills/zk-vs-fhe-vs-mpc",
     "./.agents/skills/1am-wallet",
     "./.agents/skills/react-wallet-connector",
+    "./.agents/skills/dynamic-midnight-wallet",
     "./.agents/skills/compact",
     "./.agents/skills/testing",
     "./.agents/skills/multinetwork",

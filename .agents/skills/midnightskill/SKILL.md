@@ -21,6 +21,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Compare ZK vs FHE vs MPC for privacy-preserving computation | `zk-vs-fhe-vs-mpc/` |
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Build a React app with wallet connect/disconnect via DApp Connector API | `react-wallet-connector/` |
+| Integrate Dynamic.xyz Midnight wallets (external 1AM or embedded MPC) | `dynamic-midnight-wallet/` |
 | Write Compact smart contracts | `compact/` |
 | Debug Compact contracts, read errors, manage versions | `testing/` |
 | Build a single dApp targeting all networks from one codebase | `multinetwork/` |
@@ -65,6 +66,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Compact](/.agents/skills/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.
 - Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns.
+
+### [Dynamic Midnight Wallet](/.agents/skills/dynamic-midnight-wallet/SKILL.md)
+- DynamicContextProvider + MidnightWalletConnectors or DynamicWaasMidnightConnectors.
+- Three surfaces (unshielded, shielded, DUST), balances, sendBalance, registerDust.
 
 ### [Example Counter](/.agents/skills/example-counter/SKILL.md)
 - Complete DApp reference: headless wallet, CLI, counter contract.
