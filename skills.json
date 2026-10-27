@@ -61,6 +61,14 @@
           "summary": "Full stack hello-world + tests"
         },
         {
+          "skillId": "midnight-passport",
+          "summary": "Passport passkey + Night ID + custody"
+        },
+        {
+          "skillId": "example-passport-dapp",
+          "summary": "Run Passport foundations demo"
+        },
+        {
           "skillId": "1am-wallet",
           "summary": "Deploy and call circuits via 1AM"
         }
@@ -385,6 +393,49 @@
         "Wallet",
         "DUST",
         "1AM"
+      ]
+    },
+    {
+      "id": "example-passport-dapp",
+      "name": "Example Passport Dapp",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/example-passport-dapp/SKILL.md",
+      "description": "Runnable Midnight Passport foundations demo — passkey onboarding, custody deploy, Night ID, deposit, localnet via npm run demo.",
+      "enabled": true,
+      "featured": true,
+      "category": "full-template",
+      "taskHint": "Build and run the Midnight Passport foundations dApp",
+      "routerBullets": [
+        "Clone templates/passport-dapp; Docker localnet + Compact + Vite one-command demo.",
+        "Passkey onboarding, identity registry, deposit_night, restore, E2E checks."
+      ],
+      "templatePath": "templates/passport-dapp",
+      "tags": [
+        "Passport",
+        "Template",
+        "Passkey",
+        "Localnet"
+      ]
+    },
+    {
+      "id": "midnight-passport",
+      "name": "Midnight Passport",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/midnight-passport/SKILL.md",
+      "description": "Integrate Midnight Passport — passkey device secrets, custody accounts, Night ID registry, PassportAccount client API.",
+      "enabled": true,
+      "featured": true,
+      "category": "wallet",
+      "taskHint": "Integrate Midnight Passport (passkey Night ID + custody account)",
+      "routerBullets": [
+        "WebAuthn PRF device secrets, per-user custody Compact contracts, Night ID registry.",
+        "PassportAccount + IdentityRegistry client APIs, witnesses, session rules (no secret storage)."
+      ],
+      "tags": [
+        "Passport",
+        "Passkey",
+        "Night ID",
+        "Custody"
       ]
     },
     {

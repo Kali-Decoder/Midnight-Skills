@@ -22,6 +22,8 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Build a React app with wallet connect/disconnect via DApp Connector API | `react-wallet-connector/` |
 | Integrate Dynamic.xyz Midnight wallets (external 1AM or embedded MPC) | `dynamic-midnight-wallet/` |
+| Build and run the Midnight Passport foundations dApp | `example-passport-dapp/` |
+| Integrate Midnight Passport (passkey Night ID + custody account) | `midnight-passport/` |
 | Write Compact smart contracts | `compact/` |
 | Debug Compact contracts, read errors, manage versions | `testing/` |
 | Build a single dApp targeting all networks from one codebase | `multinetwork/` |
@@ -85,6 +87,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Example Locker Dapp](/.agents/skills/example-locker-dapp/SKILL.md)
 - Time-lock vault: lock unshielded NIGHT until a Unix deadline; beneficiary releases via `blockTimeGte` and witness auth.
 
+### [Example Passport Dapp](/.agents/skills/example-passport-dapp/SKILL.md)
+- Clone templates/passport-dapp; Docker localnet + Compact + Vite one-command demo.
+- Passkey onboarding, identity registry, deposit_night, restore, E2E checks.
+
 ### [Example Payment Dapp](/.agents/skills/example-payment-dapp/SKILL.md)
 - Build a privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact smart contract with zero gas fees via the 1AM wallet.
 
@@ -117,6 +123,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Midnight Environment Setup](/.agents/skills/midnight-environment-setup/SKILL.md)
 - Detect OS, shell, Docker, VS Code, and Compact; install missing tooling automatically.
 - Configure PATH, update compiler, start proof server, and verify the full dev stack.
+
+### [Midnight Passport](/.agents/skills/midnight-passport/SKILL.md)
+- WebAuthn PRF device secrets, per-user custody Compact contracts, Night ID registry.
+- PassportAccount + IdentityRegistry client APIs, witnesses, session rules (no secret storage).
 
 ### [Midnight.js](/.agents/skills/midnight-js/SKILL.md)
 - TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).

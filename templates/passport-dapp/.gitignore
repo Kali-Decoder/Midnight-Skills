@@ -1,0 +1,9 @@
+node_modules/
+app/node_modules/
+contracts/managed/
+midnight-level-db/
+infra/.env
+dist/
+*.log
+.DS_Store
+deploy-*.json

@@ -110,7 +110,9 @@ Curated sequences from `skills.json`. Follow a path end-to-end or jump to any st
 4. **[React Wallet Connector](.agents/skills/react-wallet-connector/SKILL.md)** — Connect a wallet in React
 5. **[Compact](.agents/skills/compact/SKILL.md)** — Write your first Compact contract
 6. **[Example Hello World](.agents/skills/example-hello-world/SKILL.md)** — Full stack hello-world + tests
-7. **[1AM Wallet](.agents/skills/1am-wallet/SKILL.md)** — Deploy and call circuits via 1AM
+7. **[Midnight Passport](.agents/skills/midnight-passport/SKILL.md)** — Passport passkey + Night ID + custody
+8. **[Example Passport Dapp](.agents/skills/example-passport-dapp/SKILL.md)** — Run Passport foundations demo
+9. **[1AM Wallet](.agents/skills/1am-wallet/SKILL.md)** — Deploy and call circuits via 1AM
 
 ### DeFi primitives on Midnight
 
@@ -158,12 +160,13 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 </details>
 
 <details>
-<summary><strong>Wallet & Integration</strong> — 3 skills · 1AM wallet and React connector flows</summary>
+<summary><strong>Wallet & Integration</strong> — 4 skills · 1AM wallet and React connector flows</summary>
 
 | Skill | Description |
 |-------|-------------|
 | [1AM Wallet](.agents/skills/1am-wallet/SKILL.md) | Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network. |
 | [Dynamic Midnight Wallet](.agents/skills/dynamic-midnight-wallet/SKILL.md) | Scaffold React + Vite with Dynamic.xyz Midnight wallets — external (1AM) and embedded MPC: unshielded, shielded, DUST, balances, send. |
+| [Midnight Passport](.agents/skills/midnight-passport/SKILL.md) | Integrate Midnight Passport — passkey device secrets, custody accounts, Night ID registry, PassportAccount client API. |
 | [React Wallet Connector](.agents/skills/react-wallet-connector/SKILL.md) | Scaffold a React + Vite app with DApp Connector API wallet connection, connect/disconnect UI, and unshielded address display. |
 
 </details>
@@ -192,7 +195,7 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 </details>
 
 <details>
-<summary><strong>Full dApp Templates</strong> — 9 skills · End-to-end reference apps with contracts and frontends</summary>
+<summary><strong>Full dApp Templates</strong> — 10 skills · End-to-end reference apps with contracts and frontends</summary>
 
 | Skill | Description |
 |-------|-------------|
@@ -201,6 +204,7 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 | [Example Hello World](.agents/skills/example-hello-world/SKILL.md) | Build a complete Midnight Network hello-world DApp from scratch with Compact, vitest, and FluentWalletBuilder. |
 | [Example Leaderboard Dapp](.agents/skills/example-leaderboard-dapp/SKILL.md) | Privacy-preserving arcade leaderboard: submit scores with anonymous/public/custom names and prove ownership via ZK. |
 | [Example Locker Dapp](.agents/skills/example-locker-dapp/SKILL.md) | Time-lock vault dApp: lock unshielded NIGHT until a Unix deadline; beneficiary releases via blockTimeGte. |
+| [Example Passport Dapp](.agents/skills/example-passport-dapp/SKILL.md) | Runnable Midnight Passport foundations demo — passkey onboarding, custody deploy, Night ID, deposit, localnet via npm run demo. |
 | [Example Payment Dapp](.agents/skills/example-payment-dapp/SKILL.md) | Privacy-preserving payment vault: deposit/withdraw tNIGHT via Compact + 1AM wallet. |
 | [Example Private Party Dapp](.agents/skills/example-private-party-dapp/SKILL.md) | Private party RSVP dApp: persistentCommit guest list, DApp-specific public keys, unshielded NIGHT privacy boundary, Next.js + 1AM wallet. |
 | [Example Private Reserve Auction](.agents/skills/example-private-reserve-auction/SKILL.md) | Private reserve auction dApp: hidden reserve price, public bids, private bidder identities, persistentCommit, Map, Counter, receiveUnshielded/sendUnshielded privacy boundary, Next.js + 1AM wallet. |
