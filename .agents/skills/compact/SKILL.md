@@ -7,9 +7,12 @@ description: Write, reason about, and debug Compact smart contracts for the Midn
 
 Compact is Midnight's smart contract language. It looks like TypeScript but compiles to zero-knowledge circuits. The compiler handles all cryptographic machinery — you write business logic.
 
+> **Toolchain (Ledger 9.1, Nov 2026):** Compact toolchain **0.36.1**, language version **0.28.0**, `@midnight-ntwrk/compact-runtime` **0.21.0**. Install with `compact update 0.36.1` and compile with `compact compile +0.36.1 ...` so the compiler always matches the runtime you pinned. Every full example in this skill compiles with 0.36.1. Output built with 0.31.x / ZKIR v2 must be recompiled, and recompiling changes the verifier keys (redeploy, or replace keys through the maintenance authority).
+
 **Primary references:**
 - `compact-book.vercel.app` — structured example-driven reference (your best source)
-- `docs.midnight.network/compact` — official spec (testing/security pages are "coming soon" as of 2026)
+- `docs.midnight.network/compact` — official spec and the standard-library exports page
+- `docs.midnight.network/relnotes/compact/toolchain-0.36.0` — language 0.28.0 changes
 
 ---
 
@@ -43,7 +46,7 @@ Compact is Midnight's smart contract language. It looks like TypeScript but comp
 Every Compact contract has four mandatory pieces + one optional:
 
 ```compact
-pragma language_version >= 0.22;      // 1. Language version
+pragma language_version >= 0.28.0;      // 1. Language version
 
 import CompactStandardLibrary;         // optional, needed for hashing, Merkle, etc.
 
@@ -267,6 +270,61 @@ const val = message.value;  // access inner value (only when present)
 
 ---
 
+### Ledger 9 Additions (language 0.28.0)
+
+All of these compile with 0.36.1. The snippets below were checked as one contract.
+
+```compact
+pragma language_version >= 0.28.0;
+import CompactStandardLibrary;
+
+// Contract type: the interface of another deployed contract.
+contract Adder {
+  circuit addTo(n: Uint<64>): Uint<64>;   // may NOT be `pure` inside a contract type
+}
+
+export ledger lastDigest: Bytes<32>;
+export ledger verified: Boolean;
+export ledger ethAddr: Bytes<20>;
+
+// Keccak-256 (native circuit)
+export circuit hashIt(x: Bytes<32>): Bytes<32> {
+  const d = keccak256<Bytes<32>>(x);
+  lastDigest = disclose(d);
+  return d;
+}
+
+// Native secp256k1 ECDSA verification
+export circuit checkSig(msgHash: Bytes<32>, sig: Secp256k1EcdsaSignature, pk: Secp256k1Point): [] {
+  const ok = secp256k1EcdsaVerify(msgHash, sig, pk);   // rejects the identity point as pk
+  assert(ok, "bad signature");
+  verified = disclose(ok);
+  ethAddr = disclose(secp256k1EthereumAddress(pk));
+}
+
+// Event emission: events are public; emitting from the constructor is an error
+export circuit announce(name: Bytes<32>, payload: Bytes<256>): [] {
+  emit(Misc { name: disclose(name), payload: disclose(payload) });
+}
+
+// Contract-to-contract call: the callee reference AND every argument must be disclosed
+export circuit callAdder(a: Adder, n: Uint<64>): Uint<64> {
+  return disclose(a).addTo(disclose(n));
+}
+```
+
+| Addition | Notes |
+|---|---|
+| `keccak256<T>(v): Bytes<32>` | Also `sha512<T>(v): Bytes<64>` (no feature flag needed since 0.36) |
+| `secp256k1EcdsaVerify(msgHash, sig, pk): Boolean` | `msgHash` is taken as given (hash the message yourself). `Secp256k1Point` values cannot be created in Compact; pass them as arguments or return them from witnesses. Also `secp256k1PointX/Y`, `ecAdd`/`ecMul`/`ecMulGenerator` overloads. |
+| `emit(e)` | `e` is a standard event struct: `Misc { name: Bytes<32>, payload: Bytes<256> }`, `ShieldedSpend`, `UnshieldedReceive`, `Paused`, … Indexed by the indexer (`contractEvents`). |
+| `contract X { circuit ...; }` + `contract implements X;` | Cross-contract calls (phase 1). Values of contract type come from arguments or ledger state; Compact cannot create them. Cycles fail at run time. Callers and callees must both be built with 0.36.x / runtime 0.21. |
+| `kernel.caller()` | Returns `Maybe<PublicAddress>` (added in 0.35) |
+
+**Breaking changes to know:** a `pure circuit` *inside a contract type* is a compile error (top-level `pure circuit` helpers are fine); undisclosed cross-contract arguments are a disclosure error; casting any field type other than `Field` to `Boolean` is a type error; `--feature-zkir-v3` was removed (ZKIR v3 is the only backend); the stdlib `add`/`mul` circuits were removed; curve types (`JubjubPoint`, `Secp256k1Point`, …) must be imported from `CompactStandardLibrary`, not exported at top level.
+
+---
+
 ## 7) Security Patterns
 
 The official security docs are "coming soon." Use these patterns from the compact-book.
@@ -388,7 +446,7 @@ Use `HistoricMerkleTree` only when proofs must verify against past roots (i.e., 
 ### Minimal Bulletin Board (No Privacy)
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version >= 0.28.0;
 
 export ledger message: Opaque<"string">;
 
@@ -400,7 +458,7 @@ export circuit post(msg: Opaque<"string">): [] {
 ### Bulletin Board with Ownership (Privacy Pattern)
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version >= 0.28.0;
 
 import CompactStandardLibrary;
 
@@ -446,7 +504,7 @@ pure circuit publicKey(sk: Bytes<32>, seq: Bytes<32>): Bytes<32> {
 ### NFT Contract (Commitment-Based Ownership)
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version >= 0.28.0;
 
 import CompactStandardLibrary;
 
@@ -490,17 +548,28 @@ export circuit transfer(tokenId: Uint<64>, newOwner: Bytes<32>, metaHash: Bytes<
 ## 9) Compilation and Tooling
 
 ```bash
-# Compile a contract
-compact compile contracts/your-contract.compact contracts/managed/your-contract
+# Install and pin the Ledger 9.1 toolchain
+compact update 0.36.1
+compact compile +0.36.1 --version            # 0.36.1
+compact compile +0.36.1 --language-version   # 0.28.0
+
+# Compile a contract (--skip-zk skips key generation for fast iteration)
+compact compile +0.36.1 contracts/your-contract.compact contracts/managed/your-contract
 
 # Output structure
 contracts/managed/your-contract/
+  compiler/
+    contract-info.json        # declares runtime-version
+    contract-manifest.json    # integrity manifest (verified by FetchZkConfigProvider)
+  contract/                   # generated JS + .d.ts (imports @midnight-ntwrk/compact-runtime)
   keys/
-    circuitName.prover      # 2–10 MB
-    circuitName.verifier    # ~2 KB
+    circuitName.prover        # 2–10 MB
+    circuitName.verifier      # ~2 KB
   zkir/
-    circuitName.bzkir       # 1–3 KB
+    circuitName.bzkir         # ZKIR v3
 ```
+
+When serving artifacts to a browser, copy `compiler/` along with `keys/` and `zkir/`. Without it Midnight.js 5 refuses the bundle (`EraMismatchError`). In compact-runtime 0.21, circuits and `initialState` are **async**, and witnesses receive `WitnessContext<Ledger, PrivateState>`.
 
 TypeScript bindings are also generated — import the `Contract` object from the managed output folder.
 

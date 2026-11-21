@@ -15,7 +15,7 @@ author: Kali-Decoder
 
 End-to-end **MN Passport foundations** demo: onboard with a passkey → deploy a custody contract → bind `alice.night` → deposit Night → explore custody workspace → logout/login restore.
 
-**Runnable template:** `templates/passport-dapp/`  
+**Runnable template:** `templates/passport-dapp/`. It was ported to Ledger 9 on 21 Nov 2026: Compact 0.36.1, runtime 0.21.0, Midnight.js 5.0.2, Wallet SDK 2.0.1, and `infra/` images node 2.1.101 / indexer 4.4.101 / proof server 9.0.2. `npm test` passes (23 tests), and the Node code plus `app/` type-check and build. The localnet lifecycle suites and browser E2E have not been re-run on the Ledger 9 stack yet.  
 **Integration API skill:** `midnight-passport/`
 
 **What this skill produces / runs:**
@@ -70,11 +70,11 @@ templates/passport-dapp/
 node --version    # >= 22
 docker --version  # required for npm run demo
 
-# Compact compiler (language 0.23 / toolchain ~0.30+)
-curl --proto '=https' --tlsv1.2 -sSf \
-  https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
-source "$HOME/.local/bin/env"
-compact --version
+# Compact devtools (pinned) + the Ledger 9.1 toolchain
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/midnightntwrk/compact/releases/download/compact-v0.5.1/compact-installer.sh | sh
+compact update 0.36.1
+compact compile +0.36.1 --language-version   # 0.28.0
 ```
 
 Chrome/Chromium for `npm run demo:e2e` (puppeteer-core).
@@ -134,9 +134,9 @@ npm run demo:e2e
 ```bash
 npm run compile
 # expands to:
-# compact compile contracts/account.compact contracts/managed/account
-# compact compile contracts/faucet.compact contracts/managed/faucet
-# compact compile contracts/identity_registry.compact contracts/managed/identity_registry
+# compact compile +0.36.1 contracts/account.compact contracts/managed/account
+# compact compile +0.36.1 contracts/faucet.compact contracts/managed/faucet
+# compact compile +0.36.1 contracts/identity_registry.compact contracts/managed/identity_registry
 ```
 
 Managed output is gitignored — always compile before node tests if missing.
@@ -239,7 +239,9 @@ Lifecycle scripts expect a live localnet (same stack as `npm run demo`).
 | Docker permission / not running | Start Docker Desktop; `docker info` |
 | Passkey invalid domain | Use `http://localhost:5173/` |
 | Unlock hangs | Localnet reset — Forget account / clear `passport-demo-session` |
-| Compile language mismatch | Match Compact to `pragma language_version 0.23` |
+| Compile language mismatch | Contracts use `pragma language_version >= 0.28.0`; compile with `compact compile +0.36.1` |
+| `Version mismatch: compiled code expects 0.21.0, runtime is 0.16.0` | Stale `node_modules` | `rm -rf node_modules app/node_modules && npm install` (template pins runtime 0.21.0) |
+| Old localnet chain after upgrading images | Volume from the Ledger 8 stack | `docker compose -f infra/docker-compose.yml down -v`, then restart (node 2.1.101, indexer 4.4.101, proof server 9.0.2) |
 | Port 5173 busy | Stop other Vite; or change Vite port and RP expectations |
 | E2E fails mid-deposit | Ensure demo script finished deploy; faucet address injected |
 

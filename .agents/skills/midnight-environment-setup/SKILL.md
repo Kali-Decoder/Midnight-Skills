@@ -56,11 +56,13 @@ echo $SHELL
 
 # Step 2 — Install Compact
 
-If Compact is not installed:
+If Compact is not installed, install the devtools release named in the support matrix (Ledger 9.1: **compact 0.5.1**). Use the tagged release, not `releases/latest`:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/download/compact-v0.5.1/compact-installer.sh | sh
 ```
+
+Devtools `0.5.2` and `0.5.3` also exist and work, but the matrix lists 0.5.1. Devtools only manage compilers; the version that matters most is the toolchain below.
 
 Wait until installation finishes.
 
@@ -92,29 +94,31 @@ Reload shell again.
 
 ---
 
-# Step 4 — Update Compiler
+# Step 4 — Install the Pinned Compiler
 
-Always install the latest compiler.
+Install the toolchain from the support matrix, not whatever is newest. A bare `compact update` installs the newest compiler and makes it the default, which can outrun the `compact-runtime` your project pins.
 
 ```bash
-compact update
+compact update 0.36.1          # Ledger 9.1 toolchain (language 0.28.0, runtime 0.21.0)
 ```
+
+To keep another default for older projects, use `compact update 0.36.1 --no-set-default` and compile with `compact compile +0.36.1 ...`.
 
 ---
 
 # Step 5 — Verify Installation
 
-Run
+Run each command and compare against the expected value:
 
 ```bash
-compact --version
-
-compact compile --version
-
-which compact
+compact --version                       # expect: compact 0.5.1 (or newer devtools)
+compact compile --version               # expect: 0.36.1 (or `compact compile +0.36.1 --version`)
+compact compile --language-version      # expect: 0.28.0
+which compact                           # expect: ~/.compact/bin/compact
+docker image inspect midnightntwrk/proof-server:9.0.2 --format '{{.Id}}'   # after Step 7
 ```
 
-Installation is considered successful only if all commands execute without errors.
+Installation is successful only if every value matches. A compiler other than 0.36.1 means Step 4 did not set the default. Re-run it, or always compile with `+0.36.1`.
 
 ---
 
@@ -137,7 +141,7 @@ Pause until Docker is running.
 Run
 
 ```bash
-docker run -p 6300:6300 midnightntwrk/proof-server:latest midnight-proof-server -v
+docker run -p 6300:6300 midnightntwrk/proof-server:9.0.2 midnight-proof-server -v
 ```
 
 Verify logs indicate:
@@ -149,10 +153,12 @@ Listening on http://localhost:6300
 If port 6300 is occupied, retry using:
 
 ```bash
-docker run -p 6301:6300 midnightntwrk/proof-server:latest midnight-proof-server -v
+docker run -p 6301:6300 midnightntwrk/proof-server:9.0.2 midnight-proof-server -v
 ```
 
 Inform the user that applications must now use port 6301.
+
+The proof server always runs locally, on every network (Blockfrost does not provide one). `9.0.2` is the Ledger 9.1 build. A proof server is built against one ledger version, so older tags (8.x) produce proofs that Ledger 9 networks reject.
 
 ---
 
@@ -178,11 +184,11 @@ Provide concise instructions:
 
 Confirm:
 
-- Compact installed
-- Latest compiler installed
+- Compact devtools installed (`compact --version` → 0.5.1+)
+- Compact toolchain **0.36.1** installed (`compact compile --version`), language **0.28.0**
 - PATH configured
 - Docker running
-- Proof Server running
+- Proof Server **9.0.2** running (`midnightntwrk/proof-server:9.0.2`, listening on 6300)
 - VS Code extension installed (or user informed)
 
 ---
@@ -219,7 +225,7 @@ Ask the user to launch Docker Desktop and wait until the engine is fully started
 Use:
 
 ```bash
-docker run -p 6301:6300 midnightntwrk/proof-server:latest midnight-proof-server -v
+docker run -p 6301:6300 midnightntwrk/proof-server:9.0.2 midnight-proof-server -v
 ```
 
 and configure applications to use:

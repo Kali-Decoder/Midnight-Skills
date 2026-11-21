@@ -8,7 +8,8 @@ import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const HOST = 'https://midnight-s3-fileshare-dev-eu-west-1.s3.eu-west-1.amazonaws.com/';
+// Same host the Wallet SDK's WasmProver reads by default (no CORS, hence staging locally).
+const HOST = 'https://srs.midnight.network/';
 const kLo = Number(process.argv[2] ?? '9');
 const kHi = Number(process.argv[3] ?? '16');
 
@@ -31,8 +32,8 @@ const fetchOne = async (name) => {
 
 for (let k = kLo; k <= kHi; k++) await fetchOne(`bls_midnight_2p${k}`);
 
-// System (balancing) circuits — zswap and dust, proof-server cache layout.
-for (const circuit of ['zswap/9/spend', 'zswap/9/output', 'zswap/9/sign', 'dust/9/spend']) {
+// System (balancing) circuits — ledger-v9 key material, circuit generation 10.
+for (const circuit of ['zswap/10/spend', 'zswap/10/output', 'zswap/10/sign', 'dust/10/spend']) {
   for (const ext of ['prover', 'verifier', 'bzkir']) await fetchOne(`${circuit}.${ext}`);
 }
 console.log(`zk params staged in ${outDir}`);

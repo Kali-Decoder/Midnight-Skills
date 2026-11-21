@@ -14,7 +14,7 @@ npm run sync:assets
 npm run dev
 ```
 
-Requires: **1AM wallet** on preprod, **Compact compiler**, funded tNIGHT.
+Requires: **1AM wallet** (Ledger 9 build) on preprod or preview, **Compact toolchain 0.36.1** (`compact update 0.36.1`), funded tNIGHT registered for DUST.
 
 ## Layout
 

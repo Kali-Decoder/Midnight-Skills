@@ -124,7 +124,7 @@ Call `rpc_methods` at any time for the full method list on your node.
 
 > **Note:** Some Midnight RPC methods may not appear in Polkadot JS Apps. See [Polkadot SDK RPC docs](https://polkadot.js.org/docs/substrate/rpc) for overlap; support varies by node version and configuration.
 
-For application-level reads, many dApps prefer the **Indexer GraphQL API** — see `midnight-indexer/`.
+For application-level reads, many dApps prefer the **Indexer GraphQL API** — see `indexer/`.
 
 ---
 
@@ -166,5 +166,5 @@ Align RPC configuration with your **threat model** and role (validator vs observ
 ## Related skills
 
 - `midnight-onchain-logic/` — what state RPC methods read
-- `midnight-indexer/` — GraphQL alternative for dApp data
+- `indexer/` — GraphQL alternative for dApp data
 - `midnight-transactions/` — submitting proof-based transactions via RPC

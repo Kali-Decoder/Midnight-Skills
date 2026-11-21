@@ -7,20 +7,26 @@
 
 import * as Rx from 'rxjs';
 
-import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
-import { setNetworkId, getNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import * as ledgerPkg from '@midnight-ntwrk/ledger-v8';
-import { WalletFacade } from '@midnight-ntwrk/wallet-sdk-facade';
-import { DustWallet } from '@midnight-ntwrk/wallet-sdk-dust-wallet';
-import { HDWallet, Roles } from '@midnight-ntwrk/wallet-sdk-hd';
-import { ShieldedWallet } from '@midnight-ntwrk/wallet-sdk-shielded';
+import { httpClientProofProvider } from '@midnightntwrk/midnight-js-http-client-proof-provider';
+import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
+import { FetchZkConfigProvider } from '@midnightntwrk/midnight-js-fetch-zk-config-provider';
+import {
+  createLedger9MidnightProvider,
+  createLedger9WalletProvider,
+  type MidnightProviders,
+  type PrivateStateProvider,
+} from '@midnightntwrk/midnight-js-types';
+import { InMemoryTransactionHistoryStorage } from '@midnightntwrk/wallet-sdk-abstractions';
+import { WalletFacade, WalletEntrySchema } from '@midnightntwrk/wallet-sdk-facade';
+import { DustWallet } from '@midnightntwrk/wallet-sdk-dust-wallet';
+import { WalletSeeds } from '@midnightntwrk/wallet-sdk-hd';
+import { WasmProver } from '@midnightntwrk/wallet-sdk-prover-client/effect';
+import { ShieldedWallet } from '@midnightntwrk/wallet-sdk-shielded';
 import {
   createKeystore,
   PublicKey,
   UnshieldedWallet,
-} from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
+} from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
 
 import { Contract } from '../../../src/wallet/contract.js';
@@ -30,7 +36,7 @@ import * as FaucetModule from '../../../contracts/managed/faucet/contract/index.
 import { Contract as IdentityRegistryContract } from '../../../src/wallet/identity.js';
 
 import { proveStarted, proveEnded } from './txTracker.js';
-import { wasmProofProvider, wasmWalletProvingService } from './wasmProver.js';
+import { wasmProofProvider } from './wasmProver.js';
 
 // The local demo defaults to the Docker proof server because it is the most
 // reliable path for live calls. `?prover=browser` opts into the experimental
@@ -60,167 +66,128 @@ export const CONFIG = {
   proofServer: 'http://127.0.0.1:6300',
 };
 
-setNetworkId(CONFIG.networkId as any);
-
-const NoopTxHistoryStorage = {
-  upsert: async (..._args: unknown[]) => undefined,
-  get: async (..._args: unknown[]) => null,
-  delete: async (..._args: unknown[]) => undefined,
-  list: async (..._args: unknown[]) => [] as unknown[],
-  clear: async (..._args: unknown[]) => undefined,
-};
-
-// Workaround for ledger-v8 MerkleTree::collapse panic (see node/wallet.ts).
-const _origTryApply = (ledgerPkg.ZswapChainState.prototype as any).tryApply;
-(ledgerPkg.ZswapChainState.prototype as any).tryApply = function (...args: unknown[]) {
-  try {
-    return _origTryApply.apply(this, args as any);
-  } catch {
-    return [this, new Map()];
-  }
-};
-
-export function deriveKeys(seedHex: string) {
-  const hdWallet = HDWallet.fromSeed(hexToBytes(seedHex));
-  if (hdWallet.type !== 'seedOk') throw new Error('Invalid seed');
-  const result = hdWallet.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust])
-    .deriveKeysAt(0);
-  if (result.type !== 'keysDerived') throw new Error('Key derivation failed');
-  hdWallet.hdWallet.clear();
-  return result.keys;
-}
+// Ledger 9 / Wallet SDK 2.x: networkId is passed in each configuration
+// (setNetworkId was removed in Midnight.js 5); no ledger-v8 tryApply patch.
 
 export async function createWallet(seedHex: string) {
-  const keys = deriveKeys(seedHex);
-  const networkId = getNetworkId();
+  const seeds = WalletSeeds.fromMasterSeed(hexToBytes(seedHex));
+  const networkId = CONFIG.networkId;
+  const unshieldedKeystore = createKeystore({ kind: 'schnorr', secret: seeds.unshielded }, networkId);
 
-  const shieldedSecretKeys = ledgerPkg.ZswapSecretKeys.fromSeed(keys[Roles.Zswap]);
-  const dustSecretKey = ledgerPkg.DustSecretKey.fromSeed(keys[Roles.Dust]);
-  const unshieldedKeystore = createKeystore(keys[Roles.NightExternal], networkId);
-
-  const configuration = {
-    networkId,
-    indexerClientConnection: {
-      indexerHttpUrl: CONFIG.indexer,
-      indexerWsUrl: CONFIG.indexerWS,
+  const wallet = await WalletFacade.init({
+    configuration: {
+      networkId,
+      indexerClientConnection: {
+        indexerHttpUrl: CONFIG.indexer,
+        indexerWsUrl: CONFIG.indexerWS,
+      },
+      // With ?prover=browser the balancing proofs (zswap, dust) are computed in
+      // this tab by the Wallet SDK's own WasmProver, reading ledger-v9
+      // (generation 10) key material staged under /zk-params and checked
+      // against the hashes the ledger release declares.
+      provers: BROWSER_PROVER
+        ? {
+            v9: {
+              kind: 'wasm',
+              keyMaterialProvider: WasmProver.makeV9KeyMaterialProvider({ source: `${ORIGIN}/zk-params/` }),
+            },
+          }
+        : { v9: { kind: 'server', url: new URL(CONFIG.proofServer) } },
+      relayURL: new URL(CONFIG.node.replace(/^http/, 'ws')),
+      costParameters: { feeBlocksMargin: 100 },
+      txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
     },
-    provingServerUrl: new URL(CONFIG.proofServer),
-    relayURL: new URL(CONFIG.node.replace(/^http/, 'ws')),
-    costParameters: { feeBlocksMargin: 100 },
-    txHistoryStorage: NoopTxHistoryStorage,
-  };
-
-  const wallet: any = await (WalletFacade as any).init({
-    configuration,
-    shielded: (config: any) => ShieldedWallet(config).startWithSecretKeys(shieldedSecretKeys),
-    unshielded: (config: any) =>
+    shielded: (config) => ShieldedWallet(config).startWithSeed(seeds.shielded),
+    unshielded: (config) =>
       UnshieldedWallet(config).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore)),
-    dust: (config: any) =>
-      DustWallet(config).startWithSecretKey(
-        dustSecretKey,
-        ledgerPkg.LedgerParameters.initialParameters().dust,
-      ),
-    // With ?prover=browser the balancing proofs (zswap, dust) are computed
-    // in this tab too — no proof server anywhere in the stack.
-    ...(BROWSER_PROVER ? { provingService: () => wasmWalletProvingService() } : {}),
+    dust: (config) => DustWallet(config).startWithSeed(seeds.dust),
   });
 
-  await wallet.start(shieldedSecretKeys, dustSecretKey);
-  return { wallet, shieldedSecretKeys, dustSecretKey, unshieldedKeystore };
+  await wallet.start(seeds);
+  return { wallet, seeds, unshieldedKeystore };
 }
 
 export type WalletContext = Awaited<ReturnType<typeof createWallet>>;
 
-export async function awaitSync(walletCtx: WalletContext): Promise<any> {
-  return Rx.firstValueFrom(
-    walletCtx.wallet.state().pipe(Rx.filter((s: any) => s.isSynced === true)),
-  );
+export async function awaitSync(walletCtx: WalletContext) {
+  return Rx.firstValueFrom(walletCtx.wallet.state().pipe(Rx.filter((s) => s.isSynced === true)));
 }
 
 // In-memory PrivateStateProvider — secrets live for the page session only.
 // (C16 wallet-local-storage is its own component; the demo deliberately
 // re-derives the device secret from the passkey on every page load.)
-export function inMemoryPrivateStateProvider(): any {
-  const states = new Map<string, unknown>();
+// Midnight.js 5 scopes private state per contract via forContract(address).
+export function inMemoryPrivateStateProvider(): PrivateStateProvider {
+  const states = new Map<string, Map<string, unknown>>();
   const signingKeys = new Map<string, unknown>();
-  return {
-    setContractAddress(_address: string) {},
-    async set(id: string, state: unknown) {
-      states.set(id, state);
-    },
-    async get(id: string) {
-      return states.has(id) ? states.get(id) : null;
-    },
-    async remove(id: string) {
-      states.delete(id);
-    },
-    async clear() {
-      states.clear();
-    },
-    async setSigningKey(address: string, key: unknown) {
-      signingKeys.set(address, key);
-    },
-    async getSigningKey(address: string) {
-      return signingKeys.get(address) ?? null;
-    },
-    async removeSigningKey(address: string) {
-      signingKeys.delete(address);
-    },
-    async clearSigningKeys() {
-      signingKeys.clear();
-    },
-    async exportPrivateStates() {
-      throw new Error('not supported in the demo');
-    },
-    async importPrivateStates() {
-      throw new Error('not supported in the demo');
-    },
+  const scoped = (address: string) => {
+    let m = states.get(address);
+    if (!m) states.set(address, (m = new Map()));
+    return m;
   };
+  const unsupported = async (): Promise<never> => {
+    throw new Error('not supported in the demo');
+  };
+  const provider = {
+    forContract(address: string) {
+      const m = scoped(address);
+      return {
+        get: async (id: string) => (m.has(id) ? m.get(id) : null),
+        set: async (id: string, state: unknown) => void m.set(id, state),
+        remove: async (id: string) => void m.delete(id),
+        clear: async () => m.clear(),
+      };
+    },
+    clearAll: async () => states.clear(),
+    setSigningKey: async (address: string, key: unknown) => void signingKeys.set(address, key),
+    getSigningKey: async (address: string) => signingKeys.get(address) ?? null,
+    removeSigningKey: async (address: string) => void signingKeys.delete(address),
+    clearSigningKeys: async () => signingKeys.clear(),
+    exportPrivateStates: unsupported,
+    importPrivateStates: unsupported,
+    exportSigningKeys: unsupported,
+    importSigningKeys: unsupported,
+  };
+  return provider as unknown as PrivateStateProvider;
 }
 
 export async function createProviders(
   walletCtx: WalletContext,
   contractName: 'account' | 'faucet' | 'identity_registry',
-) {
+): Promise<MidnightProviders> {
+  const { wallet, unshieldedKeystore } = walletCtx;
   const state = await awaitSync(walletCtx);
+  const signSegment = (payload: Uint8Array) => Promise.resolve(unshieldedKeystore.signData(payload));
 
-  const signFn = (payload: Uint8Array) => walletCtx.unshieldedKeystore.signData(payload);
-
-  const walletProvider = {
+  const walletProvider = createLedger9WalletProvider({
     getCoinPublicKey: () => state.shielded.coinPublicKey.toHexString(),
     getEncryptionPublicKey: () => state.shielded.encryptionPublicKey.toHexString(),
-    async balanceTx(tx: any, ttl?: Date) {
-      const recipe = await walletCtx.wallet.balanceUnboundTransaction(
-        tx,
-        {
-          shieldedSecretKeys: walletCtx.shieldedSecretKeys,
-          dustSecretKey: walletCtx.dustSecretKey,
-        },
-        { ttl: ttl ?? new Date(Date.now() + 30 * 60 * 1000) },
-      );
-      const signed = await walletCtx.wallet.signRecipe(recipe, signFn);
-      return walletCtx.wallet.finalizeRecipe(signed);
+    async balanceTx(tx, ttl) {
+      const recipe = await wallet.balanceUnboundTransaction(wallet.adoptTransaction(tx.serialize(), 'Unbound'), {
+        ttl: ttl ?? new Date(Date.now() + 30 * 60 * 1000),
+      });
+      return wallet.finalizeRecipe(await wallet.signRecipe(recipe, signSegment));
     },
-    submitTx: (tx: any) => walletCtx.wallet.submitTransaction(tx),
-  };
-
-  const zkConfigProvider = new FetchZkConfigProvider(
-    `${ORIGIN}/zk/${contractName}`,
-    window.fetch.bind(window),
+  });
+  const midnightProvider = createLedger9MidnightProvider((tx) =>
+    wallet.submitTransaction(wallet.adoptTransaction(tx.serialize(), 'Finalized')),
   );
+
+  // Must serve compiler/ (contract-manifest.json), keys/ and zkir/ under /zk/<name>.
+  const zkConfigProvider = new FetchZkConfigProvider<string>(`${ORIGIN}/zk/${contractName}`, {
+    fetchFunc: window.fetch.bind(window),
+  });
 
   // Wrapped so the UI's proving dock sees when the prover is actually
   // working (build → prove → submit phases in txTracker). With
-  // ?prover=browser the proof is computed in this tab by the zkir-v2 wasm
+  // ?prover=browser the proof is computed in this tab by the zkir wasm
   // prover; otherwise it goes to the local proof server.
-  const baseProofProvider: any = httpClientProofProvider(CONFIG.proofServer, zkConfigProvider as any);
+  const baseProofProvider = httpClientProofProvider({ url: CONFIG.proofServer, zkConfigProvider });
   const proofProvider = BROWSER_PROVER
     ? wasmProofProvider(zkConfigProvider)
     : {
-        ...baseProofProvider,
-        proveTx: async (...args: unknown[]) => {
+        supportedEras: baseProofProvider.supportedEras,
+        proveTx: async (...args: Parameters<typeof baseProofProvider.proveTx>) => {
           proveStarted();
           try {
             return await baseProofProvider.proveTx(...args);
@@ -232,11 +199,12 @@ export async function createProviders(
 
   return {
     privateStateProvider: inMemoryPrivateStateProvider(),
-    publicDataProvider: indexerPublicDataProvider(CONFIG.indexer, CONFIG.indexerWS),
+    publicDataProvider: indexerPublicDataProvider({ queryURL: CONFIG.indexer, subscriptionURL: CONFIG.indexerWS }),
     zkConfigProvider,
     proofProvider,
     walletProvider,
-    midnightProvider: walletProvider,
+    midnightProvider,
+    config: { networkId: CONFIG.networkId, ttlSeconds: 30 * 60 },
   };
 }
 

@@ -3,7 +3,7 @@
 // contracts, and the faucet handle.
 
 import { firstValueFrom } from 'rxjs';
-import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
 
 import {
   createWallet,

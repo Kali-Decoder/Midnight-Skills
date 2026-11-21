@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { firstValueFrom } from 'rxjs';
-import { rawTokenType, encodeRawTokenType } from '@midnight-ntwrk/ledger-v8';
+import { rawTokenType, encodeRawTokenType } from '@midnightntwrk/ledger-v9';
 
 import { randomBytes32, hexToBytes32, hexToBytes, bytesToHex } from '../../../src/wallet/hex.js';
 

@@ -1,7 +1,5 @@
-import { CompiledContract } from '@midnight-ntwrk/compact-runtime';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-import { witnesses } from './witnesses';
+import { CompiledContract } from '@midnight-ntwrk/compact-js';
+import { witnesses, type LeaderboardPrivateState } from './witnesses';
 
 export {
   Contract,
@@ -11,10 +9,13 @@ export {
 } from './managed/leaderboard/contract/index.js';
 import { Contract } from './managed/leaderboard/contract/index.js';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-export const zkConfigPath = path.resolve(currentDir, 'managed', 'leaderboard');
+// Browser bundle: no node:path / node:url. Keys + ZKIR load through the session's FetchZkConfigProvider.
+export const zkConfigPath = '/zk/leaderboard';
 
-export const CompiledLeaderboardContract = CompiledContract.make('leaderboard', Contract).pipe(
+export type LeaderboardContract = Contract<LeaderboardPrivateState>;
+export type { LeaderboardPrivateState };
+
+export const CompiledLeaderboardContract = CompiledContract.make<LeaderboardContract>('leaderboard', Contract).pipe(
   CompiledContract.withWitnesses(witnesses),
   CompiledContract.withCompiledFileAssets(zkConfigPath),
 );

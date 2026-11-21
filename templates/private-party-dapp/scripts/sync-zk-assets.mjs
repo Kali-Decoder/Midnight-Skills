@@ -8,7 +8,8 @@ const dest = join(root, 'public/zk/private-party');
 
 rmSync(dest, { recursive: true, force: true });
 mkdirSync(dest, { recursive: true });
-for (const dir of ['keys', 'zkir']) {
+// compiler/ carries contract-manifest.json + contract-info.json; without it the provider throws EraMismatchError.
+for (const dir of ['compiler', 'keys', 'zkir']) {
   cpSync(join(src, dir), join(dest, dir), { recursive: true });
 }
 console.log('Synced ZK assets to public/zk/private-party/');

@@ -154,7 +154,7 @@ Expected shape:
 {
   "id": 1,
   "jsonrpc": "2.0",
-  "result": "testnet-02-1"
+  "result": "Midnight Preview"   // illustrative; the value depends on the network the endpoint tracks
 }
 ```
 
@@ -241,24 +241,26 @@ import { ANKR_MIDNIGHT } from './ankr';
 export const networks = {
   testnet: {
     // Keep official indexer unless you have another GraphQL provider
-    indexerHttp: 'https://indexer.preprod.midnight.network/api/v4/graphql',
-    indexerWs: 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
+    // indexer.preprod.midnight.network was retired (HTTP 410); preprod's indexer is Blockfrost
+    indexerHttp: `https://midnight-preprod.blockfrost.io/api/v0?project_id=${process.env.BLOCKFROST_PROJECT_ID}`,
+    indexerWs: `wss://midnight-preprod.blockfrost.io/api/v0/ws?project_id=${process.env.BLOCKFROST_PROJECT_ID}`,
     // Ankr node RPC (HTTPS). Some midnight-js setups expect WSS — use ANKR_MIDNIGHT.testnet.wss then.
     rpc: ANKR_MIDNIGHT.testnet.http,
     proofServerUrl: 'http://127.0.0.1:6300',
   },
   mainnet: {
-    indexerHttp: 'https://indexer.mainnet.midnight.network/api/v4/graphql',
-    indexerWs: 'wss://indexer.mainnet.midnight.network/api/v4/graphql/ws',
+    // indexer.mainnet.midnight.network was retired (HTTP 410); mainnet's indexer is Blockfrost
+    indexerHttp: `https://midnight-mainnet.blockfrost.io/api/v0?project_id=${process.env.BLOCKFROST_PROJECT_ID}`,
+    indexerWs: `wss://midnight-mainnet.blockfrost.io/api/v0/ws?project_id=${process.env.BLOCKFROST_PROJECT_ID}`,
     rpc: ANKR_MIDNIGHT.mainnet.http,
     proofServerUrl: 'https://api.1am.xyz',
   },
 };
 ```
 
-Where example skills use `node = 'https://rpc.preprod.midnight.network'`, replace with the Ankr HTTPS URL (or WSS if the provider builder requires WebSocket).
+`rpc.preprod.midnight.network` / `rpc.mainnet.midnight.network` were shut down on 18 Nov 2026. Use the Ankr HTTPS URL (or WSS if the provider builder requires WebSocket) or Blockfrost's RPC (`rpc.midnight-preprod.blockfrost.io?project_id=…`). All networks run Ledger 9, so make sure the endpoint's node is 2.1.x.
 
-**Network naming note:** Ankr exposes `midnight_testnet` / `midnight_mainnet`. Midnight apps often use `preview` / `preprod` / `mainnet`. Confirm which public Midnight network Ankr’s `midnight_testnet` tracks (`system_chain` → e.g. `testnet-02-1`) before deploying contracts against it.
+**Network naming note:** Ankr exposes `midnight_testnet` / `midnight_mainnet`. Midnight apps often use `preview` / `preprod` / `mainnet`. Confirm which public Midnight network Ankr’s `midnight_testnet` tracks before deploying contracts against it: call `system_chain` (the official endpoints answer `Midnight Preview`, `Midnight Preprod`, `Midnight Mainnet`). Preview relaunched as a new chain on 7 Nov 2026, so older chain names are stale.
 
 ---
 
@@ -297,7 +299,7 @@ const versions = await ankrMidnightRpc(rpc, 'midnight_apiVersions');
 
 | Method | Purpose |
 |--------|---------|
-| `system_chain` | Chain name (e.g. `testnet-02-1`) |
+| `system_chain` | Chain name (e.g. `Midnight Preview`) |
 | `system_chainType` | `Live` / `Development` / `Local` |
 | `system_health` | Sync + peer health |
 | `system_properties` | Chain properties |

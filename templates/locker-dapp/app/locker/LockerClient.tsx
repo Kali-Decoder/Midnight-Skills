@@ -30,7 +30,7 @@ export default function LockerClient() {
 
   const refresh = useCallback(async () => {
     if (!session || !contractAddress) return;
-    setLedger(await fetchLockerState(session.config.indexerUri, contractAddress));
+    setLedger(await fetchLockerState(session, contractAddress));
   }, [session, contractAddress]);
 
   useEffect(() => {

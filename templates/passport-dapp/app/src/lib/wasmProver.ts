@@ -12,8 +12,12 @@
 // Selected with `?prover=browser` (see providers.ts). With the flag set, no
 // proof server is needed anywhere in the stack.
 
-import { CostModel } from '@midnight-ntwrk/ledger-v8';
-import { zkConfigToProvingKeyMaterial } from '@midnight-ntwrk/midnight-js-types';
+import { CostModel } from '@midnightntwrk/ledger-v9';
+import {
+  createProofProviderFromProvingProviders,
+  zkConfigToProvingKeyMaterial,
+  type ProofProvider,
+} from '@midnightntwrk/midnight-js-types';
 
 import { proveStarted, proveEnded } from './txTracker.js';
 
@@ -55,12 +59,13 @@ async function getParams(k: number): Promise<Uint8Array> {
   return cache.get(key) as Uint8Array;
 }
 
-// System (balancing) circuits, mirroring the proof server's key layout.
+// System circuits, ledger-v9 key material (circuit generation 10), laid out as
+// srs.midnight.network lays it out.
 const SYSTEM_KEYS: Record<string, string> = {
-  'midnight/zswap/spend': 'zswap/9/spend',
-  'midnight/zswap/output': 'zswap/9/output',
-  'midnight/zswap/sign': 'zswap/9/sign',
-  'midnight/dust/spend': 'dust/9/spend',
+  'midnight/zswap/spend': 'zswap/10/spend',
+  'midnight/zswap/output': 'zswap/10/output',
+  'midnight/zswap/sign': 'zswap/10/sign',
+  'midnight/dust/spend': 'dust/10/spend',
 };
 
 async function lookupSystemKey(keyLocation: string): Promise<KeyMaterial | undefined> {
@@ -155,7 +160,7 @@ function workerProvingProvider(km: KmProvider): any {
 
 // ——— public surface ———
 
-export function wasmProofProvider(zkConfigProvider: ZkConfigProviderLike): any {
+export function wasmProofProvider(zkConfigProvider: ZkConfigProviderLike): ProofProvider {
   const km: KmProvider = {
     lookupKey: async (keyLocation: string) => {
       console.debug(`[wasm-prover] lookupKey: ${keyLocation}`);
@@ -166,34 +171,28 @@ export function wasmProofProvider(zkConfigProvider: ZkConfigProviderLike): any {
     },
     getParams,
   };
-  const provingProvider = workerProvingProvider(km);
-  return {
-    async proveTx(unprovenTx: any) {
+  const inner = workerProvingProvider(km);
+  // Track proving for the UI dock, per proof the ledger asks for.
+  const tracked = {
+    check: inner.check,
+    // Ledger 9's ProvingProvider also exposes key lookup.
+    lookupKey: (keyLocation: string) => km.lookupKey(keyLocation),
+    prove: async (...args: Parameters<typeof inner.prove>) => {
       proveStarted();
       try {
-        return await unprovenTx.prove(provingProvider, CostModel.initialCostModel());
+        return await inner.prove(...args);
       } finally {
         proveEnded();
       }
     },
   };
+  // Midnight.js 5 proof providers are era-aware; this prover serves ledger 9 only.
+  return createProofProviderFromProvingProviders({
+    v8: undefined,
+    v9: tracked,
+    costModel: CostModel.initialCostModel(),
+  });
 }
 
-/**
- * Wallet-side proving service (balancing: zswap spends/outputs/signs and
- * dust fee spends). Same shape the wallet SDK's makeWasmProvingService
- * builds; injected through WalletFacade.init({ provingService }).
- */
-export function wasmWalletProvingService(): { prove(tx: any): Promise<any> } {
-  const km: KmProvider = {
-    lookupKey: async (keyLocation: string) => {
-      console.debug(`[wasm-prover/wallet] lookupKey: ${keyLocation}`);
-      return lookupSystemKey(keyLocation);
-    },
-    getParams,
-  };
-  const provingProvider = workerProvingProvider(km);
-  return {
-    prove: (tx: any) => tx.prove(provingProvider, CostModel.initialCostModel()),
-  };
-}
+// Wallet-side balancing proofs now use the Wallet SDK's own WasmProver
+// (configured through WalletFacade.init `provers`, see providers.ts).

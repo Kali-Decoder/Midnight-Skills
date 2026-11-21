@@ -91,10 +91,10 @@ Even a `Boolean` comparison result counts as disclosure. Wrap the witness call o
 ### Version Mismatch
 
 ```
-Error: runtime version mismatch: expected 0.15.0, got 0.14.2
+Error: Version mismatch: compiled code expects 0.21.0, runtime is 0.16.0
 ```
 
-The compiled contract expects a different runtime version. See version management below.
+The contract was compiled by toolchain 0.36.x (which targets runtime 0.21.0), but the project still installs `@midnight-ntwrk/compact-runtime@0.16.0`. This message was reproduced on 21 Nov 2026. Pin the runtime the toolchain expects, or compile with the matching toolchain (`compact compile +0.36.1`). See version management below.
 
 ## 3) The `--skip-zk` Development Loop
 
@@ -110,22 +110,25 @@ This produces `contract/index.js` and `compiler/contract-info.json`, enough to t
 
 Midnight has **6 components** that must stay in sync. When they're not, you get opaque runtime errors about version mismatches.
 
-| Component | What it is | How to check |
-|---|---|---|
-| CLI tool | `compact` binary | `compact --version` |
-| Compiler | `compactc` | `compact compile --version` |
-| Runtime | `@midnight-ntwrk/compact-runtime` | `npm list` |
-| Ledger | `@midnight-ntwrk/ledger-v8` | `npm list` |
-| JS libraries | `@midnight-ntwrk/midnight-js-*` | `npm list` |
-| Proof server | Docker image | image tag |
+| Component | What it is | Ledger 9.1 version | How to check |
+|---|---|---|---|
+| CLI tool | `compact` binary (devtools) | `0.5.1` | `compact --version` |
+| Compiler | toolchain / language | `0.36.1` / `0.28.0` | `compact compile --version`, `compact compile --language-version` |
+| Runtime | `@midnight-ntwrk/compact-runtime` | `0.21.0` | `npm list` |
+| Ledger | `@midnightntwrk/ledger-v9` | `1.0.2` | `npm list` |
+| JS libraries | `@midnightntwrk/midnight-js-*` | `5.0.2` (matrix: 5.0.1) | `npm list` |
+| Proof server | `midnightntwrk/proof-server` Docker image | `9.0.2` | image tag |
+
+Wallet SDK (`2.0.1`), indexer (`4.4.101`) and node (`2.1.101`) must also come from the same matrix row. `ledger-v8`, Midnight.js 4.x and Wallet SDK 1.x cannot transact on Ledger 9 networks.
 
 ### Check Current Versions
 
 ```bash
 compact --version
 compact compile --version
-npm list @midnight-ntwrk/compact-runtime
-npm list @midnight-ntwrk/ledger-v8
+compact compile --language-version
+npm list @midnight-ntwrk/compact-runtime @midnightntwrk/ledger-v9
+npm ls | grep -E "@midnight-?ntwrk/"   # both scopes: a package in both is a duplicate-WASM bug
 ```
 
 ### Consult the Compatibility Matrix
@@ -137,13 +140,13 @@ The [official release compatibility matrix](https://docs.midnight.network/relnot
 ```json
 {
   "dependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.15.0",
-    "@midnight-ntwrk/ledger-v8": "8.0.3"
+    "@midnight-ntwrk/compact-runtime": "0.21.0",
+    "@midnightntwrk/ledger-v9": "1.0.2"
   }
 }
 ```
 
-**Do not use `^` or `~`** — these allow automatic updates that silently break compatibility.
+**Do not use `^` or `~`** — these allow automatic updates that silently break compatibility. Also pin the compiler in your build script (`"compact": "compact compile +0.36.1 src/x.compact src/managed/x"`) so a newer default toolchain cannot silently outrun the runtime.
 
 ### Use `npm ci` for Reproducible Installs
 
@@ -264,7 +267,9 @@ h = transientCommit<Field>(v, nonce);
 | `ERR_UNSUPPORTED_DIR_IMPORT` | Node.js tried to import directory | Open new terminal, clear caches |
 | Docker connection errors | Docker Desktop not running | Start Docker Desktop |
 | Port 6300 in use | Another container on same port | `-p 6301:6300` |
-| Version mismatch at runtime | Outdated runtime package | Check compatibility matrix, update |
+| `Version mismatch: compiled code expects X, runtime is Y` | Compiler and `compact-runtime` from different toolchains | Pin runtime `0.21.0` for toolchain 0.36.x, or compile with `+<matching version>` |
+| `setNetworkId` / `midnight-js-network-id` not found | Removed in Midnight.js 5 | Pass `networkId` via `providers.config` |
+| Indexer 410 `ENDPOINT_DECOMMISSIONED` | Old preprod/mainnet indexer host | Use Blockfrost endpoints (see `references/volatile.md`) |
 
 ## 7) Version Check Script
 
@@ -276,7 +281,9 @@ echo "=== Midnight Version Check ==="
 echo "CLI:"; compact --version || echo "not found"
 echo "Compiler:"; compact compile --version || echo "not found"
 echo "Runtime:"
-npm list --depth=0 | grep @midnight-ntwrk || echo "none found"
+npm list --depth=0 | grep -E "@midnight-?ntwrk/" || echo "none found"
+echo "Language:"; compact compile --language-version || echo "not found"
+echo "Proof server images:"; docker images midnightntwrk/proof-server --format '{{.Tag}}' 2>/dev/null || echo "docker not running"
 echo "Node.js:"; node --version
 echo "Compare with: docs.midnight.network/relnotes/support-matrix"
 ```

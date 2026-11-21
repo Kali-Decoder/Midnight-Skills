@@ -2,7 +2,7 @@
 # Run: docker compose up -d
 # macOS: docker compose -f docker-compose.yml -f docker-compose.macos.yml up -d
 #
-# Image versions are pinned to those used by experiments/redjubjub-wallet/.
+# Image versions pinned to the Ledger 9.1 support matrix (node 2.1.101, indexer 4.4.101, proof server 9.0.2).
 #
 # The explicit project name keeps this stack's containers and volumes
 # separate from other experiments whose compose dir is also named `infra`
@@ -12,7 +12,7 @@ name: mn-passport-foundations-demo
 
 services:
   node:
-    image: 'midnightntwrk/midnight-node:1.0.0'
+    image: 'midnightntwrk/midnight-node:2.1.101'
     network_mode: host
     cap_drop:
       - ALL
@@ -33,7 +33,7 @@ services:
       SIDECHAIN_BLOCK_BENEFICIARY: '04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e'
 
   indexer:
-    image: 'midnightntwrk/indexer-standalone:4.3.3'
+    image: 'midnightntwrk/indexer-standalone:4.4.101'
     network_mode: host
     cap_drop:
       - ALL
@@ -61,7 +61,7 @@ services:
         condition: service_healthy
 
   proof-server:
-    image: 'midnightntwrk/proof-server:8.1.0'
+    image: 'midnightntwrk/proof-server:9.0.2'
     network_mode: host
     cap_drop:
       - ALL

@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "compact": "compact compile src/private-party.compact src/managed/private-party"
+    "compact": "compact compile +0.36.1 src/private-party.compact src/managed/private-party"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.16.0"
+    "@midnight-ntwrk/compact-js": "3.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0"
   }
 }

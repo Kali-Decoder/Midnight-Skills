@@ -11,43 +11,29 @@ import { WebSocket } from 'ws';
 import * as Rx from 'rxjs';
 import { Buffer } from 'node:buffer';
 
-import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
-import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
-import { setNetworkId, getNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import * as ledger from '@midnight-ntwrk/ledger-v8';
-import { WalletFacade } from '@midnight-ntwrk/wallet-sdk-facade';
-import { DustWallet } from '@midnight-ntwrk/wallet-sdk-dust-wallet';
-import { HDWallet, Roles } from '@midnight-ntwrk/wallet-sdk-hd';
-import { ShieldedWallet } from '@midnight-ntwrk/wallet-sdk-shielded';
+import { httpClientProofProvider } from '@midnightntwrk/midnight-js-http-client-proof-provider';
+import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
+import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
+import { NodeZkConfigProvider } from '@midnightntwrk/midnight-js-node-zk-config-provider';
+import {
+  createLedger9MidnightProvider,
+  createLedger9WalletProvider,
+  type MidnightProviders,
+} from '@midnightntwrk/midnight-js-types';
+import { InMemoryTransactionHistoryStorage } from '@midnightntwrk/wallet-sdk-abstractions';
+import { WalletFacade, WalletEntrySchema } from '@midnightntwrk/wallet-sdk-facade';
+import { DustWallet } from '@midnightntwrk/wallet-sdk-dust-wallet';
+import { WalletSeeds } from '@midnightntwrk/wallet-sdk-hd';
+import { ShieldedWallet } from '@midnightntwrk/wallet-sdk-shielded';
 import {
   createKeystore,
   PublicKey,
   UnshieldedWallet,
-} from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
+} from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 
-// InMemoryTransactionHistoryStorage was removed from
-// @midnight-ntwrk/wallet-sdk-unshielded-wallet@3; supply a no-op stub.
-const NoopTxHistoryStorage = {
-  upsert: async (..._args: unknown[]) => undefined,
-  get: async (..._args: unknown[]) => null,
-  delete: async (..._args: unknown[]) => undefined,
-  list: async (..._args: unknown[]) => [] as unknown[],
-  clear: async (..._args: unknown[]) => undefined,
-};
-
-// Workaround for ledger-v8 bug: MerkleTree::collapse panics on non-empty
-// trees when producing shielded outputs. Inherited from redjubjub-wallet /
-// contract-custody-feasibility; drop when verified fixed upstream.
-const _origTryApply = (ledger.ZswapChainState.prototype as any).tryApply;
-(ledger.ZswapChainState.prototype as any).tryApply = function (...args: unknown[]) {
-  try {
-    return _origTryApply.apply(this, args as any);
-  } catch {
-    return [this, new Map()];
-  }
-};
+// Ledger 9 / Wallet SDK 2.x: no setNetworkId (removed in Midnight.js 5), no
+// ledger-v8 ZswapChainState.tryApply monkeypatch (that was a ledger-v8 bug),
+// no hand-rolled tx-history stub (InMemoryTransactionHistoryStorage is back).
 
 // Enable WebSocket for GraphQL subscriptions.
 // @ts-expect-error required for wallet sync
@@ -69,7 +55,6 @@ const CONFIGS: Record<
 };
 
 export const CONFIG = CONFIGS[NETWORK] ?? CONFIGS.local;
-setNetworkId(CONFIG.networkId as any);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const managedPath = path.resolve(__dirname, '..', '..', 'contracts', 'managed');
@@ -77,60 +62,35 @@ export const zkConfigPath = path.join(managedPath, 'account');
 export const faucetZkConfigPath = path.join(managedPath, 'faucet');
 export const identityRegistryZkConfigPath = path.join(managedPath, 'identity_registry');
 
-export function deriveKeys(seed: string) {
-  const hdWallet = HDWallet.fromSeed(Buffer.from(seed, 'hex'));
-  if (hdWallet.type !== 'seedOk') throw new Error('Invalid seed');
-
-  const result = hdWallet.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust])
-    .deriveKeysAt(0);
-
-  if (result.type !== 'keysDerived') throw new Error('Key derivation failed');
-
-  hdWallet.hdWallet.clear();
-  return result.keys;
-}
-
 export async function createWallet(seed: string) {
-  const keys = deriveKeys(seed);
-  const networkId = getNetworkId();
-
-  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(keys[Roles.Zswap]);
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(keys[Roles.Dust]);
-  const unshieldedKeystore = createKeystore(keys[Roles.NightExternal], networkId);
-
+  // WalletSeeds derives account 0 / index 0 for Zswap, NightExternal and Dust,
+  // the same keys the localnet genesis seed is funded under.
+  const seeds = WalletSeeds.fromMasterSeed(Buffer.from(seed, 'hex'));
+  const networkId = CONFIG.networkId;
+  const unshieldedKeystore = createKeystore({ kind: 'schnorr', secret: seeds.unshielded }, networkId);
   const feeBlocksMargin = Number(process.env.FEE_BLOCKS_MARGIN ?? '100');
 
-  const configuration = {
-    networkId,
-    indexerClientConnection: {
-      indexerHttpUrl: CONFIG.indexer,
-      indexerWsUrl: CONFIG.indexerWS,
+  const wallet = await WalletFacade.init({
+    configuration: {
+      networkId,
+      indexerClientConnection: {
+        indexerHttpUrl: CONFIG.indexer,
+        indexerWsUrl: CONFIG.indexerWS,
+      },
+      provingServerUrl: new URL(CONFIG.proofServer),
+      relayURL: new URL(CONFIG.node.replace(/^http/, 'ws')),
+      costParameters: { feeBlocksMargin },
+      txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
     },
-    provingServerUrl: new URL(CONFIG.proofServer),
-    relayURL: new URL(CONFIG.node.replace(/^http/, 'ws')),
-    costParameters: {
-      feeBlocksMargin,
-    },
-    txHistoryStorage: NoopTxHistoryStorage,
-  };
-
-  const wallet: WalletFacade = await (WalletFacade as any).init({
-    configuration,
-    shielded: (config: any) => ShieldedWallet(config).startWithSecretKeys(shieldedSecretKeys),
-    unshielded: (config: any) =>
+    shielded: (config) => ShieldedWallet(config).startWithSeed(seeds.shielded),
+    unshielded: (config) =>
       UnshieldedWallet(config).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore)),
-    dust: (config: any) =>
-      DustWallet(config).startWithSecretKey(
-        dustSecretKey,
-        ledger.LedgerParameters.initialParameters().dust,
-      ),
+    dust: (config) => DustWallet(config).startWithSeed(seeds.dust),
   });
 
-  await wallet.start(shieldedSecretKeys, dustSecretKey);
+  await wallet.start(seeds);
 
-  return { wallet, shieldedSecretKeys, dustSecretKey, unshieldedKeystore };
+  return { wallet, seeds, unshieldedKeystore };
 }
 
 export type WalletContext = Awaited<ReturnType<typeof createWallet>>;
@@ -147,33 +107,31 @@ export async function syncWallet(walletCtx: WalletContext, label: string): Promi
   console.log('\nWallet synced.');
 }
 
-export async function createProviders(walletCtx: WalletContext, contractZkPath: string = zkConfigPath) {
-  const state = await Rx.firstValueFrom(
-    walletCtx.wallet.state().pipe(Rx.filter((s) => s.isSynced)),
-  );
+export async function createProviders(
+  walletCtx: WalletContext,
+  contractZkPath: string = zkConfigPath,
+): Promise<MidnightProviders> {
+  const { wallet, unshieldedKeystore } = walletCtx;
+  const state = await wallet.waitForSyncedState();
+  const signSegment = (payload: Uint8Array) => Promise.resolve(unshieldedKeystore.signData(payload));
 
-  const signFn = (payload: Uint8Array) => walletCtx.unshieldedKeystore.signData(payload);
-
-  const walletProvider = {
+  // midnight-js hands transactions over as era-tagged handles; the facade
+  // adopts the bytes at the protocol version it is acting at.
+  const walletProvider = createLedger9WalletProvider({
     getCoinPublicKey: () => state.shielded.coinPublicKey.toHexString(),
     getEncryptionPublicKey: () => state.shielded.encryptionPublicKey.toHexString(),
-    async balanceTx(tx: any, ttl?: Date) {
-      const recipe = await walletCtx.wallet.balanceUnboundTransaction(
-        tx,
-        {
-          shieldedSecretKeys: walletCtx.shieldedSecretKeys,
-          dustSecretKey: walletCtx.dustSecretKey,
-        },
-        { ttl: ttl ?? new Date(Date.now() + 30 * 60 * 1000) },
-      );
-
-      const signed = await walletCtx.wallet.signRecipe(recipe, signFn);
-      return walletCtx.wallet.finalizeRecipe(signed);
+    async balanceTx(tx, ttl) {
+      const recipe = await wallet.balanceUnboundTransaction(wallet.adoptTransaction(tx.serialize(), 'Unbound'), {
+        ttl: ttl ?? new Date(Date.now() + 30 * 60 * 1000),
+      });
+      return wallet.finalizeRecipe(await wallet.signRecipe(recipe, signSegment));
     },
-    submitTx: (tx: any) => walletCtx.wallet.submitTransaction(tx) as any,
-  };
+  });
+  const midnightProvider = createLedger9MidnightProvider((tx) =>
+    wallet.submitTransaction(wallet.adoptTransaction(tx.serialize(), 'Finalized')),
+  );
 
-  const zkConfigProvider = new NodeZkConfigProvider(contractZkPath);
+  const zkConfigProvider = new NodeZkConfigProvider<string>(contractZkPath);
 
   return {
     privateStateProvider: levelPrivateStateProvider({
@@ -182,11 +140,12 @@ export async function createProviders(walletCtx: WalletContext, contractZkPath: 
       privateStoragePasswordProvider: () => 'MNPassport!foundations-demo',
       accountId: state.shielded.encryptionPublicKey.toHexString().slice(0, 16),
     }),
-    publicDataProvider: indexerPublicDataProvider(CONFIG.indexer, CONFIG.indexerWS),
+    publicDataProvider: indexerPublicDataProvider({ queryURL: CONFIG.indexer, subscriptionURL: CONFIG.indexerWS }),
     zkConfigProvider,
-    proofProvider: httpClientProofProvider(CONFIG.proofServer, zkConfigProvider),
+    proofProvider: httpClientProofProvider({ url: CONFIG.proofServer, zkConfigProvider }),
     walletProvider,
-    midnightProvider: walletProvider,
+    midnightProvider,
+    config: { networkId: CONFIG.networkId, ttlSeconds: 30 * 60 },
   };
 }
 

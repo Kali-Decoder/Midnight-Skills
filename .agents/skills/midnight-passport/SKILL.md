@@ -30,7 +30,7 @@ This skill teaches agents how to **implement** Passport pieces in an app. For a 
 **Prototype caveats (do not hide from the user):**
 - Auth = **hash-preimage** of device secret (Schnorr / full MIP-0013 arms deferred in this foundations cut)
 - Recovery Shamir shares are stored **in public ledger state** — placeholder for PVSS; **do not ship as-is**
-- `transientHash` commitments — may not survive Compact language upgrades
+- `transientHash` commitments: not guaranteed stable across Compact versions. The 0.31 → 0.36.1 move was checked and produces identical commitments, but re-check before every toolchain upgrade
 - One Compact contract **per account**
 - Localnet demo funds deposits from a genesis wallet
 
@@ -68,31 +68,41 @@ flowchart LR
 
 ---
 
-## 1) Dependencies (foundations stack)
+## 1) Dependencies (foundations stack, Ledger 9.1)
 
-Pin with the template (`templates/passport-dapp/package.json`). Core packages:
+Pin with the template (`templates/passport-dapp/package.json` and `app/package.json`). Ported to Ledger 9 on 21 Nov 2026: contracts compile with 0.36.1, `npm test` (23 simulator tests) passes, and the Node code and browser app type-check and build. The localnet lifecycle suites have not been re-run on the Ledger 9 stack yet.
 
 ```bash
 # root (wallet client + node tests)
-@midnight-ntwrk/compact-runtime@^0.16.0
-@midnight-ntwrk/midnight-js-contracts@^4.0.4
-@midnight-ntwrk/midnight-js-indexer-public-data-provider@^4.0.4
-@midnight-ntwrk/midnight-js-http-client-proof-provider@^4.0.4
-@midnight-ntwrk/midnight-js-level-private-state-provider@^4.0.4
-@midnight-ntwrk/midnight-js-network-id@^4.0.4
-# plus wallet-sdk-* if using embedded localnet genesis wallet (demo)
+@midnight-ntwrk/compact-runtime@0.21.0
+@midnight-ntwrk/compact-js@3.0.2
+@midnightntwrk/ledger-v9@1.0.2
+@midnightntwrk/midnight-js-contracts@5.0.2
+@midnightntwrk/midnight-js-types@5.0.2
+@midnightntwrk/midnight-js-indexer-public-data-provider@5.0.2
+@midnightntwrk/midnight-js-http-client-proof-provider@5.0.2
+@midnightntwrk/midnight-js-level-private-state-provider@5.0.2
+@midnightntwrk/midnight-js-node-zk-config-provider@5.0.2
+@midnightntwrk/wallet-sdk-facade@5.0.1 wallet-sdk-shielded@4.0.1 wallet-sdk-unshielded-wallet@4.0.1
+@midnightntwrk/wallet-sdk-dust-wallet@5.1.0 wallet-sdk-hd@4.0.0 wallet-sdk-abstractions@3.0.0 wallet-sdk-address-format@4.0.1
 
 # browser app also needs
-@midnight-ntwrk/compact-js
+@midnightntwrk/midnight-js-fetch-zk-config-provider@5.0.2
+@midnightntwrk/wallet-sdk-prover-client@2.0.1 @midnightntwrk/zkir-v2@2.2.0   # ?prover=browser path
 vite-plugin-wasm vite-plugin-top-level-await
 ```
 
-Compact sources use `pragma language_version 0.23;`. Compile with:
+Removed in the port: `midnight-js-network-id` (no `setNetworkId`), `ledger-v8`, `@midnight-ntwrk/wallet-api`, `@midnight-ntwrk/zswap`, and the ledger-v8 `ZswapChainState.tryApply` monkeypatch.
+
+Compact sources use `pragma language_version >= 0.28.0;`. Compile with the pinned toolchain (`npm run compile` does this):
 
 ```bash
-compact compile contracts/account.compact contracts/managed/account
-compact compile contracts/identity_registry.compact contracts/managed/identity_registry
+compact compile +0.36.1 contracts/account.compact contracts/managed/account
+compact compile +0.36.1 contracts/faucet.compact contracts/managed/faucet
+compact compile +0.36.1 contracts/identity_registry.compact contracts/managed/identity_registry
 ```
+
+Local stack (`infra/docker-compose.yml`): `midnight-node:2.1.101`, `indexer-standalone:4.4.101`, `proof-server:9.0.2`.
 
 ---
 
@@ -245,7 +255,7 @@ const account = await PassportAccount.connect(
   { deviceSecret }, // re-derived from passkey
 );
 
-// Ledger
+// Ledger (decodes queryContractState via read.contractState.deserialize({ v9: ContractState }))
 const ledger = await account.ledgerState();
 
 // Night custody (color = token color bytes / hex decoded)
@@ -351,12 +361,12 @@ Full Compact sources: `templates/passport-dapp/contracts/`.
 
 ## 9) Provider wiring
 
-Demo uses localnet genesis wallet + proof server (see `app/src/lib/providers.ts`, `src/node/`). For production dApps:
+The demo uses a localnet genesis wallet: Wallet SDK 2.x `WalletFacade.init` started from `WalletSeeds.fromMasterSeed(...)`. Providers are built with `createLedger9WalletProvider` / `createLedger9MidnightProvider` and carry `config: { networkId, ttlSeconds }` (see `src/node/wallet.ts`, `app/src/lib/providers.ts`). For production dApps:
 
-- Prefer `1am-wallet/` / `dynamic-midnight-wallet/` / `react-wallet-connector/` for user wallets
-- Keep Passport **custody contract** as the account surface; wallet only funds / submits
-- Reuse `references/midnight-session.md` indexer patch when on preview/preprod
-- Proof server required for circuit calls
+- Prefer `1am-wallet/` / `dynamic-midnight-wallet/` / `react-wallet-connector/` for user wallets, wired through `@midnightntwrk/midnight-js-dapp-connector-proof-provider` (`references/midnight-session.md`)
+- Keep the Passport **custody contract** as the account surface; the wallet only funds and submits
+- No indexer patch is needed on Ledger 9 (indexer 4.4.101 handles no-offset queries)
+- Proving: a local proof server 9.0.2, the user's wallet, or the browser path (`?prover=browser`), which now uses `@midnightntwrk/zkir-v2` + ledger-v9 generation-10 keys from `srs.midnight.network`
 
 ---
 
@@ -370,7 +380,9 @@ Demo uses localnet genesis wallet + proof server (see `app/src/lib/providers.ts`
 | Witness throws missing secret | Connected without device/grant/recovery hex | Pass secrets into `PassportAccount.connect` |
 | Invalid Transaction on register | Registry race / duplicate demo write | Retry; check registry address injected by demo script |
 | Deposit fails | No Night in funding wallet / wrong color | Ensure faucet/genesis funded; use wallet's Night color bytes |
-| Cross-toolchain commitment break | `transientHash` instability | Stay on pinned Compact language; plan migration to `persistentHash` for prod |
+| Cross-toolchain commitment break | `transientHash` is not guaranteed stable across toolchains | Checked for 0.31 → 0.36.1: same `derive_device_commitment` / `derive_recovery_commitment` output. Re-run that check before each upgrade; plan `persistentHash` for production |
+| `Version mismatch: compiled code expects 0.21.0, runtime is 0.16.0` | Old runtime pinned | Use `compact-runtime@0.21.0` with toolchain 0.36.x |
+| Old Preview account/session | Preview relaunched as a new chain on 7 Nov 2026 | Clear the session and onboard again |
 
 ---
 

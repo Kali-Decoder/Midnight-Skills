@@ -1,14 +1,27 @@
-import { createUnprovenDeployTx, submitCallTxAsync, submitTxAsync } from '@midnight-ntwrk/midnight-js-contracts';
-import { ContractState, sampleSigningKey } from '@midnight-ntwrk/compact-runtime';
-import { CompiledLeaderboardContract, Contract, ledger } from '../contract/src/index';
+import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import {
+  CompiledLeaderboardContract,
+  ledger,
+  type LeaderboardContract,
+  type LeaderboardPrivateState,
+} from '../contract/src/index';
 import { setCustomName } from '../contract/src/witnesses';
 import type { ConnectedSession } from './midnight';
+import { queryLatestState } from './midnight';
 import { decodeDisplayName } from './display-name';
-import { fromHex, pollForState } from './midnight';
 
 const PRIVATE_STATE_ID = 'leaderboardPrivateState';
 const SECRET_STORAGE_KEY = 'midnight-leaderboard-secret';
 export const ZK_PATH = '/zk/leaderboard';
+
+type LeaderboardProviders = MidnightProviders<
+  ProvableCircuitId<LeaderboardContract>,
+  typeof PRIVATE_STATE_ID,
+  LeaderboardPrivateState
+>;
+const providersFor = (session: ConnectedSession) => session.providers as unknown as LeaderboardProviders;
 
 export type LeaderboardEntry = {
   id: number;
@@ -21,10 +34,6 @@ export type LeaderboardState = {
   entryCount: number;
   entries: LeaderboardEntry[];
 };
-
-function makeCompiledContract() {
-  return CompiledLeaderboardContract as any;
-}
 
 export function getOrCreateSecretKey(): Uint8Array {
   if (typeof window !== 'undefined') {
@@ -40,88 +49,49 @@ export function getOrCreateSecretKey(): Uint8Array {
 }
 
 export async function deployLeaderboard(session: ConnectedSession): Promise<string> {
-  const secretKey = getOrCreateSecretKey();
-  const initialPrivateState = { secretKey };
-  const deployTxData = await (createUnprovenDeployTx as any)(
-    {
-      zkConfigProvider: session.providers.zkConfigProvider,
-      walletProvider: session.providers.walletProvider,
-    },
-    {
-      compiledContract: makeCompiledContract(),
-      args: [],
-      privateStateId: PRIVATE_STATE_ID,
-      initialPrivateState,
-      signingKey: sampleSigningKey(),
-    },
-  );
-  const contractAddress = deployTxData.public.contractAddress;
-  await (submitTxAsync as any)(session.providers, { unprovenTx: deployTxData.private.unprovenTx });
-  await session.providers.privateStateProvider.setContractAddress(contractAddress);
-  await session.providers.privateStateProvider.set(PRIVATE_STATE_ID, initialPrivateState);
-  await session.providers.privateStateProvider.setSigningKey(
-    contractAddress,
-    deployTxData.private.signingKey,
-  );
-  return contractAddress;
+  const deployed = await deployContract(providersFor(session), {
+    compiledContract: CompiledLeaderboardContract,
+    privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState: { secretKey: getOrCreateSecretKey() },
+  });
+  return deployed.deployTxData.public.contractAddress;
 }
 
-export async function submitScore(
-  session: ConnectedSession,
-  contractAddress: string,
-  score: number,
-  customName?: string,
-) {
-  if (customName) {
-    setCustomName(customName);
-  }
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
+async function connect(session: ConnectedSession, contractAddress: string) {
+  return findDeployedContract(providersFor(session), {
+    compiledContract: CompiledLeaderboardContract,
     contractAddress,
-    circuitId: 'submitScore',
-    args: [BigInt(score), Boolean(customName)],
     privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState: { secretKey: getOrCreateSecretKey() },
   });
 }
 
-export async function verifyOwnership(
-  session: ConnectedSession,
-  contractAddress: string,
-  entryId: number,
-) {
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
-    contractAddress,
-    circuitId: 'verifyOwnership',
-    args: [BigInt(entryId)],
-    privateStateId: PRIVATE_STATE_ID,
-  });
+export async function submitScore(session: ConnectedSession, contractAddress: string, score: number, customName?: string) {
+  if (customName) setCustomName(customName);
+  const board = await connect(session, contractAddress);
+  await board.callTx.submitScore(BigInt(score), Boolean(customName));
 }
 
-export function decodeLeaderboardState(stateHex: string): LeaderboardState {
-  const contractState = ContractState.deserialize(fromHex(stateHex));
-  const l = ledger(contractState.data);
+export async function verifyOwnership(session: ConnectedSession, contractAddress: string, entryId: number) {
+  const board = await connect(session, contractAddress);
+  await board.callTx.verifyOwnership(BigInt(entryId));
+}
+
+export async function fetchLeaderboardState(session: ConnectedSession, contractAddress: string): Promise<LeaderboardState> {
+  const state = await queryLatestState(session, contractAddress);
+  if (!state) return { entryCount: 0, entries: [] };
+  const l = ledger(state.data);
   const entries: LeaderboardEntry[] = [];
-  for (const [key, entry] of l.scores as Map<bigint, { score: bigint; displayName: Uint8Array; ownerHash: Uint8Array }>) {
+  for (const [key, entry] of l.scores) {
     const id = Number(key);
     const score = Number(entry.score);
     entries.push({
       id,
       score,
       displayName: decodeDisplayName(entry.displayName, id, score),
-      ownerHash: Array.from(entry.ownerHash)
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join(''),
+      ownerHash: Array.from(entry.ownerHash, (b) => b.toString(16).padStart(2, '0')).join(''),
     });
   }
   entries.sort((a, b) => b.score - a.score);
-  return { entryCount: Number(l.nextId as unknown as bigint), entries };
-}
-
-export async function fetchLeaderboardState(
-  queryUrl: string,
-  contractAddress: string,
-): Promise<LeaderboardState> {
-  const hex = await pollForState(queryUrl, contractAddress);
-  return decodeLeaderboardState(hex);
+  return { entryCount: Number(l.nextId), entries };
 }

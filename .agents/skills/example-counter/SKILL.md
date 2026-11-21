@@ -5,7 +5,7 @@ description: Generate a complete Midnight Network counter DApp from scratch — 
 
 # Example Counter DApp Skill
 
-This skill generates the complete, runnable `midnightntwrk/example-counter` reference DApp. It covers every file: Compact contract, TypeScript sources, entry points for each network, Docker compose files, test infrastructure, and all supporting config. The code matches the official implementation at `github.com/midnightntwrk/example-counter` (v2.1.1).
+This skill generates the complete, runnable `midnightntwrk/example-counter` reference DApp. It covers every file: Compact contract, TypeScript sources, entry points for each network, Docker compose files, test infrastructure, and all supporting config. It is based on the official implementation at `github.com/midnightntwrk/example-counter` (v2.1.1), **ported to Ledger 9** here (21 Nov 2026). Upstream had not published a Ledger 9 release at the time: its `main` still pins runtime 0.15 / Midnight.js 4 / `setNetworkId`. This port uses Compact 0.36.1, runtime 0.21.0, Midnight.js 5.0.2, Wallet SDK 2.0.1 and indexer API v4. The contract compiles and `api.ts` type-checks; the CLI has not been run against a live network.
 
 **Primary references:**
 - `github.com/midnightntwrk/example-counter` — official reference repo
@@ -13,7 +13,7 @@ This skill generates the complete, runnable `midnightntwrk/example-counter` refe
 - `docs.midnight.network/guides/interact-with-mn-app` — official interact guide
 - `docs.midnight.network/relnotes/support-matrix` — authoritative version compatibility matrix
 
-**Package versions below are a dated snapshot (May 2026).** Resolve the current tested set from the [support matrix](https://docs.midnight.network/relnotes/support-matrix) before pinning — see `references/volatile.md`. Never install `@latest`.
+**Package versions below are the Ledger 9.1 set (checked against npm and the support matrix on 21 Nov 2026).** Resolve the current tested set from the [support matrix](https://docs.midnight.network/relnotes/support-matrix) before pinning — see `references/volatile.md`. Never install `@latest`.
 
 ---
 
@@ -91,7 +91,7 @@ docker --version
 curl --proto '=https' --tlsv1.2 -sSf \
   https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
 source $HOME/.local/bin/env
-compact update 0.30.0
+compact update 0.36.1
 compact compile --version
 ```
 
@@ -102,7 +102,7 @@ compact compile --version
 ```json
 {
   "name": "example-counter",
-  "version": "2.1.1",
+  "version": "2.1.1-ledger9",
   "private": true,
   "type": "module",
   "engines": {
@@ -120,23 +120,24 @@ compact compile --version
     "validate": "yarn env:up && yarn test:local; yarn env:down"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.16.0",
-    "@midnight-ntwrk/ledger-v8": "8.0.3",
-    "@midnight-ntwrk/midnight-js-contracts": "4.0.4",
-    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-network-id": "4.0.4",
-    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-types": "4.0.4",
-    "@midnight-ntwrk/midnight-js-utils": "4.0.4",
-    "@midnight-ntwrk/testkit-js": "4.0.4",
-    "@midnight-ntwrk/wallet-sdk-address-format": "3.1.0",
-    "@midnight-ntwrk/wallet-sdk-dust-wallet": "3.0.0",
-    "@midnight-ntwrk/wallet-sdk-facade": "3.0.0",
-    "@midnight-ntwrk/wallet-sdk-hd": "3.0.1",
-    "@midnight-ntwrk/wallet-sdk-shielded": "2.1.0",
-    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "2.1.0",
+    "@midnight-ntwrk/compact-js": "3.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0",
+    "@midnightntwrk/ledger-v9": "1.0.2",
+    "@midnightntwrk/midnight-js-contracts": "5.0.2",
+    "@midnightntwrk/midnight-js-http-client-proof-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-indexer-public-data-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-level-private-state-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-node-zk-config-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-types": "5.0.2",
+    "@midnightntwrk/midnight-js-utils": "5.0.2",
+    "@midnightntwrk/testkit-js": "5.0.2",
+    "@midnightntwrk/wallet-sdk-abstractions": "3.0.0",
+    "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
+    "@midnightntwrk/wallet-sdk-dust-wallet": "5.1.0",
+    "@midnightntwrk/wallet-sdk-facade": "5.0.1",
+    "@midnightntwrk/wallet-sdk-hd": "4.0.0",
+    "@midnightntwrk/wallet-sdk-shielded": "4.0.1",
+    "@midnightntwrk/wallet-sdk-unshielded-wallet": "4.0.1",
     "axios": "^1.15.0",
     "pino": "^9.0.0",
     "pino-pretty": "^13.0.0",
@@ -145,7 +146,7 @@ compact compile --version
     "ws": "^8.14.2"
   },
   "devDependencies": {
-    "@midnight-ntwrk/midnight-js-compact": "4.0.4",
+    "@midnightntwrk/midnight-js-compact": "5.0.2",
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.9",
     "ts-node": "^10.9.2",
@@ -154,9 +155,8 @@ compact compile --version
     "vitest": "^3.0.0"
   },
   "resolutions": {
-    "@midnight-ntwrk/ledger-v8": "8.0.3",
-    "@midnight-ntwrk/midnight-js-network-id": "4.0.4",
-    "@midnight-ntwrk/compact-runtime": "0.16.0"
+    "@midnightntwrk/ledger-v9": "1.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0"
   },
   "packageManager": "yarn@1.22.22"
 }
@@ -228,7 +228,7 @@ compact compile --version
 ## 6) `contract/src/counter.compact`
 
 ```compact
-pragma language_version >= 0.20;
+pragma language_version >= 0.28.0;
 
 import CompactStandardLibrary;
 
@@ -246,10 +246,10 @@ Compile it:
 cd contract && npm run compact
 ```
 
-Expected output:
+Expected output (exact `k`/`rows` depend on the toolchain; 0.36.x emits ZKIR v3):
 ```
 Compiling 1 circuits:
-  circuit "increment" (k=10, rows=29)
+  circuit "increment" ...
 ```
 
 ---
@@ -277,11 +277,10 @@ export * from "./witnesses";
 
 ## 9) `counter-cli/src/config.ts`
 
-Network configuration classes and shared contract config:
+Network configuration. Ledger 9 / Midnight.js 5: there is no `setNetworkId`, so each config carries its `networkId`. Preprod is served by Blockfrost.
 
 ```typescript
 import path from 'node:path';
-import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 export const currentDir = path.resolve(new URL(import.meta.url).pathname, '..');
 
@@ -291,42 +290,52 @@ export const contractConfig = {
 };
 
 export interface Config {
+  readonly networkId: string;
   readonly logDir: string;
-  readonly indexer: string;
-  readonly indexerWS: string;
-  readonly node: string;
-  readonly proofServer: string;
+  indexer: string;
+  indexerWS: string;
+  node: string;
+  proofServer: string;
+  readonly faucet?: string;
 }
 
 export class StandaloneConfig implements Config {
+  networkId = 'undeployed';
   logDir = path.resolve(currentDir, '..', 'logs', 'standalone', `${new Date().toISOString()}.log`);
-  indexer = 'http://127.0.0.1:8088/api/v3/graphql';
-  indexerWS = 'ws://127.0.0.1:8088/api/v3/graphql/ws';
+  indexer = 'http://127.0.0.1:8088/api/v4/graphql';
+  indexerWS = 'ws://127.0.0.1:8088/api/v4/graphql/ws';
   node = 'http://127.0.0.1:9944';
   proofServer = 'http://127.0.0.1:6300';
-  constructor() { setNetworkId('undeployed'); }
 }
 
 export class PreviewConfig implements Config {
+  networkId = 'preview';
   logDir = path.resolve(currentDir, '..', 'logs', 'preview', `${new Date().toISOString()}.log`);
-  indexer = 'https://indexer.preview.midnight.network/api/v3/graphql';
-  indexerWS = 'wss://indexer.preview.midnight.network/api/v3/graphql/ws';
+  indexer = 'https://indexer.preview.midnight.network/api/v4/graphql';
+  indexerWS = 'wss://indexer.preview.midnight.network/api/v4/graphql/ws';
   node = 'https://rpc.preview.midnight.network';
   proofServer = 'http://127.0.0.1:6300';
-  constructor() { setNetworkId('preview'); }
+  faucet = 'https://faucet.preview.midnight.network/';
 }
 
+const blockfrostToken = (): string => {
+  const t = process.env.BLOCKFROST_PROJECT_ID;   // a preprod token (nightpreprod…)
+  if (!t) throw new Error('Preprod is served by Blockfrost: set BLOCKFROST_PROJECT_ID');
+  return t;
+};
+
 export class PreprodConfig implements Config {
+  networkId = 'preprod';
   logDir = path.resolve(currentDir, '..', 'logs', 'preprod', `${new Date().toISOString()}.log`);
-  indexer = 'https://indexer.preprod.midnight.network/api/v3/graphql';
-  indexerWS = 'wss://indexer.preprod.midnight.network/api/v3/graphql/ws';
-  node = 'https://rpc.preprod.midnight.network';
+  indexer = `https://midnight-preprod.blockfrost.io/api/v0?project_id=${blockfrostToken()}`;
+  indexerWS = `wss://midnight-preprod.blockfrost.io/api/v0/ws?project_id=${blockfrostToken()}`;
+  node = `https://rpc.midnight-preprod.blockfrost.io?project_id=${blockfrostToken()}`;
   proofServer = 'http://127.0.0.1:6300';
-  constructor() { setNetworkId('preprod'); }
+  faucet = 'https://midnight-tmnight-preprod.nethermind.dev/';
 }
 ```
 
-**Note:** All networks use indexer API v3 (`/api/v3/graphql`). Do not change to v4.
+**Note:** local and preview use indexer API **v4** (`/api/v4/graphql`). The old "all networks use v3, do not change to v4" advice is obsolete. `indexer.preprod.midnight.network` was retired on 9 Oct 2026 (HTTP 410), and `rpc.preprod.midnight.network` shut down on 18 Nov 2026. Blockfrost URLs contain your token, so don't log them.
 
 ---
 
@@ -334,8 +343,8 @@ export class PreprodConfig implements Config {
 
 ```typescript
 import { Counter, type CounterPrivateState } from '@midnight-ntwrk/counter-contract';
-import type { MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
-import type { DeployedContract, FoundContract } from '@midnight-ntwrk/midnight-js-contracts';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import type { DeployedContract, FoundContract } from '@midnightntwrk/midnight-js-contracts';
 import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
 
 export type CounterCircuits = ProvableCircuitId<Counter.Contract<CounterPrivateState>>;
@@ -381,29 +390,28 @@ export const createLogger = async (logPath: string): Promise<pino.Logger> => {
 
 ## 12) `counter-cli/src/api.ts`
 
-Core API — wallet creation, key derivation, contract deploy/join, increment, transaction signing workaround, DUST management.
+Core API — wallet creation (Wallet SDK 2.x), contract deploy/join, increment, DUST management. Ported to Ledger 9; type-checked against Midnight.js 5.0.2 / Wallet SDK 2.0.1.
 
 ```typescript
-import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
+import { type ContractAddress, ContractState } from '@midnight-ntwrk/compact-runtime';
 import { Counter, type CounterPrivateState, witnesses } from '@midnight-ntwrk/counter-contract';
-import * as ledger from '@midnight-ntwrk/ledger-v8';
-import { unshieldedToken } from '@midnight-ntwrk/ledger-v8';
-import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
-import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
-import { type FinalizedTxData, type MidnightProvider, type WalletProvider } from '@midnight-ntwrk/midnight-js-types';
-import { WalletFacade } from '@midnight-ntwrk/wallet-sdk-facade';
-import { DustWallet } from '@midnight-ntwrk/wallet-sdk-dust-wallet';
-import { HDWallet, Roles, generateRandomSeed } from '@midnight-ntwrk/wallet-sdk-hd';
-import { ShieldedWallet } from '@midnight-ntwrk/wallet-sdk-shielded';
+import { unshieldedToken } from '@midnightntwrk/ledger-v9';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
+import { httpClientProofProvider } from '@midnightntwrk/midnight-js-http-client-proof-provider';
+import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
+import { NodeZkConfigProvider } from '@midnightntwrk/midnight-js-node-zk-config-provider';
+import { createLedger9MidnightProvider, createLedger9WalletProvider } from '@midnightntwrk/midnight-js-types';
+import { InMemoryTransactionHistoryStorage } from '@midnightntwrk/wallet-sdk-abstractions';
+import { WalletFacade, WalletEntrySchema, type FacadeState } from '@midnightntwrk/wallet-sdk-facade';
+import { DustWallet } from '@midnightntwrk/wallet-sdk-dust-wallet';
+import { WalletSeeds, generateRandomSeed } from '@midnightntwrk/wallet-sdk-hd';
+import { ShieldedWallet } from '@midnightntwrk/wallet-sdk-shielded';
 import {
   createKeystore,
-  InMemoryTransactionHistoryStorage,
   PublicKey,
   UnshieldedWallet,
   type UnshieldedKeystore,
-} from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
+} from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 import { type Logger } from 'pino';
 import * as Rx from 'rxjs';
 import { WebSocket } from 'ws';
@@ -415,9 +423,8 @@ import {
   type DeployedCounterContract,
 } from './common-types';
 import { type Config, contractConfig } from './config';
-import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
-import { assertIsContractAddress, toHex } from '@midnight-ntwrk/midnight-js-utils';
-import { getNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
+import { assertIsContractAddress, toHex } from '@midnightntwrk/midnight-js-utils';
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
 import { Buffer } from 'buffer';
 import {
@@ -425,11 +432,11 @@ import {
   ShieldedAddress,
   ShieldedCoinPublicKey,
   ShieldedEncryptionPublicKey,
-} from '@midnight-ntwrk/wallet-sdk-address-format';
+} from '@midnightntwrk/wallet-sdk-address-format';
 
 let logger: Logger;
 
-globalThis.WebSocket = WebSocket;
+globalThis.WebSocket = WebSocket as unknown as typeof globalThis.WebSocket;
 
 const counterCompiledContract = CompiledContract.make('counter', Counter.Contract).pipe(
   CompiledContract.withVacantWitnesses,
@@ -438,9 +445,9 @@ const counterCompiledContract = CompiledContract.make('counter', Counter.Contrac
 
 export interface WalletContext {
   wallet: WalletFacade;
-  shieldedSecretKeys: ledger.ZswapSecretKeys;
-  dustSecretKey: ledger.DustSecretKey;
+  seeds: WalletSeeds;            // Wallet SDK 2.x starts from seeds, not key objects
   unshieldedKeystore: UnshieldedKeystore;
+  networkId: string;
 }
 
 export const getCounterLedgerState = async (
@@ -451,7 +458,8 @@ export const getCounterLedgerState = async (
   logger.info('Checking contract ledger state...');
   const state = await providers.publicDataProvider
     .queryContractState(contractAddress)
-    .then((contractState) => (contractState != null ? Counter.ledger(contractState.data).round : null));
+    // Midnight.js 5 returns era-tagged bytes; decode with this app's own compact-runtime copy
+    .then((read) => (read != null ? Counter.ledger(read.contractState.deserialize({ v9: ContractState }).data).round : null));
   logger.info(`Ledger state: ${state}`);
   return state;
 };
@@ -486,7 +494,7 @@ export const deploy = async (
   return counterContract;
 };
 
-export const increment = async (counterContract: DeployedCounterContract): Promise<FinalizedTxData> => {
+export const increment = async (counterContract: DeployedCounterContract) => {
   logger.info('Incrementing...');
   const finalizedTxData = await counterContract.callTx.increment();
   logger.info(`Transaction ${finalizedTxData.public.txId} added in block ${finalizedTxData.public.blockHeight}`);
@@ -507,81 +515,25 @@ export const displayCounterValue = async (
   return { contractAddress, counterValue };
 };
 
-/**
- * Sign all unshielded offers in a transaction's intents, using the correct
- * proof marker for Intent.deserialize. This works around a bug in the wallet
- * SDK where signRecipe hardcodes 'pre-proof', which fails for proven
- * (UnboundTransaction) intents that contain 'proof' data.
- */
-const signTransactionIntents = (
-  tx: { intents?: Map<number, any> },
-  signFn: (payload: Uint8Array) => ledger.Signature,
-  proofMarker: 'proof' | 'pre-proof',
-): void => {
-  if (!tx.intents || tx.intents.size === 0) return;
-
-  for (const segment of tx.intents.keys()) {
-    const intent = tx.intents.get(segment);
-    if (!intent) continue;
-
-    const cloned = ledger.Intent.deserialize<ledger.SignatureEnabled, ledger.Proofish, ledger.PreBinding>(
-      'signature',
-      proofMarker,
-      'pre-binding',
-      intent.serialize(),
-    );
-
-    const sigData = cloned.signatureData(segment);
-    const signature = signFn(sigData);
-
-    if (cloned.fallibleUnshieldedOffer) {
-      const sigs = cloned.fallibleUnshieldedOffer.inputs.map(
-        (_: ledger.UtxoSpend, i: number) => cloned.fallibleUnshieldedOffer!.signatures.at(i) ?? signature,
-      );
-      cloned.fallibleUnshieldedOffer = cloned.fallibleUnshieldedOffer.addSignatures(sigs);
-    }
-
-    if (cloned.guaranteedUnshieldedOffer) {
-      const sigs = cloned.guaranteedUnshieldedOffer.inputs.map(
-        (_: ledger.UtxoSpend, i: number) => cloned.guaranteedUnshieldedOffer!.signatures.at(i) ?? signature,
-      );
-      cloned.guaranteedUnshieldedOffer = cloned.guaranteedUnshieldedOffer.addSignatures(sigs);
-    }
-
-    tx.intents.set(segment, cloned);
-  }
-};
-
-export const createWalletAndMidnightProvider = async (
-  ctx: WalletContext,
-): Promise<WalletProvider & MidnightProvider> => {
-  const state = await Rx.firstValueFrom(ctx.wallet.state().pipe(Rx.filter((s) => s.isSynced)));
-  return {
-    getCoinPublicKey() {
-      return state.shielded.coinPublicKey.toHexString();
+// Wallet SDK 2.x: signRecipe signs each part at its own stage, so the old
+// signTransactionIntents ("Failed to clone intent") workaround is gone.
+export const createWalletAndMidnightProvider = async (ctx: WalletContext) => {
+  const state = await ctx.wallet.waitForSyncedState();
+  const signSegment = (payload: Uint8Array) => Promise.resolve(ctx.unshieldedKeystore.signData(payload));
+  const walletProvider = createLedger9WalletProvider({
+    getCoinPublicKey: () => state.shielded.coinPublicKey.toHexString(),
+    getEncryptionPublicKey: () => state.shielded.encryptionPublicKey.toHexString(),
+    async balanceTx(tx, ttl) {
+      const recipe = await ctx.wallet.balanceUnboundTransaction(ctx.wallet.adoptTransaction(tx.serialize(), 'Unbound'), {
+        ttl: ttl ?? new Date(Date.now() + 30 * 60 * 1000),
+      });
+      return ctx.wallet.finalizeRecipe(await ctx.wallet.signRecipe(recipe, signSegment));
     },
-    getEncryptionPublicKey() {
-      return state.shielded.encryptionPublicKey.toHexString();
-    },
-    async balanceTx(tx, ttl?) {
-      const recipe = await ctx.wallet.balanceUnboundTransaction(
-        tx,
-        { shieldedSecretKeys: ctx.shieldedSecretKeys, dustSecretKey: ctx.dustSecretKey },
-        { ttl: ttl ?? new Date(Date.now() + 30 * 60 * 1000) },
-      );
-
-      const signFn = (payload: Uint8Array) => ctx.unshieldedKeystore.signData(payload);
-      signTransactionIntents(recipe.baseTransaction, signFn, 'proof');
-      if (recipe.balancingTransaction) {
-        signTransactionIntents(recipe.balancingTransaction, signFn, 'pre-proof');
-      }
-
-      return ctx.wallet.finalizeRecipe(recipe);
-    },
-    submitTx(tx) {
-      return ctx.wallet.submitTransaction(tx) as any;
-    },
-  };
+  });
+  const midnightProvider = createLedger9MidnightProvider((tx) =>
+    ctx.wallet.submitTransaction(ctx.wallet.adoptTransaction(tx.serialize(), 'Finalized')),
+  );
+  return { walletProvider, midnightProvider };
 };
 
 export const waitForSync = (wallet: WalletFacade) =>
@@ -602,57 +554,15 @@ export const waitForFunds = (wallet: WalletFacade): Promise<bigint> =>
     ),
   );
 
-const buildShieldedConfig = ({ indexer, indexerWS, node, proofServer }: Config) => ({
-  networkId: getNetworkId(),
-  indexerClientConnection: {
-    indexerHttpUrl: indexer,
-    indexerWsUrl: indexerWS,
-  },
+// One configuration for WalletFacade.init (Wallet SDK 2.x); `forks` defaults to DefaultForkSchedule.
+const buildWalletConfig = ({ networkId, indexer, indexerWS, node, proofServer }: Config) => ({
+  networkId,
+  indexerClientConnection: { indexerHttpUrl: indexer, indexerWsUrl: indexerWS },
   provingServerUrl: new URL(proofServer),
   relayURL: new URL(node.replace(/^http/, 'ws')),
+  costParameters: { additionalFeeOverhead: 300_000_000_000_000n, feeBlocksMargin: 5 },
+  txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
 });
-
-const buildUnshieldedConfig = ({ indexer, indexerWS }: Config) => ({
-  networkId: getNetworkId(),
-  indexerClientConnection: {
-    indexerHttpUrl: indexer,
-    indexerWsUrl: indexerWS,
-  },
-  txHistoryStorage: new InMemoryTransactionHistoryStorage(),
-});
-
-const buildDustConfig = ({ indexer, indexerWS, node, proofServer }: Config) => ({
-  networkId: getNetworkId(),
-  costParameters: {
-    additionalFeeOverhead: 300_000_000_000_000n,
-    feeBlocksMargin: 5,
-  },
-  indexerClientConnection: {
-    indexerHttpUrl: indexer,
-    indexerWsUrl: indexerWS,
-  },
-  provingServerUrl: new URL(proofServer),
-  relayURL: new URL(node.replace(/^http/, 'ws')),
-});
-
-const deriveKeysFromSeed = (seed: string) => {
-  const hdWallet = HDWallet.fromSeed(Buffer.from(seed, 'hex'));
-  if (hdWallet.type !== 'seedOk') {
-    throw new Error('Failed to initialize HDWallet from seed');
-  }
-
-  const derivationResult = hdWallet.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust])
-    .deriveKeysAt(0);
-
-  if (derivationResult.type !== 'keysDerived') {
-    throw new Error('Failed to derive keys');
-  }
-
-  hdWallet.hdWallet.clear();
-  return derivationResult.keys;
-};
 
 const formatBalance = (balance: bigint): string => balance.toLocaleString();
 
@@ -706,7 +616,7 @@ const registerForDustGeneration = async (
     const recipe = await wallet.registerNightUtxosForDustGeneration(
       nightUtxos,
       unshieldedKeystore.getPublicKey(),
-      (payload) => unshieldedKeystore.signData(payload),
+      (payload) => Promise.resolve(unshieldedKeystore.signData(payload)),
     );
     const finalized = await wallet.finalizeRecipe(recipe);
     await wallet.submitTransaction(finalized);
@@ -723,8 +633,7 @@ const registerForDustGeneration = async (
   );
 };
 
-const printWalletSummary = (state: any, unshieldedKeystore: UnshieldedKeystore) => {
-  const networkId = getNetworkId();
+const printWalletSummary = (state: FacadeState, unshieldedKeystore: UnshieldedKeystore, networkId: string) => {
   const unshieldedBalance = state.unshielded.balances[unshieldedToken().raw] ?? 0n;
 
   const coinPubKey = ShieldedCoinPublicKey.fromHexString(state.shielded.coinPublicKey.toHexString());
@@ -742,7 +651,7 @@ ${DIV}
   └─ Address: ${shieldedAddress}
 
   Unshielded
-  ├─ Address: ${unshieldedKeystore.getBech32Address()}
+  ├─ Address: ${unshieldedKeystore.getBech32Address().asString()}
   └─ Balance: ${formatBalance(unshieldedBalance)} tNight
 
   Dust
@@ -754,48 +663,34 @@ ${DIV}`);
 export const buildWalletAndWaitForFunds = async (config: Config, seed: string): Promise<WalletContext> => {
   console.log('');
 
-  const { wallet, shieldedSecretKeys, dustSecretKey, unshieldedKeystore } = await withStatus(
-    'Building wallet',
-    async () => {
-      const keys = deriveKeysFromSeed(seed);
-      const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(keys[Roles.Zswap]);
-      const dustSecretKey = ledger.DustSecretKey.fromSeed(keys[Roles.Dust]);
-      const unshieldedKeystore = createKeystore(keys[Roles.NightExternal], getNetworkId());
+  const { wallet, seeds, unshieldedKeystore } = await withStatus('Building wallet', async () => {
+    const seeds = WalletSeeds.fromMasterSeed(Buffer.from(seed, 'hex'));   // account 0 / index 0, as before
+    const unshieldedKeystore = createKeystore({ kind: 'schnorr', secret: seeds.unshielded }, config.networkId);
+    const wallet = await WalletFacade.init({
+      configuration: buildWalletConfig(config),
+      shielded: (cfg) => ShieldedWallet(cfg).startWithSeed(seeds.shielded),
+      unshielded: (cfg) => UnshieldedWallet(cfg).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore)),
+      dust: (cfg) => DustWallet(cfg).startWithSeed(seeds.dust),
+    });
+    await wallet.start(seeds);
+    return { wallet, seeds, unshieldedKeystore };
+  });
 
-      const walletConfig = {
-        ...buildShieldedConfig(config),
-        ...buildUnshieldedConfig(config),
-        ...buildDustConfig(config),
-      };
-      const wallet = await WalletFacade.init({
-        configuration: walletConfig,
-        shielded: (cfg) => ShieldedWallet(cfg).startWithSecretKeys(shieldedSecretKeys),
-        unshielded: (cfg) => UnshieldedWallet(cfg).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore)),
-        dust: (cfg) =>
-          DustWallet(cfg).startWithSecretKey(dustSecretKey, ledger.LedgerParameters.initialParameters().dust),
-      });
-      await wallet.start(shieldedSecretKeys, dustSecretKey);
-
-      return { wallet, shieldedSecretKeys, dustSecretKey, unshieldedKeystore };
-    },
-  );
-
-  const networkId = getNetworkId();
   const DIV = '──────────────────────────────────────────────────────────────';
   console.log(`
 ${DIV}
-  Wallet Overview                            Network: ${networkId}
+  Wallet Overview                            Network: ${config.networkId}
 ${DIV}
   Unshielded Address (send tNight here):
-  ${unshieldedKeystore.getBech32Address()}
-
-  Fund your wallet with tNight from the Preprod faucet:
-  https://faucet.preprod.midnight.network/
+  ${unshieldedKeystore.getBech32Address().asString()}
+${config.faucet ? `
+  Fund your wallet with tNight from the faucet:
+  ${config.faucet}` : ''}
 ${DIV}
 `);
 
   const syncedState = await withStatus('Syncing with network', () => waitForSync(wallet));
-  printWalletSummary(syncedState, unshieldedKeystore);
+  printWalletSummary(syncedState, unshieldedKeystore, config.networkId);
 
   const balance = syncedState.unshielded.balances[unshieldedToken().raw] ?? 0n;
   if (balance === 0n) {
@@ -805,7 +700,7 @@ ${DIV}
 
   await registerForDustGeneration(wallet, unshieldedKeystore);
 
-  return { wallet, shieldedSecretKeys, dustSecretKey, unshieldedKeystore };
+  return { wallet, seeds, unshieldedKeystore, networkId: config.networkId };
 };
 
 export const buildFreshWallet = async (config: Config): Promise<WalletContext> => {
@@ -822,22 +717,24 @@ ${DIV}
 };
 
 export const configureProviders = async (ctx: WalletContext, config: Config) => {
-  const walletAndMidnightProvider = await createWalletAndMidnightProvider(ctx);
+  const { walletProvider, midnightProvider } = await createWalletAndMidnightProvider(ctx);
   const zkConfigProvider = new NodeZkConfigProvider<CounterCircuits>(contractConfig.zkConfigPath);
-  const accountId = walletAndMidnightProvider.getCoinPublicKey();
+  const accountId = walletProvider.getCoinPublicKey();
   const storagePassword = `${Buffer.from(accountId, 'hex').toString('base64')}!`;
-  return {
+  const providers: CounterProviders = {
     privateStateProvider: levelPrivateStateProvider<typeof CounterPrivateStateId>({
       privateStateStoreName: contractConfig.privateStateStoreName,
       accountId,
       privateStoragePasswordProvider: () => storagePassword,
     }),
-    publicDataProvider: indexerPublicDataProvider(config.indexer, config.indexerWS),
+    publicDataProvider: indexerPublicDataProvider({ queryURL: config.indexer, subscriptionURL: config.indexerWS }),
     zkConfigProvider,
-    proofProvider: httpClientProofProvider(config.proofServer, zkConfigProvider),
-    walletProvider: walletAndMidnightProvider,
-    midnightProvider: walletAndMidnightProvider,
+    proofProvider: httpClientProofProvider({ url: config.proofServer, zkConfigProvider }),
+    walletProvider,
+    midnightProvider,
+    config: { networkId: config.networkId, ttlSeconds: 30 * 60 },   // replaces setNetworkId
   };
+  return providers;
 };
 
 export const getDustBalance = async (
@@ -847,7 +744,7 @@ export const getDustBalance = async (
   const available = state.dust.balance(new Date());
   const availableCoins = state.dust.availableCoins.length;
   const pendingCoins = state.dust.pendingCoins.length;
-  const pending = state.dust.pendingCoins.reduce((sum, c) => sum + c.initialValue, 0n);
+  const pending = state.dust.pendingCoins.reduce((sum, c) => sum + c.token.initialValue, 0n); // 2.x: DustFullInfo.token
   return { available, pending, availableCoins, pendingCoins };
 };
 
@@ -876,7 +773,7 @@ export const monitorDustBalance = async (wallet: WalletFacade, stopSignal: Promi
 
       let status = '';
       if (pendingCoins > 0 && availableCoins === 0) {
-        status = '⚠ locked by pending tx';
+        status = '⚠ booked by a pending tx (released on rejection, TTL or sync)';
       } else if (available > 0n) {
         status = '✓ ready to deploy';
       } else if (availableCoins > 0) {
@@ -904,9 +801,10 @@ export function setLogger(_logger: Logger) {
 
 **Key points:**
 - `globalThis.WebSocket = WebSocket` is required for GraphQL subscriptions (wallet sync) in Node.js
-- `WalletFacade.init()` static factory replaces direct `new WalletFacade()` usage
-- `signTransactionIntents` works around a wallet SDK bug where `signRecipe` hardcodes `'pre-proof'` marker
-- The `configureProviders` function uses `accountId` and `privateStoragePasswordProvider` as required by `levelPrivateStateProvider`
+- `WalletFacade.init()` with `WalletSeeds.fromMasterSeed(seed)`; the facade is started with the seeds (`wallet.start(seeds)`)
+- Era-aware providers via `createLedger9WalletProvider` / `createLedger9MidnightProvider`; the old `signTransactionIntents` workaround is gone
+- `providers.config = { networkId, ttlSeconds }` replaces `setNetworkId`
+- DUST balance is `state.dust.balance(time)`; the registration signer returns a Promise (`SignSegment`)
 
 ---
 
@@ -1352,7 +1250,7 @@ export * from './cli';
 ```yaml
 services:
   proof-server:
-    image: 'midnightntwrk/proof-server:8.0.3'
+    image: 'midnightntwrk/proof-server:9.0.2'
     command: ['midnight-proof-server', '-v']
     ports:
       - '127.0.0.1:6300:6300'
@@ -1366,7 +1264,7 @@ services:
       start_period: 10s
 
   indexer:
-    image: 'midnightntwrk/indexer-standalone:4.0.0'
+    image: 'midnightntwrk/indexer-standalone:4.4.101'
     ports:
       - '127.0.0.1:8088:8088'
     environment:
@@ -1388,7 +1286,7 @@ services:
         condition: service_healthy
 
   node:
-    image: 'midnightntwrk/midnight-node:0.22.3'
+    image: 'midnightntwrk/midnight-node:2.1.101'
     ports:
       - '127.0.0.1:9944:9944'
     healthcheck:
@@ -1407,7 +1305,7 @@ services:
 ```yaml
 services:
   proof-server:
-    image: 'midnightntwrk/proof-server:8.0.3'
+    image: 'midnightntwrk/proof-server:9.0.2'
     command: ['midnight-proof-server -v']
     ports:
       - '6300:6300'
@@ -1421,7 +1319,7 @@ services:
 services:
   proof-server:
     container_name: 'counter-proof-server'
-    image: 'midnightntwrk/proof-server:8.0.3'
+    image: 'midnightntwrk/proof-server:9.0.2'
     command: ['midnight-proof-server -v']
     ports:
       - '6300'
@@ -1436,7 +1334,7 @@ services:
 
   indexer:
     container_name: 'counter-indexer'
-    image: 'midnightntwrk/indexer-standalone:4.0.0'
+    image: 'midnightntwrk/indexer-standalone:4.4.101'
     env_file: standalone.env.example
     ports:
       - '0:8088'
@@ -1454,7 +1352,7 @@ services:
         condition: service_healthy
 
   node:
-    image: 'midnightntwrk/midnight-node:0.22.3'
+    image: 'midnightntwrk/midnight-node:2.1.101'
     container_name: 'counter-node'
     ports:
       - '9944'
@@ -1571,18 +1469,19 @@ yarn
 
 # 2. Compile contract (from contract/ directory)
 cd contract && npm run compact && cd ..
-# → circuit "increment" (k=10, rows=29)
+# → circuit "increment" (compiled by `compact compile +0.36.1`)
 
 # 3. Start proof server (keep this terminal open)
 cd counter-cli && docker compose -f proof-server.yml pull && docker compose -f proof-server.yml up
 
-# 4. In another terminal, run the CLI
+# 4. In another terminal, run the CLI (preprod endpoints are Blockfrost: export a preprod token first)
+export BLOCKFROST_PROJECT_ID=nightpreprod...
 cd counter-cli && tsx src/preprod.ts
 # or with auto-started proof server:
 cd counter-cli && yarn preprod-ps
 ```
 
-**Faucet:** `https://faucet.preprod.midnight.network/`
+**Faucet:** `https://midnight-tmnight-preprod.nethermind.dev/` (preprod) or `https://faucet.preview.midnight.network/` (preview, `tsx src/preview.ts`, no token needed). Preprod cleared non-cNIGHT DUST registrations on 9 Nov 2026, so wallets register again on first run.
 
 The CLI will:
 1. Present a wallet menu — choose [1] to create a new wallet
@@ -1635,8 +1534,8 @@ yarn validate
 | `ETARGET No matching version found` | Version not in the tested set | Resolve current versions from the support matrix — see `references/volatile.md`. Do not install `@latest`. |
 | `ECONNREFUSED 127.0.0.1:6300` | Proof server not running | Start proof server: `docker compose -f proof-server.yml up` |
 | `WalletFacade.init is not a function` | Old WalletFacade usage | Use `WalletFacade.init()` static factory, not `new WalletFacade()` |
-| `MidnightBech32m.encode is not a function` | Missing address-format import | Import from `@midnight-ntwrk/wallet-sdk-address-format` |
-| `Failed to clone intent` | Wallet SDK signing bug | Fixed via `signTransactionIntents` in `api.ts` |
+| `MidnightBech32m.encode is not a function` | Missing address-format import | Import from `@midnightntwrk/wallet-sdk-address-format` |
+| `Failed to clone intent` | Wallet SDK 1.x signing bug | Gone in Wallet SDK 2.x (`signRecipe` signs per stage); upgrade instead of patching |
 | DUST = 0 after failed deploy | DUST coins locked | Restart the process — `wallet.stop()` then rerun |
 | 0 balance after faucet | Wallet not synced yet | Wait for sync; check unshielded address was used |
 | `Cannot find module` | Contract not compiled | `cd contract && npm run compact` |

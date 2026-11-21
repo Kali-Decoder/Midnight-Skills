@@ -33,7 +33,7 @@ This is a **foundations / localnet demo**, not production custody. Recovery shar
 
 - Docker
 - Node.js >= 22
-- Compact compiler on PATH (demo validated on Compact language `0.23` / toolchain ~0.30–0.31)
+- Compact toolchain 0.36.1 installed (`compact update 0.36.1`); the `compile` script calls `compact compile +0.36.1` (language `0.28.0`, Ledger 9)
 - Chrome for headless E2E (`npm run demo:e2e`)
 
 ## Run

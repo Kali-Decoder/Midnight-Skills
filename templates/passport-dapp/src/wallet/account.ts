@@ -1,9 +1,10 @@
+import { ContractState } from '@midnight-ntwrk/compact-runtime';
 // PassportAccount — the high-level client API over a deployed
 // account-custody contract instance. Platform-neutral: the caller supplies
 // providers and a CompiledContract prepared for its platform (Node file
 // assets vs browser fetch assets).
 
-import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
 
 import { deviceCommitment, grantCommitment, recoveryCommitment, ledger, type Ledger } from './contract.js';
 import { privateStateFromSecrets, type AccountPrivateState } from './witnesses.js';
@@ -94,9 +95,10 @@ export class PassportAccount {
   // ── Ledger reads ──────────────────────────────────────────────────────────
 
   async ledgerState(): Promise<Ledger> {
-    const state = await this.providers.publicDataProvider.queryContractState(this.address);
-    if (!state) throw new Error(`no contract state found at ${this.address}`);
-    return ledger(state.data);
+    // Midnight.js 5 returns era-tagged bytes; decode with this app's own compact-runtime copy.
+    const read = await this.providers.publicDataProvider.queryContractState(this.address);
+    if (!read) throw new Error(`no contract state found at ${this.address}`);
+    return ledger(read.contractState.deserialize({ v9: ContractState }).data);
   }
 
   // ── Night custody ─────────────────────────────────────────────────────────
