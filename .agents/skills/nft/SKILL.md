@@ -16,17 +16,17 @@ Place files exactly as shown:
 ### Prerequisites
 
 - [Node.js v22.15+](https://nodejs.org/)
-- Compact devtools: `curl --proto '=https' --tlsv1.2 -sSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh`
-- Add to PATH: `source $HOME/.local/bin/env`
+- Compact devtools (pinned release): `curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/download/compact-v0.5.1/compact-installer.sh | sh`
+- Compact toolchain for Ledger 9: `compact update 0.36.1` (language `0.28.0`)
 
 ### Add OpenZeppelin Contracts for Compact
 
 ```bash
-mkdir my-nft-project && cd my-nft-project
-git init
-git submodule add https://github.com/OpenZeppelin/contracts-compact.git
-cd contracts-compact && SKIP_ZK=true yarn && cd ..
+mkdir my-nft-project && cd my-nft-project && npm init -y
+npm install @openzeppelin/compact-contracts@0.5.0-alpha.2
 ```
+
+**Version note (21 Nov 2026):** OZ's latest *stable* release, `0.4.0`, targets Compact 0.31 / Ledger 8. The Ledger 9 line (language 0.28.0, `compact-runtime` 0.21.0) is `0.5.0-alpha.2`. OZ marks pre-releases as unaudited and not for production, so ship on a stable release targeting Ledger 9 once one exists. The repo is `github.com/OpenZeppelin/compact-contracts` (the old `contracts-compact` / `@openzeppelin-compact/contracts` names are gone). Import modules through `./node_modules/@openzeppelin/compact-contracts/<area>/<Module>` (no `src/`). The contract below compiles with that layout on 0.36.1.
 
 ## 2) OpenZeppelin NonFungibleToken Contract
 
@@ -37,37 +37,39 @@ The OpenZeppelin `NonFungibleToken` module provides an ERC721-like implementatio
 | Feature | Status | Notes |
 |---|---|---|
 | Token ID type | `Uint<128>` | Uint256 not supported (circuit limits) |
-| Transfers | ✅ | To ECDSA public keys or contract addresses |
+| Transfers | ✅ | To account IDs (`persistentHash(secretKey)` from the `wit_NonFungibleTokenSK` witness) |
 | Approvals | ✅ | Per-token and operator approvals |
 | Metadata URI | ✅ | Per-token URI storage |
 | Pausable | ✅ | Through Pausable module |
 | Ownable | ✅ | Through Ownable module |
-| Contract-to-contract | ❌ | Not yet supported (use `_unsafeTransfer`) |
+| Contract recipients | ⚠️ | Compact supports cross-contract calls since Ledger 9, but OZ's NFT module *has not migrated to them yet*. `transfer`/`transferFrom`/`_mint` reject `ContractAddress` recipients; `_unsafe*` variants allow them, but the token is stranded until OZ's C2C migration lands |
 
 ### Import and Use
 
 ```compact
-pragma language_version >= 0.21.0;
+pragma language_version >= 0.28.0;
 
 import CompactStandardLibrary;
-import "./contracts-compact/node_modules/@openzeppelin-compact/contracts/src/access/Ownable"
+import "./node_modules/@openzeppelin/compact-contracts/access/Ownable"
   prefix Ownable_;
-import "./contracts-compact/node_modules/@openzeppelin-compact/contracts/src/security/Pausable"
+import "./node_modules/@openzeppelin/compact-contracts/security/Pausable"
   prefix Pausable_;
-import "./contracts-compact/node_modules/@openzeppelin-compact/contracts/src/token/NonFungibleToken"
+import "./node_modules/@openzeppelin/compact-contracts/utils/Utils"
+  prefix Utils_;
+import "./node_modules/@openzeppelin/compact-contracts/token/NonFungibleToken"
   prefix NonFungibleToken_;
 
 constructor(
   _name: Opaque<"string">,
   _symbol: Opaque<"string">,
-  _initOwner: Either<ZswapCoinPublicKey, ContractAddress>,
+  _initOwner: Either<Bytes<32>, ContractAddress>,
 ) {
   Ownable_initialize(_initOwner);
   NonFungibleToken_initialize(_name, _symbol);
 }
 
 export circuit mint(
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
+  to: Either<Bytes<32>, ContractAddress>,
   tokenId: Uint<128>,
   uri: Opaque<"string">,
 ): [] {
@@ -77,23 +79,23 @@ export circuit mint(
 }
 
 export circuit transferFrom(
-  from: Either<ZswapCoinPublicKey, ContractAddress>,
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
+  fromAddress: Either<Bytes<32>, ContractAddress>,
+  to: Either<Bytes<32>, ContractAddress>,
   tokenId: Uint<128>,
 ): [] {
   Pausable_assertNotPaused();
-  NonFungibleToken_transferFrom(from, to, tokenId);
+  NonFungibleToken_transferFrom(fromAddress, to, tokenId);
 }
 
 export circuit approve(
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
+  to: Either<Bytes<32>, ContractAddress>,
   tokenId: Uint<128>,
 ): [] {
   NonFungibleToken_approve(to, tokenId);
 }
 
 export circuit setApprovalForAll(
-  operator: Either<ZswapCoinPublicKey, ContractAddress>,
+  operator: Either<Bytes<32>, ContractAddress>,
   approved: Boolean,
 ): [] {
   Ownable_assertOnlyOwner();
@@ -108,6 +110,11 @@ export circuit pause(): [] {
 export circuit unpause(): [] {
   Ownable_assertOnlyOwner();
   Pausable__unpause();
+}
+
+// Account ID helper for the TypeScript side: same derivation OZ uses (persistentHash of the secret key)
+export pure circuit accountIdOf(secretKey: Bytes<32>): Bytes<32> {
+  return Utils_computeAccountId(secretKey);
 }
 ```
 
@@ -194,45 +201,55 @@ cd contracts
 compact compile MyNFT.compact artifacts/MyNFT
 ```
 
-Expected output:
+Output looks like this (the `k`/`rows` numbers depend on the OZ version and changed with compiler 0.36 / ZKIR v3, so treat them as illustrative):
 ```
 Compiling 5 circuits:
-  circuit "mint" (k=11, rows=1180)
-  circuit "transferFrom" (k=11, rows=1966)
-  circuit "approve" (k=10, rows=966)
-  circuit "pause" (k=10, rows=125)
-  circuit "unpause" (k=10, rows=121)
-Overall progress [====================] 5/5
+  circuit "mint" (k=11, rows=…)
+  circuit "transferFrom" (k=11, rows=…)
+  ...
 ```
+
+Use `compact compile +0.36.1 ...` to pin the toolchain. The TypeScript side must implement the OZ witness `wit_NonFungibleTokenSK(): Bytes<32>` (the caller's secret key; its `persistentHash` is the on-chain account ID).
 
 ## 5) Deploy and Interact (TypeScript)
 
+OZ's modules read the caller's secret key through **two witnesses**, `wit_OwnableSK` and `wit_NonFungibleTokenSK`, so the contract cannot use `withVacantWitnesses`. Owners and recipients are `Either<Bytes<32>, ContractAddress>` in the generated TS shape (`{ is_left, left, right }`), where `left` is the account ID computed by the contract's `accountIdOf` pure circuit. This flow was executed against the compiled contract on runtime 0.21: the owner mints and transfers, and a non-owner mint is rejected.
+
 ```typescript
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
-import { deployContract } from '@midnight-ntwrk/midnight-js-contracts';
-import { Contract } from './contracts/managed/MyNFT';
+import type { WitnessContext } from '@midnight-ntwrk/compact-runtime';
+import { deployContract } from '@midnightntwrk/midnight-js-contracts';
+import { Contract, pureCircuits, type Ledger } from './contracts/artifacts/MyNFT/contract/index.js';
 
-const compiledContract = CompiledContract.make('MyNFT', Contract).pipe(
-  CompiledContract.withVacantWitnesses,
-  CompiledContract.withCompiledFileAssets('./contracts/managed/MyNFT'),
+type NftPrivateState = { secretKey: Uint8Array };
+const sk = ({ privateState }: WitnessContext<Ledger, NftPrivateState>): [NftPrivateState, Uint8Array] =>
+  [privateState, privateState.secretKey];
+
+const compiledContract = CompiledContract.make<Contract<NftPrivateState>>('MyNFT', Contract).pipe(
+  CompiledContract.withWitnesses({ wit_OwnableSK: sk, wit_NonFungibleTokenSK: sk }),
+  CompiledContract.withCompiledFileAssets('./contracts/artifacts/MyNFT'),
 );
 
-const providers = await buildProviders(/* see midnight-js skill */);
+const account = (secretKey: Uint8Array) => ({
+  is_left: true,
+  left: pureCircuits.accountIdOf(secretKey),   // = persistentHash([secretKey]), same as OZ
+  right: { bytes: new Uint8Array(32) },
+});
+
+const secretKey = crypto.getRandomValues(new Uint8Array(32));   // persist it: it IS the owner identity
+const providers = await buildProviders(/* see midnight-js skill: includes config: { networkId, ttlSeconds } */);
+
 const deployed = await deployContract(providers, {
   compiledContract,
   privateStateId: 'nftPrivateState',
-  initialPrivateState: {},
+  initialPrivateState: { secretKey },
+  args: ['My NFT', 'MNFT', account(secretKey)],   // constructor(name, symbol, initOwner)
 });
 
-console.log('NFT Contract:', deployed.deployTxData.public.contractAddress);
-
-// Mint an NFT
-const mintResult = await deployed.callTx.mint(
-  { type: 'left', value: callerPublicKey() },
-  1n, // tokenId
-  'https://my-nft.com/metadata/1.json',
-);
+await deployed.callTx.mint(account(secretKey), 1n, 'https://my-nft.com/metadata/1.json');
 ```
+
+**Dependency warning:** `@openzeppelin/compact-contracts@0.5.0-alpha.2` depends on `@openzeppelin/compact-cli`, which pulls a Ledger 8 chain (`compact-deployer` → Midnight.js 4.1.1, `compact-runtime` 0.16.0). Pin `@midnight-ntwrk/compact-runtime@0.21.0` in your own `package.json` (and an `overrides` entry if your app resolves the 0.16 copy). Otherwise the compiled contract fails with `Version mismatch: compiled code expects 0.21.0, runtime is 0.16.0`.
 
 ## 6) Shielded vs Unshielded NFTs
 
@@ -241,7 +258,7 @@ const mintResult = await deployed.callTx.mint(
 | Ownership | Public on-chain | Private, only owner knows |
 | Transfers | Visible to all | Hidden, ZK-proven |
 | Metadata | Public URI on-chain | Can be committed/hashed |
-| Gas/user cost | DUST fees | DUST fees (1AM sponsors on preview) |
+| Gas/user cost | DUST fees | DUST fees (1AM has advertised sponsorship; confirm after the Ledger 9 DUST reset) |
 | Use case | Public art, collectibles | Confidential assets, private collectibles |
 | Token ID | Visible | Can be hidden with commitments |
 
@@ -292,17 +309,19 @@ export circuit setPrivateMetadata(
 | Issue | Solution |
 |---|---|
 | `Uint<256>` token IDs | Not supported. Use `Uint<128>` max (circuit constraint). |
-| Contract-to-contract transfers | Not yet supported. Use `_unsafeTransfer` with caution. |
+| Contract recipients | OZ's NFT module hasn't migrated to Ledger 9 cross-contract calls yet. `_unsafeTransfer` strands the token in the receiving contract. |
+| `parse error: found keyword "from"` | `from` is reserved in language 0.28; rename the parameter (e.g. `fromAddress`). |
+| `Either<ZswapCoinPublicKey, …>` type errors | OZ 0.5 uses `Either<Bytes<32>, ContractAddress>` (account ID = `persistentHash(secretKey)`). |
 | String concatenation for base URI | Not supported in Compact. Store full URI per token. |
 | `tokenId` overflow | Use `assert(tokenId < MAX_ID, "ID overflow")` before minting. |
 | Missing `disclose()` on URI | Metadata URIs are public. Use `disclose()` when storing. |
-| Shielded transfer without proof | Owner must sign transfers. Verify with `callerPublicKey()`. |
+| Authorization | OZ authorizes via the secret-key witness (`wit_NonFungibleTokenSK`). Never derive authority from `ownPublicKey()`. |
 
 ## 9) Testing NFT Contracts
 
 ```compact
 // In contracts/src/test/MyNFT.test.compact
-pragma language_version >= 0.21.0;
+pragma language_version >= 0.28.0;
 
 import MyNFT;
 import CompactStandardLibrary;
@@ -332,9 +351,9 @@ export circuit testTransfer(): [] {
 ```json
 {
   "scripts": {
-    "compact": "cd contracts && compact compile MyNFT.compact artifacts/MyNFT",
+    "compact": "cd contracts && compact compile +0.36.1 MyNFT.compact artifacts/MyNFT",
     "build": "tsc && npm run compact",
-    "test": "cd contracts && compact compile MyNFT.test.compact artifacts/MyNFT.test"
+    "test": "cd contracts && compact compile +0.36.1 --skip-zk MyNFT.test.compact artifacts/MyNFT.test"
   }
 }
 ```

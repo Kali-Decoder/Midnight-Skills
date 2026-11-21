@@ -29,8 +29,8 @@ A **privacy-preserving loan dApp** where applicants prove eligibility inside a Z
 
 **Shared references** (canonical provider + troubleshooting — do not duplicate in prompts):
 - `references/midnight-session.md` — `createConnectedSession`, indexer patch, deploy/call helpers
-- `references/gotchas.md` — preprod deploy hangs, GraphQL `offset: null`, ZK asset paths
-- `references/versions.json` — pinned `@midnight-ntwrk/*` versions
+- `references/gotchas.md` — Ledger 9 errors (version mismatch, `EraMismatchError`, Blockfrost 410/403), ZK asset paths
+- `references/versions.json` — the Ledger 9.1 pin set
 
 **Primary references:**
 - `example-leaderboard-dapp/` / `templates/leaderboard-dapp/` — Next.js + 1AM, low-level deploy/call, indexer reads
@@ -49,7 +49,7 @@ A **privacy-preserving loan dApp** where applicants prove eligibility inside a Z
 - `requestLoan` may return **Proposed** when amount exceeds tier max — user calls `respondToLoan` to accept/decline
 - PIN change migrates loans in batches of 5 via `changePin` + `onGoingPinMigration` ledger map
 - Use `createUnprovenDeployTx` + `submitTxAsync` — not `deployContract()` (hangs on preprod)
-- **Node.js ≥ 22** required for `@midnight-ntwrk/wallet-sdk-shielded` (Iterator helpers on `Map.values()`)
+- **Node.js ≥ 22** required for `@midnightntwrk/wallet-sdk-shielded` (Iterator helpers on `Map.values()`)
 
 ---
 
@@ -73,7 +73,7 @@ When helping the user, follow this sequence:
 
 ```
 zkloan-credit-scorer/
-├── package.json                    # workspaces + pinned midnight-js 4.0.4 / ledger 8.0.3
+├── package.json                    # workspaces + pinned Midnight.js 5.0.2 / ledger-v9 1.0.2
 ├── .nvmrc                          # 22
 ├── contract/
 │   ├── package.json
@@ -96,7 +96,7 @@ zkloan-credit-scorer/
     └── public/zk/zkloan/
 ```
 
-Root `package.json` engines: `"node": ">=22.0.0"`. Workspaces pin `@midnight-ntwrk/compact-runtime: ^0.16.0`, `@midnight-ntwrk/midnight-js-*: 4.0.4`, `@midnight-ntwrk/ledger-v8: 8.0.3`.
+Root `package.json` engines: `"node": ">=22.0.0"`. Workspaces pin `@midnight-ntwrk/compact-runtime: 0.21.0`, `@midnight-ntwrk/compact-js: 3.0.2`, `@midnightntwrk/midnight-js-*: 5.0.2`, `@midnightntwrk/ledger-v9: 1.0.2`, Wallet SDK 2.0.1 (`wallet-sdk-facade` 5.0.1) for the CLI. Remove `midnight-js-network-id` (no `setNetworkId` in Midnight.js 5).
 
 ---
 
@@ -104,7 +104,17 @@ Root `package.json` engines: `"node": ">=22.0.0"`. Workspaces pin `@midnight-ntw
 
 ### Schnorr module (`contract/src/schnorr.compact`)
 
-Verifies Jubjub Schnorr signatures inside the circuit. Temporary polyfill until `jubjubSchnorrVerify` ships in Compact Standard Library.
+Verifies Jubjub Schnorr signatures inside the circuit. It was written as a polyfill while the standard library had no Schnorr verifier.
+
+**Ledger 9 update:** the 0.36.1 standard library now has a native verifier. This compiles:
+
+```compact
+export circuit check(msg: Vector<4, Field>, sig: JubjubSchnorrSignature, pk: JubjubPoint): [] {
+  ok = disclose(jubjubSchnorrVerify<4>(msg, sig, pk));   // Boolean; rejects the identity pk (since 0.35)
+}
+```
+
+Migrating isn't a drop-in swap. The polyfill computes its own `transientHash` challenge (`schnorrChallenge`), and the native circuit may hash differently, so signatures produced by the attestation API for the polyfill may not verify natively. Move the signer and the circuit together, then redeploy. Until then, the polyfill still works.
 
 ```compact
 module schnorr {
@@ -121,7 +131,7 @@ module schnorr {
 ### Main contract (`contract/src/zkloan-credit-scorer.compact`)
 
 ```compact
-pragma language_version >= 0.22 && <= 0.23;
+pragma language_version >= 0.28.0;
 import CompactStandardLibrary;
 import "schnorr" prefix Schnorr_;
 
@@ -263,7 +273,7 @@ Mirror `example-counter/` CLI patterns:
 | `change-pin <old> <new>` | Repeat until `onGoingPinMigration` cleared |
 | `blacklist-user <userPk>` | Admin governance |
 
-Use `@midnight-ntwrk/wallet-sdk-facade` + level private state provider. Point at local proof server + preprod indexer from wallet config or `.env`.
+Use `@midnightntwrk/wallet-sdk-facade` + level private state provider. Point at local proof server + preprod indexer from wallet config or `.env`.
 
 ---
 
@@ -283,7 +293,7 @@ Use `@midnight-ntwrk/wallet-sdk-facade` + level private state provider. Point at
 | `fetchLoanState(queryUrl, addr, userPkBytes)` | Indexer poll + decode nested `loans` map |
 
 ```typescript
-import { createUnprovenDeployTx, submitCallTxAsync, submitTxAsync } from '@midnight-ntwrk/midnight-js-contracts';
+import { createUnprovenDeployTx, submitCallTxAsync, submitTxAsync } from '@midnightntwrk/midnight-js-contracts';
 import { ContractState } from '@midnight-ntwrk/compact-runtime';
 import { CompiledZKLoanContract, Contract, ledger } from '../contract/src/index';
 
@@ -329,8 +339,7 @@ Indexer reads work **without wallet** for public loan records — only writes ne
 
 ```bash
 # Terminal 1 — proof server
-docker run -d -p 6300:6300 midnightntwrk/proof-server:8.0.3 -- \
-  midnight-proof-server --network preprod
+docker run -d -p 6300:6300 midnightntwrk/proof-server:9.0.2 midnight-proof-server -v
 
 # Terminal 2 — attestation API
 cd zkloan-credit-scorer-attestation-api && npm run dev
@@ -345,7 +354,7 @@ npm run register-provider 1
 npm run request-loan 5000 1234
 ```
 
-Wallet: 1AM extension on **Preprod**, proof server `http://localhost:6300`, tNIGHT + tDUST from faucet.
+Wallet: a Ledger 9 build of 1AM on **Preprod** (or Preview), proof server `http://localhost:6300`, tNIGHT from the faucet registered for DUST. Preprod cleared non-cNIGHT DUST registrations on 9 Nov 2026, so register again. Headless CLI endpoints for Preprod are Blockfrost and need `BLOCKFROST_PROJECT_ID`.
 
 ---
 
@@ -354,19 +363,19 @@ Wallet: 1AM extension on **Preprod**, proof server `http://localhost:6300`, tNIG
 | Component | Version |
 |-----------|---------|
 | Node.js | **≥ 22** (required for shielded wallet SDK) |
-| Compact compiler | 0.22–0.23 (`pragma language_version`) |
-| Compact runtime | 0.16.0 |
-| Ledger | 8.0.3 |
-| midnight-js | 4.0.4 |
-| proof server | 8.0.3 |
+| Compact toolchain | 0.36.1 (`pragma language_version >= 0.28.0`; the old `<= 0.23` upper bound would block it) |
+| Compact runtime | 0.21.0 |
+| Ledger | `@midnightntwrk/ledger-v9` 1.0.2 |
+| Midnight.js | 5.0.2 |
+| Wallet SDK (CLI) | 2.0.1 |
+| proof server | 9.0.2 |
 | Docker | For local proof server |
 
 ```bash
 node --version          # v22+
-compact compile --version
-compact update
-docker run -d -p 6300:6300 midnightntwrk/proof-server:8.0.3 -- \
-  midnight-proof-server --network preprod
+compact update 0.36.1
+compact compile +0.36.1 --version
+docker run -d -p 6300:6300 midnightntwrk/proof-server:9.0.2 midnight-proof-server -v
 ```
 
 ---

@@ -1,4 +1,5 @@
-import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { ContractState } from '@midnight-ntwrk/compact-runtime';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
 
 import * as IdentityModule from '../../contracts/managed/identity_registry/contract/index.js';
 import type { Ledger } from '../../contracts/managed/identity_registry/contract/index.js';
@@ -87,9 +88,10 @@ export class IdentityRegistry {
   }
 
   async ledgerState(): Promise<Ledger> {
-    const state = await this.providers.publicDataProvider.queryContractState(this.address);
-    if (!state) throw new Error(`no identity registry state found at ${this.address}`);
-    return ledger(state.data);
+    // Midnight.js 5 returns era-tagged bytes; decode with this app's own compact-runtime copy.
+    const read = await this.providers.publicDataProvider.queryContractState(this.address);
+    if (!read) throw new Error(`no identity registry state found at ${this.address}`);
+    return ledger(read.contractState.deserialize({ v9: ContractState }).data);
   }
 
   async accountFor(handle: string): Promise<string | null> {

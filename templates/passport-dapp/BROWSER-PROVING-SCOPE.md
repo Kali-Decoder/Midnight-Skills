@@ -1,5 +1,15 @@
 # Browser proving: removing the proof server from the demo
 
+**Ledger 9 note (2026/11/21):** ported to Ledger 9. The contract-proof worker
+now imports `@midnightntwrk/zkir-v2` 2.2.0, the same package the Wallet SDK
+2.x `WasmProver` uses. System circuits use ledger-v9 key material (circuit
+generation 10: `zswap/10/*`, `dust/10/*`) staged from `https://srs.midnight.network/`.
+Wallet balancing proofs no longer use a hand-rolled `provingService`. They go
+through `WalletFacade.init({ configuration: { provers: { v9: { kind: 'wasm',
+keyMaterialProvider } } } })`, which checks every file against the ledger
+release's hashes. The historical notes below describe the Ledger 8 version.
+Re-validate `?prover=browser` end to end before relying on it.
+
 **Token-demo note (2026/06/22):** the end-to-end demo now defaults to the
 local Docker proof server for reliability. Browser proving remains available
 behind `?prover=browser`, but it should be revalidated before using it in a
@@ -106,7 +116,7 @@ bucket (or a dev-server mirror, as /zk does today) and cached per origin.
 
 **Phase 0 (gate): wasm32 build of the payload prove path.** Build a minimal
 crate against the midnight-ledger 8.0.3 workspace (the version must match
-`@midnight-ntwrk/ledger-v8` in the app, not the bench pins) exposing
+`@midnightntwrk/ledger-v9` in the app, not the bench pins) exposing
 `prove(payload) -> proof`. Validate byte-compatibility: a payload produced by
 `createProvingPayload` in the browser yields a proof the localnet node
 accepts, identical in effect to the native server's output. Kill criteria:

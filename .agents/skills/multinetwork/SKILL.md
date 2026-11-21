@@ -5,104 +5,85 @@ description: Build a single Midnight dApp that deploys and runs across all netwo
 
 # Multi-Network Midnight Skill
 
-This skill covers building a Midnight DApp that works across all four network targets from a single codebase. The key insight: networks differ in three ways — **endpoints**, **proof server** (local Docker vs ProofStation), and **DUST flow** (manual registration vs sponsored). Everything else is identical.
+This skill covers building a Midnight DApp that works across all four network targets from a single codebase. Networks differ in three ways: **endpoints** (and whether they need a Blockfrost token), **funding** (genesis wallet vs faucet vs real NIGHT), and **where proving runs**. Everything else, including the code, is identical.
+
+> **Ledger 9 (Nov 2026).** All four networks run Ledger 9 and need Midnight.js **5.0.x**, Wallet SDK **2.0.1**, `@midnightntwrk/ledger-v9` **1.0.2**, Compact **0.36.1**, proof server **9.0.2**, indexer **4.4.101**. There is no `setNetworkId` any more: the network id lives in each configuration object. Network ids and endpoint paths did not change in the upgrade, but preprod/mainnet indexer + RPC moved to **Blockfrost** in Oct/Nov 2026.
 
 **Primary references:**
 - `github.com/midnightntwrk/midnight-local-dev` — official local Docker stack + funding CLI
-- `github.com/midnightntwrk/example-counter` — official reference DApp (standalone + preprod modes)
+- `github.com/midnightntwrk/example-counter` — official reference DApp
+- `docs.midnight.network/guides/networks-and-environments` — endpoints, Blockfrost, faucets
+- `references/midnight-session.md` (this repo) — the verified headless and browser wiring
 
 ---
 
 ## 1) The Four Networks at a Glance
 
-| Network | `networkId` | Use for | Proof server | DUST flow |
+| Network | `networkId` | Use for | Endpoints | Funding / DUST |
 |---|---|---|---|---|
-| `undeployed` | `'undeployed'` | Local dev, CI | Local Docker `:6300` | Manual registration (genesis wallet seeds funded) |
-| `preview` | `'preview'` | Active development on testnet | 1AM ProofStation (`api-preview.1am.xyz`) | Sponsored — user pays 0 fees |
-| `preprod` | `'preprod'` | Pre-release / integration testing | Local Docker `:6300` OR ProofStation | Manual registration (faucet → NIGHT → DUST) |
-| `mainnet` | `'mainnet'` | Production | 1AM ProofStation (`api.1am.xyz`) | Sponsored — user pays 0 fees |
+| `undeployed` | `'undeployed'` | Local dev, CI | `localhost` (no token) | Genesis wallet pre-funded; register NIGHT for DUST |
+| `preview` | `'preview'` | Active development | Midnight-hosted (no token) | Faucet tNIGHT → register for DUST |
+| `preprod` | `'preprod'` | Pre-release / integration | **Blockfrost** (`project_id` token) | Faucet tNIGHT → register for DUST |
+| `mainnet` | `'mainnet'` | Production | **Blockfrost** (`project_id` token) | Real NIGHT → register for DUST (cNIGHT registrations carried over) |
 
-**Critical distinction:** On `preview` and `mainnet`, the 1AM wallet sponsors all fees via ProofStation — users need zero NIGHT or DUST. On `undeployed` and `preprod`, you must run your own proof server and manually register NIGHT UTXOs for DUST generation before transactions work.
+**Proving:** the official model is a **local** proof server (`http://localhost:6300`, image `midnightntwrk/proof-server:9.0.2`) on every network. Blockfrost does not provide one. Alternatives: the Wallet SDK's in-process prover (`provers: { v9: { kind: 'wasm' } }`), or in the browser, the user's wallet proving through the DApp Connector. 1AM's hosted ProofStation (`https://api-preview.1am.xyz`, `https://api.1am.xyz`; `/health` responded on 21 Nov 2026) is a third-party option. 1AM has advertised sponsoring fees on preview/mainnet, but confirm the current policy with 1AM after the Preview relaunch and mainnet DUST reset before you build on it.
+
+**Ledger 9 network events:**
+- **Preview** relaunched as a **new chain** on 7 Nov 2026: old contracts, balances and registrations are gone. Redeploy, re-request tNIGHT, and re-register DUST.
+- **Preprod** upgraded in place on 9 Nov 2026 (block 3,348,434). History and contracts carried over; DUST registrations not backed by cNIGHT were cleared.
+- **Mainnet** moved to Ledger 9 on 6 Nov 2026 and no longer decodes Ledger 8 transactions. DUST state reset and replayed to full cap; generation parameters are unchanged.
 
 ---
 
 ## 2) Local Docker Stack (`undeployed`)
 
-Running the `undeployed` network locally requires three Docker containers: a Midnight node, an indexer, and a proof server. **You cannot just run the proof server** — you need all three.
+Running `undeployed` needs three containers: a node, an indexer and a proof server. **The proof server alone is not enough.**
 
-### Option A: Use `midnight-local-dev` (recommended)
-
-The official tool at `github.com/midnightntwrk/midnight-local-dev` manages the full stack and handles genesis wallet funding:
+### Option A: `midnight-local-dev` (recommended)
 
 ```bash
-
 git clone https://github.com/midnightntwrk/midnight-local-dev
 cd midnight-local-dev
 npm install
 npm start
-
 ```
 
-`npm start` will:
-1. Detect if containers are already running (prompts to reuse or restart)
-2. Pull and start all three containers via Docker Compose
-3. Initialize the genesis master wallet (seed `0x00...01`) and register its DUST
-4. Present a funding menu to transfer NIGHT and register DUST for your test accounts
-
-Once running, connect your DApp to:
+`npm start` detects running containers, starts the stack via Docker Compose, initializes the genesis master wallet (seed `0x00...01`), and offers a funding menu (50,000 tNIGHT per account) that also registers DUST.
 
 ```
-networkId:  undeployed
-indexer:    http://localhost:8088/api/v3/graphql
-indexerWS:  ws://localhost:8088/api/v3/graphql/ws
-node:       http://localhost:9944
+networkId:   undeployed
+indexer:     http://localhost:8088/api/v4/graphql
+indexerWS:   ws://localhost:8088/api/v4/graphql/ws
+node:        http://localhost:9944
 proofServer: http://localhost:6300
 ```
 
-**Note:** The local indexer uses `/api/v3/graphql` (not v4 like testnet). Use the correct path.
+The local indexer uses **`/api/v4/graphql`**, the same path as preview. (Older skills said v3; indexer 4.4.101 serves v4, and the Wallet SDK READMEs use `localhost:8088/api/v4/graphql`.)
 
-### Option B: Docker Compose directly (no funding CLI)
+### Option B: Docker Compose directly
 
 ```bash
-# From midnight-local-dev repo root:
-docker compose -f standalone.yml up -d
-
-# Check all three services are healthy
+docker compose -f standalone.yml up -d      # from the midnight-local-dev repo root
 docker compose -f standalone.yml ps
-
-# View logs
 docker compose -f standalone.yml logs -f
-
-# Tear down
 docker compose -f standalone.yml down
 ```
 
-In this mode, you manage genesis wallet initialization and DUST registration yourself.
-
-### Docker Image Versions (as of 2026)
+### Docker Image Versions (Ledger 9.1 support matrix)
 
 | Service | Image | Version |
 |---|---|---|
-| Node | `midnightntwrk/midnight-node` | `0.21.0` |
-| Indexer | `midnightntwrk/indexer-standalone` | `3.1.0` |
-| Proof Server | `midnightntwrk/proof-server` | `7.0.0` |
+| Node | `midnightntwrk/midnight-node` | `2.1.101` |
+| Indexer | `midnightntwrk/indexer-standalone` | `4.4.101` |
+| Proof Server | `midnightntwrk/proof-server` | `9.0.2` |
+
+Indexer versions before 4.4.101 are incompatible with Ledger 9. If your local chain volume predates the upgrade, wipe it (`docker compose down -v`).
 
 ### Lace wallet on `undeployed`
 
-The Lace browser wallet auto-connects to the local stack when you select "Undeployed" in its network settings — it hardcodes `localhost:9944`, `localhost:8088`, and `localhost:6300`. No custom endpoint config needed.
+Select "Undeployed" in Lace's network settings; it uses `localhost:9944`, `localhost:8088` and `localhost:6300`.
 
-### Funding test accounts locally
-
-```bash
-# Option 1: Fund from a JSON file (gets NIGHT + DUST registered)
-# accounts.json: { "accounts": [{ "name": "Alice", "mnemonic": "..." }] }
-# (max 10 accounts, 50,000 NIGHT each)
-
-# Option 2: Fund by Bech32 address (NIGHT only — DUST not registered)
-# Use when you have a Lace address or DApp-generated address
-```
-
-Genesis master wallet seed: `0x0000000000000000000000000000000000000000000000000000000000000001`
+Genesis master wallet seed: `0x0000000000000000000000000000000000000000000000000000000000000001` (local only).
 
 ---
 
@@ -110,473 +91,216 @@ Genesis master wallet seed: `0x0000000000000000000000000000000000000000000000000
 
 ```typescript
 // src/config/networks.ts
-import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+import { networks, type MidnightNetwork } from '@midnightntwrk/midnight-js-utils';
 
-export type NetworkId = 'undeployed' | 'preview' | 'preprod' | 'mainnet';
+export type NetworkName = 'undeployed' | 'preview' | 'preprod' | 'mainnet';
 
-// 'sponsored' = 1AM ProofStation pays fees (preview, mainnet)
-// 'manual'    = you run a proof server, user registers NIGHT→DUST (undeployed, preprod)
-export type DustMode = 'sponsored' | 'manual';
-
-export interface NetworkConfig {
-  networkId: NetworkId;
-  indexerHttp: string;
-  indexerWs: string;
-  rpc: string;
+export interface NetworkConfig extends MidnightNetwork {
   proofServerUrl: string;
-  dustMode: DustMode;
   faucetUrl?: string;
 }
 
-export const NETWORKS: Record<NetworkId, NetworkConfig> = {
-  undeployed: {
-    networkId: 'undeployed',
-    indexerHttp: 'http://localhost:8088/api/v3/graphql',  // NOTE: v3, not v4
-    indexerWs:   'ws://localhost:8088/api/v3/graphql/ws',
-    rpc:         'ws://localhost:9944',
-    proofServerUrl: 'http://127.0.0.1:6300',
-    dustMode: 'manual',
+const local: MidnightNetwork = {
+  networkId: 'undeployed',
+  indexer: {
+    queryURL: 'http://localhost:8088/api/v4/graphql',
+    subscriptionURL: 'ws://localhost:8088/api/v4/graphql/ws',
   },
-  preview: {
-    networkId: 'preview',
-    indexerHttp: 'https://indexer.preview.midnight.network/api/v4/graphql',
-    indexerWs:   'wss://indexer.preview.midnight.network/api/v4/graphql/ws',
-    rpc:         'wss://rpc.preview.midnight.network',
-    proofServerUrl: 'https://api-preview.1am.xyz',  // 1AM ProofStation
-    dustMode: 'sponsored',
-  },
-  preprod: {
-    networkId: 'preprod',
-    indexerHttp: 'https://indexer.preprod.midnight.network/api/v4/graphql',
-    indexerWs:   'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
-    rpc:         'https://rpc.preprod.midnight.network',
-    proofServerUrl: 'http://127.0.0.1:6300',  // local proof server (run via Docker)
-    dustMode: 'manual',
-    faucetUrl: 'https://faucet.preprod.midnight.network',
-  },
-  mainnet: {
-    networkId: 'mainnet',
-    indexerHttp: 'https://indexer.mainnet.midnight.network/api/v4/graphql',
-    indexerWs:   'wss://indexer.mainnet.midnight.network/api/v4/graphql/ws',
-    rpc:         'https://rpc.mainnet.midnight.network',
-    proofServerUrl: 'https://api.1am.xyz',  // 1AM ProofStation
-    dustMode: 'sponsored',
-  },
+  nodeURL: 'http://localhost:9944',
+  nodeWsURL: 'ws://localhost:9944',
 };
 
-export function getActiveNetwork(): NetworkConfig {
-  const id = (
-    process.env.NETWORK ||
-    process.env.VITE_NETWORK ||
-    'undeployed'
-  ) as NetworkId;
-  const config = NETWORKS[id];
-  if (!config) throw new Error(`Unknown network: "${id}". Valid: ${Object.keys(NETWORKS).join(', ')}`);
-  return config;
+function blockfrostToken(name: NetworkName): string {
+  const token = process.env.BLOCKFROST_PROJECT_ID;   // per network: nightpreprod… / nightmainnet…
+  if (!token) throw new Error(`${name} is served by Blockfrost: set BLOCKFROST_PROJECT_ID`);
+  return token;
 }
 
-// Call this once at startup before any SDK operations
-export function applyNetworkId(config: NetworkConfig) {
-  setNetworkId(config.networkId);
-}
-```
-
----
-
-## 4) Unified Provider Builder
-
-```typescript
-// src/config/providers.ts
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import type { NetworkConfig } from './networks';
-
-// ── ZK Config Provider ──────────────────────────────────────────────────────
-
-// Node.js: load ZK assets from filesystem
-export function makeNodeZkConfigProvider(zkConfigPath: string) {
-  const { NodeZkConfigProvider } = require('@midnight-ntwrk/midnight-js-node-zk-config-provider');
-  const path = require('path');
-  return new NodeZkConfigProvider(path.resolve(zkConfigPath));
-}
-
-// Browser: load ZK assets via fetch from CDN or public/
-export function makeFetchZkConfigProvider(zkAssetBasePath: string) {
-  const { FetchZkConfigProvider } = require('@midnight-ntwrk/midnight-js-fetch-zk-config-provider');
-  return new FetchZkConfigProvider(
-    new URL(zkAssetBasePath, window.location.origin).toString(),
-    window.fetch.bind(window),
-  );
-}
-
-// ── Proof Provider ───────────────────────────────────────────────────────────
-
-// Node.js / self-hosted: points at local Docker proof server or ProofStation URL
-// For ProofStation (preview/mainnet headless), pass the 1AM endpoint + API key
-export function makeHttpProofProvider(proofServerUrl: string, zkConfigProvider: any) {
-  const { httpClientProofProvider } = require('@midnight-ntwrk/midnight-js-http-client-proof-provider');
-  return httpClientProofProvider(new URL(proofServerUrl), zkConfigProvider);
-}
-
-// Browser + 1AM wallet: proving handled by the wallet extension (no proof server needed)
-export function make1AMProofProvider(provingProvider: any) {
-  const { createProofProvider } = require('@midnight-ntwrk/midnight-js-types');
-  return createProofProvider(provingProvider);
-}
-
-// ── Public Data Provider ─────────────────────────────────────────────────────
-
-export function makePublicDataProvider(network: NetworkConfig) {
-  return indexerPublicDataProvider(network.indexerHttp, network.indexerWs);
-}
-
-// ── Private State Provider ───────────────────────────────────────────────────
-
-// Node.js: persistent LevelDB store (survives restarts)
-export function makeLevelPrivateStateProvider(storeName: string, walletProvider: any) {
-  const { levelPrivateStateProvider } = require('@midnight-ntwrk/midnight-js-level-private-state-provider');
-  return levelPrivateStateProvider({ privateStateStoreName: storeName, walletProvider });
-}
-
-// Browser: in-memory (lost on page refresh — acceptable for browser DApps)
-export function makeInMemoryPrivateStateProvider() {
-  let scope = '';
-  const stateStore = new Map<string, unknown>();
-  const signingKeyStore = new Map<string, unknown>();
-  const key = (id: string) => `${scope}:${id}`;
-  return {
-    setContractAddress(address: string) { scope = address; },
-    async set(id: string, state: unknown) { stateStore.set(key(id), state); },
-    async get(id: string) { return stateStore.get(key(id)) ?? null; },
-    async remove(id: string) { stateStore.delete(key(id)); },
-    async clear() { stateStore.clear(); },
-    async setSigningKey(addr: string, k: unknown) { signingKeyStore.set(addr, k); },
-    async getSigningKey(addr: string) { return signingKeyStore.get(addr) ?? null; },
-    async removeSigningKey(addr: string) { signingKeyStore.delete(addr); },
-    async clearSigningKeys() { signingKeyStore.clear(); },
-    async exportPrivateStates(): Promise<never> { throw new Error('Not implemented'); },
-    async importPrivateStates(): Promise<never> { throw new Error('Not implemented'); },
-    async exportSigningKeys(): Promise<never> { throw new Error('Not implemented'); },
-    async importSigningKeys(): Promise<never> { throw new Error('Not implemented'); },
-  };
-}
-```
-
----
-
-## 5) WalletProvider & MidnightProvider (Node.js headless, all networks)
-
-This bridge is identical across all networks. The `signTransactionIntents` workaround is required on all networks — it's a wallet SDK bug, not network-specific.
-
-```typescript
-// src/config/wallet-provider.ts
-import * as Rx from 'rxjs';
-import * as ledger from '@midnight-ntwrk/ledger-v8';
-import type { WalletProvider, MidnightProvider } from '@midnight-ntwrk/midnight-js-types';
-
-/**
- * Workaround for wallet SDK bug: signRecipe hardcodes 'pre-proof' marker,
- * but proven (UnboundTransaction) intents contain 'proof' data → "Failed to clone intent".
- * Call with proofMarker='proof' for baseTransaction, 'pre-proof' for balancingTransaction.
- */
-function signTransactionIntents(
-  tx: { intents?: Map<number, any> },
-  signFn: (payload: Uint8Array) => ledger.Signature,
-  proofMarker: 'proof' | 'pre-proof',
-): void {
-  if (!tx.intents || tx.intents.size === 0) return;
-
-  for (const segment of tx.intents.keys()) {
-    const intent = tx.intents.get(segment);
-    if (!intent) continue;
-
-    const cloned = ledger.Intent.deserialize<
-      ledger.SignatureEnabled, ledger.Proofish, ledger.PreBinding
-    >('signature', proofMarker, 'pre-binding', intent.serialize());
-
-    const signature = signFn(cloned.signatureData(segment));
-
-    if (cloned.fallibleUnshieldedOffer) {
-      const sigs = cloned.fallibleUnshieldedOffer.inputs.map(
-        (_: ledger.UtxoSpend, i: number) =>
-          cloned.fallibleUnshieldedOffer!.signatures.at(i) ?? signature,
-      );
-      cloned.fallibleUnshieldedOffer = cloned.fallibleUnshieldedOffer.addSignatures(sigs);
-    }
-    if (cloned.guaranteedUnshieldedOffer) {
-      const sigs = cloned.guaranteedUnshieldedOffer.inputs.map(
-        (_: ledger.UtxoSpend, i: number) =>
-          cloned.guaranteedUnshieldedOffer!.signatures.at(i) ?? signature,
-      );
-      cloned.guaranteedUnshieldedOffer = cloned.guaranteedUnshieldedOffer.addSignatures(sigs);
-    }
-
-    tx.intents.set(segment, cloned);
+export function getNetwork(name: NetworkName): NetworkConfig {
+  const proofServerUrl = process.env.PROOF_SERVER_URL ?? 'http://127.0.0.1:6300';
+  switch (name) {
+    case 'undeployed':
+      return { ...local, proofServerUrl };
+    case 'preview':
+      return { ...networks.preview(), proofServerUrl, faucetUrl: 'https://faucet.preview.midnight.network/' };
+    case 'preprod':
+      return { ...networks.preprod(blockfrostToken(name)), proofServerUrl, faucetUrl: 'https://midnight-tmnight-preprod.nethermind.dev/' };
+    case 'mainnet':
+      return { ...networks.mainnet(blockfrostToken(name)), proofServerUrl };
   }
 }
 
-export async function makeWalletAndMidnightProvider(
-  walletFacade: any,
-  shieldedSecretKeys: ledger.ZswapSecretKeys,
-  dustSecretKey: ledger.DustSecretKey,
-  unshieldedKeystore: any,
-): Promise<WalletProvider & MidnightProvider> {
-  // state() is an Observable — must subscribe, not access as property
-  const state = await Rx.firstValueFrom(
-    walletFacade.state().pipe(Rx.filter((s: any) => s.isSynced)),
-  );
+export function getActiveNetwork(): NetworkConfig {
+  const name = (process.env.NETWORK || process.env.VITE_NETWORK || 'undeployed') as NetworkName;
+  if (!['undeployed', 'preview', 'preprod', 'mainnet'].includes(name)) {
+    throw new Error(`Unknown network: "${name}"`);
+  }
+  return getNetwork(name);
+}
+```
 
-  const signFn = (payload: Uint8Array) => unshieldedKeystore.signData(payload);
+`networks.*()` returns `{ networkId, indexer: { queryURL, subscriptionURL }, nodeURL, nodeWsURL }`. Blockfrost URLs carry the token as `?project_id=…`, so strip it before logging. In a browser, never ship the token: proxy through a backend, or use the wallet's own endpoints (`dappConnectorNetwork(api)`).
 
+Endpoint reference (unchanged by Ledger 9):
+
+| Network | Indexer HTTP | Node RPC |
+|---|---|---|
+| `undeployed` | `http://localhost:8088/api/v4/graphql` | `http://localhost:9944` |
+| `preview` | `https://indexer.preview.midnight.network/api/v4/graphql` | `https://rpc.preview.midnight.network` |
+| `preprod` | `https://midnight-preprod.blockfrost.io/api/v0?project_id=<token>` | `https://rpc.midnight-preprod.blockfrost.io?project_id=<token>` |
+| `mainnet` | `https://midnight-mainnet.blockfrost.io/api/v0?project_id=<token>` | `https://rpc.midnight-mainnet.blockfrost.io?project_id=<token>` |
+
+`indexer.preprod.midnight.network` / `indexer.mainnet.midnight.network` return **410 `ENDPOINT_DECOMMISSIONED`** (retired 9 Oct 2026); `rpc.preprod/mainnet.midnight.network` shut down on 18 Nov 2026.
+
+---
+
+## 4) Headless Wallet (Node.js, all networks)
+
+Wallet SDK 2.x: `WalletFacade.init` (the constructor is private), started from seeds. The same code works on every network. Only the `NetworkConfig` changes.
+
+```typescript
+// src/config/wallet.ts
+import { WebSocket } from 'ws';
+import { WalletFacade, WalletEntrySchema } from '@midnightntwrk/wallet-sdk-facade';
+import { ShieldedWallet } from '@midnightntwrk/wallet-sdk-shielded';
+import { UnshieldedWallet, createKeystore, PublicKey } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
+import { DustWallet } from '@midnightntwrk/wallet-sdk-dust-wallet';
+import { WalletSeeds, generateRandomSeed } from '@midnightntwrk/wallet-sdk-hd';
+import { InMemoryTransactionHistoryStorage } from '@midnightntwrk/wallet-sdk-abstractions';
+import type { NetworkConfig } from './networks';
+
+// Required in Node.js, before any wallet sync starts.
+globalThis.WebSocket = WebSocket as unknown as typeof globalThis.WebSocket;
+
+export async function buildHeadlessWallet(network: NetworkConfig, seedHex?: string) {
+  const masterSeed = seedHex ? Buffer.from(seedHex, 'hex') : generateRandomSeed();
+  const seeds = WalletSeeds.fromMasterSeed(masterSeed);       // account 0 / index 0, as HDWallet derives
+  const keystore = createKeystore({ kind: 'schnorr', secret: seeds.unshielded }, network.networkId);
+
+  const facade = await WalletFacade.init({
+    configuration: {
+      networkId: network.networkId,
+      indexerClientConnection: { indexerHttpUrl: network.indexer.queryURL, indexerWsUrl: network.indexer.subscriptionURL },
+      relayURL: new URL(network.nodeWsURL),                   // ws:// or wss://
+      provingServerUrl: new URL(network.proofServerUrl),      // or provers: { v9: { kind: 'wasm' } }
+      costParameters: { feeBlocksMargin: 5 },
+      txHistoryStorage: new InMemoryTransactionHistoryStorage(WalletEntrySchema),
+    },
+    shielded: (config) => ShieldedWallet(config).startWithSeed(seeds.shielded),
+    unshielded: (config) => UnshieldedWallet(config).startWithPublicKey(PublicKey.fromKeyStore(keystore)),
+    dust: (config) => DustWallet(config).startWithSeed(seeds.dust),
+  });
+
+  await facade.start(seeds);
+  const state = await facade.waitForSyncedState();
   return {
-    getCoinPublicKey() {
-      return state.shielded.coinPublicKey.toHexString();
-    },
-    getEncryptionPublicKey() {
-      return state.shielded.encryptionPublicKey.toHexString();
-    },
-    async balanceTx(tx: any, ttl?: Date) {
-      const recipe = await walletFacade.balanceUnboundTransaction(
-        tx,
-        { shieldedSecretKeys, dustSecretKey },
-        { ttl: ttl ?? new Date(Date.now() + 30 * 60 * 1000) },
-      );
-
-      // Apply signTransactionIntents workaround on both tx parts
-      signTransactionIntents(recipe.baseTransaction, signFn, 'proof');
-      if (recipe.balancingTransaction) {
-        signTransactionIntents(recipe.balancingTransaction, signFn, 'pre-proof');
-      }
-
-      return walletFacade.finalizeRecipe(recipe);
-    },
-    async submitTx(tx: any) {
-      return walletFacade.submitTransaction(tx) as any;
-    },
+    facade,
+    seeds,
+    keystore,
+    state,
+    seedHex: Buffer.from(masterSeed).toString('hex'),
+    unshieldedAddress: keystore.getBech32Address().asString(),
   };
 }
 ```
 
+On preprod (which has Ledger 8 history), a brand-new wallet can pass `skipLedgerV8DustHistory: true` to `DustWallet` to start faster.
+
 ---
 
-## 6) DUST Flow Per Network
+## 5) DUST Flow (same on every network)
 
 ```
-undeployed  →  manual:  register NIGHT UTXOs → wait for DUST to accrue
-preview     →  sponsored: 1AM ProofStation pays all fees → user needs nothing
-preprod     →  manual:  faucet NIGHT → register UTXOs → wait for DUST
-mainnet     →  sponsored: 1AM ProofStation pays all fees → user needs nothing
+undeployed → genesis NIGHT (or funding menu) → register UTXOs → wait for DUST
+preview    → faucet tNIGHT                    → register UTXOs → wait for DUST
+preprod    → faucet tNIGHT                    → register UTXOs → wait for DUST (re-register after 9 Nov 2026)
+mainnet    → NIGHT                            → register UTXOs → wait for DUST (cNIGHT registrations replayed)
 ```
 
 ```typescript
 // src/config/dust.ts
 import * as Rx from 'rxjs';
-import type { NetworkConfig } from './networks';
+import type { WalletFacade } from '@midnightntwrk/wallet-sdk-facade';
+import type { createKeystore } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 
-export async function ensureDust(
-  walletFacade: any,
-  unshieldedKeystore: any,
-  network: NetworkConfig,
-): Promise<void> {
-  // sponsored networks: 1AM pays fees — nothing to do
-  if (network.dustMode === 'sponsored') return;
+export async function ensureDust(facade: WalletFacade, keystore: ReturnType<typeof createKeystore>): Promise<void> {
+  const signSegment = (payload: Uint8Array) => Promise.resolve(keystore.signData(payload));
+  const state = await facade.waitForSyncedState();
+  if (state.dust.balance(new Date()) > 0n) return;            // 2.x: balance(time), not walletBalance
 
-  const state = await Rx.firstValueFrom(
-    walletFacade.state().pipe(Rx.filter((s: any) => s.isSynced)),
-  );
-
-  // already have DUST
-  if (state.dust.availableCoins.length > 0) return;
-
-  // find NIGHT UTXOs not yet registered for DUST generation
-  const unregistered = state.unshielded.availableCoins.filter(
-    (coin: any) => coin.meta?.registeredForDustGeneration !== true,
-  );
-
-  if (unregistered.length === 0) {
-    // all UTXOs registered — just wait for DUST to accrue
-    console.log('Waiting for DUST to generate (all UTXOs already registered)...');
-  } else {
-    // submit registration tx
-    console.log(`Registering ${unregistered.length} NIGHT UTXO(s) for DUST generation...`);
-    const recipe = await walletFacade.registerNightUtxosForDustGeneration(
-      unregistered,
-      unshieldedKeystore.getPublicKey(),
-      (payload: Uint8Array) => unshieldedKeystore.signData(payload),
-    );
-    const finalized = await walletFacade.finalizeRecipe(recipe);
-    await walletFacade.submitTransaction(finalized);
+  const unregistered = state.unshielded.availableCoins.filter((c) => c.meta?.registeredForDustGeneration !== true);
+  if (unregistered.length > 0) {
+    const recipe = await facade.registerNightUtxosForDustGeneration(unregistered, keystore.getPublicKey(), signSegment);
+    await facade.submitTransaction(await facade.finalizeRecipe(recipe));
   }
 
-  // wait for DUST balance > 0 (can take a few minutes on preprod)
   await Rx.firstValueFrom(
-    walletFacade.state().pipe(
-      Rx.throttleTime(5_000),
-      Rx.filter((s: any) => s.isSynced),
-      Rx.filter((s: any) => s.dust.walletBalance(new Date()) > 0n),
-    ),
+    facade.state().pipe(Rx.throttleTime(5_000), Rx.filter((s) => s.isSynced && s.dust.balance(new Date()) > 0n)),
   );
-
-  console.log('DUST available.');
 }
 ```
 
+DUST parameters (unchanged by Ledger 9): cap 5 DUST per NIGHT, 10^15 Specks per DUST, about 1 week to cap, 3 h grace.
+
 ---
 
-## 7) Wallet Initialization (Node.js, all networks)
+## 6) Provider Assembly
 
 ```typescript
-// src/config/wallet.ts
-import * as Rx from 'rxjs';
-import * as ledger from '@midnight-ntwrk/ledger-v8';
-import { HDWallet, generateRandomSeed, Roles } from '@midnight-ntwrk/wallet-sdk-hd';
-import { ShieldedWallet } from '@midnight-ntwrk/wallet-sdk-shielded';
+// src/config/providers.ts
+import { httpClientProofProvider } from '@midnightntwrk/midnight-js-http-client-proof-provider';
+import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
+import { NodeZkConfigProvider } from '@midnightntwrk/midnight-js-node-zk-config-provider';
+import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
 import {
-  UnshieldedWallet, createKeystore, PublicKey,
-  InMemoryTransactionHistoryStorage,
-} from '@midnight-ntwrk/wallet-sdk-unshielded-wallet';
-import { DustWallet } from '@midnight-ntwrk/wallet-sdk-dust-wallet';
-import { WalletFacade } from '@midnight-ntwrk/wallet-sdk-facade';
-import { WebSocket } from 'ws';
-import { Buffer } from 'buffer';
-import { applyNetworkId, type NetworkConfig } from './networks';
-import { ensureDust } from './dust';
-import { makeWalletAndMidnightProvider } from './wallet-provider';
-
-// Required: set WebSocket global before any wallet SDK imports
-globalThis.WebSocket = WebSocket as unknown as typeof globalThis.WebSocket;
-
-export async function buildHeadlessWallet(network: NetworkConfig, seedHex?: string) {
-  applyNetworkId(network);
-
-  const seed = seedHex
-    ? Buffer.from(seedHex, 'hex')
-    : Buffer.from(generateRandomSeed());
-
-  const hdWallet = HDWallet.fromSeed(seed);
-  if (hdWallet.type !== 'seedOk') throw new Error('Invalid wallet seed');
-
-  const derivationResult = hdWallet.hdWallet
-    .selectAccount(0)
-    .selectRoles([Roles.Zswap, Roles.NightExternal, Roles.Dust])
-    .deriveKeysAt(0);
-
-  if (derivationResult.type !== 'keysDerived') throw new Error('Key derivation failed');
-  hdWallet.hdWallet.clear(); // wipe secret material from memory
-
-  const keys = derivationResult.keys;
-  const shieldedSecretKeys = ledger.ZswapSecretKeys.fromSeed(keys[Roles.Zswap]);
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(keys[Roles.Dust]);
-  const unshieldedKeystore = createKeystore(keys[Roles.NightExternal], network.networkId);
-
-  // relayURL must be WebSocket — convert http→ws, https→wss
-  const relayURL = new URL(network.rpc.replace(/^https/, 'wss').replace(/^http(?!s)/, 'ws'));
-
-  const shieldedWallet = ShieldedWallet({
-    networkId: network.networkId,
-    indexerClientConnection: { indexerHttpUrl: network.indexerHttp, indexerWsUrl: network.indexerWs },
-    provingServerUrl: new URL(network.proofServerUrl),
-    relayURL,
-  }).startWithSecretKeys(shieldedSecretKeys);
-
-  const unshieldedWallet = UnshieldedWallet({
-    networkId: network.networkId,
-    indexerClientConnection: { indexerHttpUrl: network.indexerHttp, indexerWsUrl: network.indexerWs },
-    txHistoryStorage: new InMemoryTransactionHistoryStorage(),
-  }).startWithPublicKey(PublicKey.fromKeyStore(unshieldedKeystore));
-
-  const dustWallet = DustWallet({
-    networkId: network.networkId,
-    costParameters: {
-      additionalFeeOverhead: 300_000_000_000_000n,
-      feeBlocksMargin: 5,
-    },
-    indexerClientConnection: { indexerHttpUrl: network.indexerHttp, indexerWsUrl: network.indexerWs },
-    provingServerUrl: new URL(network.proofServerUrl),
-    relayURL,
-  }).startWithSecretKey(dustSecretKey, ledger.LedgerParameters.initialParameters().dust);
-
-  const walletFacade = new WalletFacade(shieldedWallet, unshieldedWallet, dustWallet);
-  await walletFacade.start(shieldedSecretKeys, dustSecretKey);
-
-  // Wait for sync
-  await Rx.firstValueFrom(
-    walletFacade.state().pipe(
-      Rx.throttleTime(5_000),
-      Rx.filter((s: any) => s.isSynced),
-    ),
-  );
-
-  // Handle DUST based on network's dustMode
-  await ensureDust(walletFacade, unshieldedKeystore, network);
-
-  const walletProvider = await makeWalletAndMidnightProvider(
-    walletFacade, shieldedSecretKeys, dustSecretKey, unshieldedKeystore,
-  );
-
-  return {
-    walletFacade,
-    shieldedSecretKeys,
-    dustSecretKey,
-    unshieldedKeystore,
-    walletProvider,
-    seedHex: Buffer.from(seed).toString('hex'),
-    unshieldedAddress: unshieldedKeystore.getBech32Address(),
-  };
-}
-```
-
----
-
-## 8) Full Provider Assembly
-
-```typescript
-// src/config/providers-full.ts
+  createLedger9MidnightProvider, createLedger9WalletProvider, type MidnightProviders,
+} from '@midnightntwrk/midnight-js-types';
 import type { NetworkConfig } from './networks';
-import {
-  makeNodeZkConfigProvider, makeFetchZkConfigProvider,
-  makeHttpProofProvider, make1AMProofProvider,
-  makePublicDataProvider,
-  makeLevelPrivateStateProvider, makeInMemoryPrivateStateProvider,
-} from './providers';
+import type { buildHeadlessWallet } from './wallet';
 
-export async function assembleProviders(
+export function assembleProviders(
   network: NetworkConfig,
-  zkConfigPath: string, // filesystem path (Node.js) or URL path (browser)
-  walletContext: {
-    walletProvider: any;
-    midnightProvider?: any;
-  },
-  privateStateStoreName: string,
-  proofProviderOverride?: any, // pass 1AM provingProvider for browser
-) {
-  const isBrowser = typeof window !== 'undefined';
-
-  const zkConfigProvider = isBrowser
-    ? makeFetchZkConfigProvider(zkConfigPath)
-    : makeNodeZkConfigProvider(zkConfigPath);
-
-  const proofProvider = proofProviderOverride
-    ? make1AMProofProvider(proofProviderOverride)           // browser + 1AM
-    : makeHttpProofProvider(network.proofServerUrl, zkConfigProvider); // Node.js
-
-  const privateStateProvider = isBrowser
-    ? makeInMemoryPrivateStateProvider()
-    : makeLevelPrivateStateProvider(privateStateStoreName, walletContext.walletProvider);
+  wallet: Awaited<ReturnType<typeof buildHeadlessWallet>>,
+  zkConfigPath: string,
+  privateStoragePassword: string,
+): MidnightProviders {
+  const { facade, keystore, state } = wallet;
+  const signSegment = (payload: Uint8Array) => Promise.resolve(keystore.signData(payload));
+  const zkConfigProvider = new NodeZkConfigProvider<string>(zkConfigPath);
 
   return {
+    privateStateProvider: levelPrivateStateProvider({
+      accountId: wallet.unshieldedAddress,
+      privateStoragePasswordProvider: async () => privateStoragePassword,
+    }),
+    publicDataProvider: indexerPublicDataProvider(network.indexer),
     zkConfigProvider,
-    publicDataProvider: makePublicDataProvider(network),
-    proofProvider,
-    privateStateProvider,
-    walletProvider: walletContext.walletProvider,
-    midnightProvider: walletContext.midnightProvider ?? walletContext.walletProvider,
+    proofProvider: httpClientProofProvider({ url: network.proofServerUrl, zkConfigProvider }),
+    walletProvider: createLedger9WalletProvider({
+      getCoinPublicKey: () => state.shielded.coinPublicKey.toHexString(),
+      getEncryptionPublicKey: () => state.shielded.encryptionPublicKey.toHexString(),
+      balanceTx: async (tx, ttl) => {
+        const recipe = await facade.balanceUnboundTransaction(facade.adoptTransaction(tx.serialize(), 'Unbound'), {
+          ttl: ttl ?? new Date(Date.now() + 30 * 60 * 1000),
+        });
+        return facade.finalizeRecipe(await facade.signRecipe(recipe, signSegment));
+      },
+    }),
+    midnightProvider: createLedger9MidnightProvider((tx) =>
+      facade.submitTransaction(facade.adoptTransaction(tx.serialize(), 'Finalized')),
+    ),
+    config: { networkId: network.networkId, ttlSeconds: 3600 },
   };
 }
 ```
 
+Wallet SDK 2.x `signRecipe` signs each part at its own stage. The old `signTransactionIntents` ("Failed to clone intent") workaround is **not needed**.
+
+**Browser** builds don't use a headless wallet. They get the network, proof, wallet and midnight providers from the user's wallet via `@midnightntwrk/midnight-js-dapp-connector-proof-provider`. The network, including Blockfrost-backed endpoints, comes from whatever the user selected in the wallet. See `references/midnight-session.md`.
+
 ---
 
-## 9) Contract Registry
+## 8) Contract Registry
 
 ```typescript
 // src/config/registry.ts
@@ -587,8 +311,8 @@ export type ContractRegistry = Record<string, Partial<Record<string, string>>>;
 export const registry: ContractRegistry = {
   counter: {
     undeployed: '',      // fill after local deploy
-    preview:    '',      // fill after preview deploy
-    preprod:    '09dbe05f...',
+    preview:    '',      // Preview relaunched 7 Nov 2026: pre-relaunch addresses are gone
+    preprod:    '',      // Ledger 8 deployments carried over, but recompiled (0.36.x) contracts need a fresh deploy
     mainnet:    '',
   },
 };
@@ -613,33 +337,32 @@ export function saveAddress(contractName: string, networkId: string, address: st
 
 ---
 
-## 10) npm Scripts
+## 9) npm Scripts
 
 ```json
 {
   "scripts": {
-    "dev":              "VITE_NETWORK=undeployed vite",
-    "dev:preview":      "VITE_NETWORK=preview vite",
-    "dev:preprod":      "VITE_NETWORK=preprod vite",
+    "dev":            "VITE_NETWORK=undeployed vite",
+    "dev:preview":    "VITE_NETWORK=preview vite",
+    "dev:preprod":    "VITE_NETWORK=preprod vite",
 
-    "deploy:local":     "NETWORK=undeployed npx tsx scripts/deploy.ts",
-    "deploy:preview":   "NETWORK=preview npx tsx scripts/deploy.ts",
-    "deploy:preprod":   "NETWORK=preprod npx tsx scripts/deploy.ts",
-    "deploy:mainnet":   "NETWORK=mainnet npx tsx scripts/deploy.ts",
+    "compact":        "compact compile +0.36.1 contract/src/counter.compact contract/src/managed/counter",
+    "deploy:local":   "NETWORK=undeployed npx tsx scripts/deploy.ts",
+    "deploy:preview": "NETWORK=preview npx tsx scripts/deploy.ts",
+    "deploy:preprod": "NETWORK=preprod BLOCKFROST_PROJECT_ID=$BLOCKFROST_PREPROD npx tsx scripts/deploy.ts",
+    "deploy:mainnet": "NETWORK=mainnet BLOCKFROST_PROJECT_ID=$BLOCKFROST_MAINNET npx tsx scripts/deploy.ts",
 
-    "local:start":      "docker compose -f standalone.yml up -d",
-    "local:stop":       "docker compose -f standalone.yml down",
-    "local:logs":       "docker compose -f standalone.yml logs -f",
-    "local:proof":      "docker run -d -p 6300:6300 midnightntwrk/proof-server:latest midnight-proof-server -v",
-
-    "preprod:proof":    "docker compose -f proof-server.yml up"
+    "local:start":    "docker compose -f standalone.yml up -d",
+    "local:stop":     "docker compose -f standalone.yml down",
+    "local:logs":     "docker compose -f standalone.yml logs -f",
+    "proof":          "docker run -d -p 6300:6300 midnightntwrk/proof-server:9.0.2 midnight-proof-server -v"
   }
 }
 ```
 
 ---
 
-## 11) Vite Config
+## 10) Vite Config
 
 ```typescript
 // vite.config.ts
@@ -666,26 +389,30 @@ export default defineConfig({
 
 ---
 
-## 12) Common Pitfalls
+## 11) Common Pitfalls
 
-**`undeployed` indexer uses `/api/v3/graphql`, not `/api/v4/`** — the local Docker indexer ships with v3. Using v4 will 404. All live networks (preview, preprod, mainnet) use v4.
+**Using the retired preprod/mainnet indexer hosts** → HTTP 410 `ENDPOINT_DECOMMISSIONED`. Use Blockfrost with a per-network `project_id` (a preprod token is rejected on mainnet and vice versa).
 
-**Three containers required for local dev, not just the proof server** — the node and indexer must also be running. Use `midnight-local-dev` or `docker compose -f standalone.yml up`.
+**`undeployed` indexer path** → `/api/v4/graphql`, the same as preview. `/api/v3` is the legacy path.
 
-**`walletFacade.state` is a method, not a property** — `walletFacade.state()` returns an Observable. Always use `Rx.firstValueFrom(walletFacade.state().pipe(...))` to read it. Accessing `.state` directly returns the function, not the state.
+**Three containers required for local dev** → node 2.1.101 + indexer 4.4.101 + proof server 9.0.2. Wipe old chain volumes after upgrading images.
 
-**`relayURL` must be WebSocket** — convert `https://` → `wss://`, `http://` → `ws://`. The wallet SDK rejects non-WS relay URLs silently or with a confusing error.
+**`facade.state` is a method** → `facade.state()` returns an Observable; `facade.waitForSyncedState()` resolves once synced.
 
-**`globalThis.WebSocket = WebSocket` must be at the top of the entry file** — before any `@midnight-ntwrk/wallet-sdk-*` imports. GraphQL subscriptions (wallet sync) will silently fail without it in Node.js.
+**`relayURL` must be WebSocket** → use `network.nodeWsURL`.
 
-**`signTransactionIntents` workaround required on all networks** — this is a wallet SDK bug, not environment-specific. Without it, `balanceTx` throws "Failed to clone intent" on headless wallets.
+**`globalThis.WebSocket = WebSocket`** at the top of the Node entry file, or wallet sync silently stalls.
 
-**DUST locked after a failed deploy** — restart the DApp to release locked DUST coins. Affects `undeployed` and `preprod` only; sponsored networks aren't affected.
+**Calling `setNetworkId`** → removed in Midnight.js 5. Pass `networkId` in `providers.config` and the wallet configuration.
 
-**ProofStation API key for direct headless preprod access** — if calling `api-preprod.1am.xyz` directly (not via browser 1AM extension), you need `X-API-Key: pk_live_xxx` in headers. The `httpClientProofProvider` does not add this automatically — you'd need to wrap or fork it.
+**Stale balances/contracts on preview** → Preview relaunched on 7 Nov 2026. Redeploy, re-request tNIGHT and re-register DUST.
 
-**Old contract addresses after recompile** — verifier keys change with every Compact contract change. Update the registry and redeploy for the affected network. Addresses from other networks are unaffected.
+**No DUST on preprod** → re-register tNIGHT UTXOs; the 9 Nov 2026 upgrade cleared non-cNIGHT registrations.
 
-**`setNetworkId` called after SDK operations** — call it before building any providers or wallets. Use `applyNetworkId(network)` at the very top of your setup flow.
+**DUST booked by a pending tx** → Wallet SDK 2.x releases the bookings when the node provably rejected the submission, otherwise at TTL or sync. Wait rather than restart.
 
-**Wallet seed in browser build** — never pass `WALLET_SEED` to Vite's env (it exposes it in the bundle). Headless wallet is Node.js only. Browser always uses the 1AM extension.
+**ProofStation headless access** → calling `api-*.1am.xyz` directly needs 1AM's API key header, which `httpClientProofProvider` does not add.
+
+**Old contract addresses after recompile** → moving from compiler 0.31 to 0.36.x changes verifier keys. Redeploy per network and update the registry.
+
+**Wallet seed or Blockfrost token in a browser build** → never pass `WALLET_SEED` or `BLOCKFROST_PROJECT_ID` through Vite env; both end up in the bundle.

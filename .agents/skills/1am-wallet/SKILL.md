@@ -4,10 +4,12 @@ description: Integrate the 1AM wallet for dust-free contract deployment and tran
 ---
 
 **Scope**
-This skill covers detecting, connecting, and wiring the 1AM browser extension (`window.midnight['1am']`) into a frontend dApp. The 1AM wallet handles all ZK proving and dust fee sponsorship — users pay zero gas. This skill is generic: replace every `YourContract` / `yourCircuit` / `your-contract` placeholder with your actual contract name and circuit IDs.
+This skill covers detecting, connecting, and wiring the 1AM browser extension (`window.midnight['1am']`) into a frontend dApp. The wallet proves and balances transactions through the DApp Connector API. 1AM has advertised DUST fee sponsorship through its ProofStation; confirm the current policy with 1AM after the Ledger 9 DUST reset. This skill is generic: replace every `YourContract` / `yourCircuit` / `your-contract` placeholder with your actual contract name and circuit IDs.
+
+> **Ledger 9 (Nov 2026).** Targets Midnight.js **5.0.2**, DApp Connector API **4.1.0**, `ledger-v9` **1.0.2**, `compact-runtime` **0.21.0**, Compact **0.36.1** (`pragma language_version >= 0.28.0`). `setNetworkId` is gone, the `offset: null` indexer patch is no longer needed, and the hand-rolled proof/wallet/midnight providers are replaced by `@midnightntwrk/midnight-js-dapp-connector-proof-provider`. The session code in §3 is the same file `templates/locker-dapp` ships, and that template type-checks and passes `next build`. Make sure users run a Ledger 9 build of the 1AM extension.
 
 Suggested file layout (adapt to your project):
-- `src/lib/midnight.ts` → wallet session, provider wiring, indexer patch (**canonical source:** `references/midnight-session.md`)
+- `src/lib/midnight.ts` → wallet session and provider wiring (**canonical source:** `references/midnight-session.md`)
 - `src/lib/encryption.ts` → optional payload encryption derived from wallet signature
 - `src/hooks/useContract.ts` → app logic and state orchestration
 - `src/contexts/WalletContext.tsx` → wallet connection state
@@ -18,20 +20,25 @@ Suggested file layout (adapt to your project):
 
 ## 1) Dependencies
 
-Exact versions known to work together:
+The Ledger 9.1 set (checked against npm and the support matrix on 21 Nov 2026):
 
 ```bash
 npm install \
-  @midnight-ntwrk/compact-runtime@^0.15.0 \
-  @midnight-ntwrk/ledger@^4.0.0 \
-  @midnight-ntwrk/ledger-v8@^8.0.3 \
-  @midnight-ntwrk/midnight-js-contracts@^4.0.4 \
-  @midnight-ntwrk/midnight-js-fetch-zk-config-provider@^4.0.4 \
-  @midnight-ntwrk/midnight-js-indexer-public-data-provider@^4.0.4 \
-  @midnight-ntwrk/midnight-js-network-id@^4.0.4 \
-  @midnight-ntwrk/midnight-js-types@^4.0.4 \
-  @midnight-ntwrk/wallet-sdk-address-format@^3.1.0
+  @midnight-ntwrk/compact-runtime@0.21.0 \
+  @midnight-ntwrk/compact-js@3.0.2 \
+  @midnightntwrk/ledger-v9@1.0.2 \
+  @midnightntwrk/dapp-connector-api@4.1.0 \
+  @midnightntwrk/midnight-js-contracts@5.0.2 \
+  @midnightntwrk/midnight-js-types@5.0.2 \
+  @midnightntwrk/midnight-js-utils@5.0.2 \
+  @midnightntwrk/midnight-js-dapp-connector-proof-provider@5.0.2 \
+  @midnightntwrk/midnight-js-fetch-zk-config-provider@5.0.2 \
+  @midnightntwrk/midnight-js-indexer-public-data-provider@5.0.2 \
+  @midnightntwrk/midnight-js-level-private-state-provider@5.0.2 \
+  @midnightntwrk/wallet-sdk-address-format@4.0.1
 ```
+
+`compact-runtime` / `compact-js` stay on the `@midnight-ntwrk` scope (the compiler's output imports `@midnight-ntwrk/compact-runtime`). Everything else is `@midnightntwrk`. **Removed:** `@midnight-ntwrk/midnight-js-network-id`, `@midnight-ntwrk/ledger-v8`, and the obsolete `@midnight-ntwrk/ledger`.
 
 Vite requires these plugins for WASM and top-level await (the Compact SDK uses both):
 
@@ -65,7 +72,7 @@ function detectWallet(): Promise<any | null> {
 // Connect
 const wallet = await detectWallet();
 if (!wallet) throw new Error('1AM wallet not installed');
-const api = await wallet.connect('preprod'); // 'preview' | 'preprod' | 'mainnet'
+const api = await wallet.connect('preview'); // 'preview' | 'preprod' | 'mainnet' (all Ledger 9)
 ```
 
 ### React Context + useWallet Hook
@@ -111,7 +118,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(id);
   }, []);
 
-  const connect = useCallback(async (network = 'preprod') => {
+  const connect = useCallback(async (network = 'preview') => {
     if (connectingRef.current) return;
     connectingRef.current = true;
     setIsConnecting(true);
@@ -120,7 +127,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       if (!wallet) throw new Error('No wallet found');
       const api = await wallet.connect(network);
       const { createConnectedSession } = await import('../lib/midnight');
-      const sess = await createConnectedSession(api);
+      const sess = await createConnectedSession(api, '/zk/your-contract'); // where your ZK assets are served
       setSession(sess);
       setAddress((await api.getUnshieldedAddress()).unshieldedAddress);
       setIsConnected(true);
@@ -185,7 +192,7 @@ export default function WalletConnect() {
   return (
     <div className="flex flex-col gap-2">
       <button
-        onClick={() => connect('preprod')}
+        onClick={() => connect('preview')}
         disabled={isConnecting}
         className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-[11px] font-mono tracking-widest uppercase py-2.5 px-5 transition-all disabled:opacity-40"
       >
@@ -203,108 +210,118 @@ export default function WalletConnect() {
 
 ## 3) Session Setup (`createConnectedSession`)
 
-Fetch config, network ID, and all addresses in **parallel** — never await them in sequence.
+Midnight.js 5 ships the connector-backed providers, so the session is mostly wiring:
+
+- `dappConnectorNetwork(api)` → `{ networkId, indexer: { queryURL, subscriptionURL }, nodeURL, nodeWsURL }` from the network the user picked in the wallet
+- `dappConnectorProofProvider(api, zkConfigProvider, costModel)` → proving delegated to the wallet (`getProvingProvider`)
+- `dappConnectorWalletProviders(api)` → `walletProvider` (`balanceUnsealedTransaction`) + `midnightProvider` (`submitTransaction`), both era-aware
+- `providers.config = { networkId, ttlSeconds }` replaces the global `setNetworkId`
 
 ```ts
-// src/lib/midnight.ts
-import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import type { MidnightProvider, WalletProvider } from '@midnight-ntwrk/midnight-js-types';
+// src/lib/midnight.ts — identical to templates/locker-dapp/lib/midnight.ts
+import type { ConnectedAPI, InitialAPI } from '@midnightntwrk/dapp-connector-api';
+import {
+  dappConnectorNetwork,
+  dappConnectorProofProvider,
+  dappConnectorWalletProviders,
+} from '@midnightntwrk/midnight-js-dapp-connector-proof-provider';
+import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
+import { FetchZkConfigProvider } from '@midnightntwrk/midnight-js-fetch-zk-config-provider';
+import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import type { MidnightNetwork } from '@midnightntwrk/midnight-js-utils';
+import { CostModel } from '@midnightntwrk/ledger-v9';
+import { ContractState } from '@midnight-ntwrk/compact-runtime';
+import { MidnightBech32m, ShieldedCoinPublicKey } from '@midnightntwrk/wallet-sdk-address-format';
 
 export type ConnectedSession = {
-  api: any;
-  config: any;
-  providers: {
-    privateStateProvider: ReturnType<typeof createPrivateStateProvider>;
-    publicDataProvider: ReturnType<typeof createPatchedPublicDataProvider>;
-    zkConfigProvider: FetchZkConfigProvider;
-    proofProvider: { proveTx: (unprovenTx: any, _config: any) => Promise<any> };
-    walletProvider: WalletProvider;
-    midnightProvider: MidnightProvider;
-  };
+  api: ConnectedAPI;
+  /** Network id + endpoints, read from the wallet. There is no global setNetworkId any more. */
+  network: MidnightNetwork;
+  providers: MidnightProviders;
   unshieldedAddress: string;
+  coinPublicKeyBytes: Uint8Array;
 };
 
-export async function createConnectedSession(api: any): Promise<ConnectedSession> {
-  // Fetch in parallel — do not await sequentially
-  const [config, unshieldedAddress, shieldedAddress] = await Promise.all([
-    api.getConfiguration(),
+export function fromHex(hex: string): Uint8Array {
+  const h = hex.startsWith('0x') ? hex.slice(2) : hex;
+  return Uint8Array.from(h.match(/.{1,2}/g) ?? [], (b) => parseInt(b, 16));
+}
+
+export function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Demo-grade password for the encrypted IndexedDB private-state store: random, kept in localStorage.
+ * Production apps should ask the user or derive it from wallet-held material.
+ */
+function demoStoragePassword(): Promise<string> {
+  const k = 'midnight-private-storage-password';
+  let pw = localStorage.getItem(k);
+  if (!pw) {
+    pw = `Mn-${crypto.randomUUID()}-${crypto.randomUUID()}`;
+    localStorage.setItem(k, pw);
+  }
+  return Promise.resolve(pw);
+}
+
+export async function detectWallet(): Promise<InitialAPI> {
+  const midnight = (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight ?? {};
+  const w = midnight['1am'] ?? Object.values(midnight)[0];
+  if (!w) throw new Error('No Midnight wallet extension found');
+  return w;
+}
+
+export async function createConnectedSession(api: ConnectedAPI, zkAssetPath: string): Promise<ConnectedSession> {
+  const network = await dappConnectorNetwork(api);
+  const [{ unshieldedAddress }, shielded] = await Promise.all([
     api.getUnshieldedAddress(),
     api.getShieldedAddresses(),
   ]);
 
-  // Must be called before any SDK operations
-  setNetworkId(config.networkId);
-
-  // ZK assets are served from /contract/collection relative to your origin.
-  // Adjust the path to match where your compiled contract assets are hosted.
-  const zkConfigProvider = new FetchZkConfigProvider(
-    new URL('/contract/your-contract', window.location.origin).toString(),
-    window.fetch.bind(window),
+  // zkAssetPath must serve compiler/ (contract-manifest.json, contract-info.json), keys/ and zkir/.
+  const zkConfigProvider = new FetchZkConfigProvider<string>(
+    new URL(zkAssetPath, window.location.origin).toString(),
+    { fetchFunc: window.fetch.bind(window) },
   );
-
-  // Optional: smoke-test ZK asset reachability at startup
-  zkConfigProvider.getZKIR('yourCircuit').then(
-    (zkir) => console.log('[zkConfigProvider] getZKIR ok, length:', zkir?.length),
-    (err) => console.error('[zkConfigProvider] getZKIR failed — check ZK asset hosting:', err),
-  );
-
-  const provingProvider = await api.getProvingProvider(zkConfigProvider);
-
-  // ✅ Use this custom wrapper — do NOT use createProofProvider() from @midnight-ntwrk/midnight-js-types.
-  // createProofProvider wraps the provider differently and does not pass CostModel correctly.
-  // unprovenTx.prove() called directly is the only pattern confirmed to work with 1AM's provingProvider.
-  const proofProvider = {
-    async proveTx(unprovenTx: any, _config: any) {
-      const { CostModel } = await import('@midnight-ntwrk/ledger-v8');
-      return unprovenTx.prove(provingProvider, CostModel.initialCostModel());
-    },
-  };
-
-  const walletProvider: WalletProvider = {
-    getCoinPublicKey: () => shieldedAddress.shieldedCoinPublicKey,
-    getEncryptionPublicKey: () => shieldedAddress.shieldedEncryptionPublicKey,
-    balanceTx: async (tx: any) => {
-      const txHex = toHex(tx.serialize());
-      const balanced = await api.balanceUnsealedTransaction(txHex);
-      if (!balanced?.tx) throw new Error('balanceUnsealedTransaction returned invalid result');
-      const { Transaction } = await import('@midnight-ntwrk/ledger-v8');
-      return Transaction.deserialize('signature', 'proof', 'binding', fromHex(balanced.tx));
-    },
-  };
-
-  const midnightProvider: MidnightProvider = {
-    submitTx: async (tx: any) => {
-      const txHex = toHex(tx.serialize());
-      const result = await api.submitTransaction(txHex);
-      // Accept string txId, or object with transactionId/id, or fall back to hex prefix
-      if (typeof result === 'string' && result) return result;
-      if (result?.transactionId) return result.transactionId;
-      if (result?.id) return result.id;
-      return txHex.slice(0, 64); // fallback pseudo-txId
-    },
-  };
-
-  const publicDataProvider = createPatchedPublicDataProvider(config.indexerUri, config.indexerWsUri);
+  const proofProvider = await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel());
+  const { walletProvider, midnightProvider } = await dappConnectorWalletProviders(api);
 
   return {
     api,
-    config,
+    network,
     providers: {
-      privateStateProvider: createPrivateStateProvider(),
-      publicDataProvider,
+      privateStateProvider: levelPrivateStateProvider({
+        accountId: unshieldedAddress,
+        privateStoragePasswordProvider: demoStoragePassword,
+      }),
+      publicDataProvider: indexerPublicDataProvider(network.indexer),
       zkConfigProvider,
       proofProvider,
       walletProvider,
       midnightProvider,
+      config: { networkId: network.networkId, ttlSeconds: 3600 },
     },
-    unshieldedAddress: unshieldedAddress.unshieldedAddress,
+    unshieldedAddress,
+    // The connector returns keys in Bech32m, not hex.
+    coinPublicKeyBytes: new Uint8Array(
+      ShieldedCoinPublicKey.codec.decode(network.networkId, MidnightBech32m.parse(shielded.shieldedCoinPublicKey)).data,
+    ),
   };
+}
+
+/** Latest on-chain state of a contract, decoded with this app's own compact-runtime copy. */
+export async function queryLatestState(session: ConnectedSession, contractAddress: string) {
+  const read = await session.providers.publicDataProvider.queryContractState(contractAddress);
+  if (!read) return null;
+  return read.contractState.deserialize({ v9: ContractState });
 }
 ```
 
-### Hex Helpers (required — never skip `padStart`)
+With `useWallet`, call `createConnectedSession(api, '/zk/your-contract', ...)` after `connect()`. Pass the zk path, because the session needs to know where your circuit assets are served.
+
+### Hex Helpers (never skip `padStart`)
 
 ```ts
 export function toHex(bytes: Uint8Array): string {
@@ -314,25 +331,20 @@ export function toHex(bytes: Uint8Array): string {
 export function fromHex(hex: string): Uint8Array {
   const normalized = hex.startsWith('0x') ? hex.slice(2) : hex;
   if (normalized.length % 2 !== 0) throw new Error('Invalid hex string from wallet.');
-  const bytes = new Uint8Array(normalized.length / 2);
-  for (let i = 0; i < normalized.length; i += 2) {
-    bytes[i / 2] = parseInt(normalized.slice(i, i + 2), 16);
-  }
-  return bytes;
+  return Uint8Array.from(normalized.match(/.{2}/g) ?? [], (b) => parseInt(b, 16));
 }
 ```
 
 ### Coin Public Key Helpers
 
-Use these when your contract takes a wallet address as an argument (e.g. recipient fields):
+The DApp Connector returns `shieldedCoinPublicKey` in **Bech32m** (`mn_shield-cpk_…`), and `dappConnectorWalletProviders` passes it through unchanged as `walletProvider.getCoinPublicKey()`. Parsing it as hex silently yields garbage. Decode it:
 
 ```ts
-export function coinPublicKeyToBytes(walletProvider: WalletProvider): Uint8Array {
-  const pk = walletProvider?.getCoinPublicKey?.() ?? '';
-  const hex = typeof pk === 'string' ? pk : Array.from(pk as number[]).map((b) => b.toString(16).padStart(2, '0')).join('');
-  const bytes = new Uint8Array(32);
-  for (let i = 0; i < 32; i++) bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
-  return bytes;
+import { MidnightBech32m, ShieldedCoinPublicKey } from '@midnightntwrk/wallet-sdk-address-format';
+
+export function coinPublicKeyToBytes(key: string, networkId: string): Uint8Array {
+  if (/^(0x)?[0-9a-fA-F]{64}$/.test(key)) return fromHex(key);          // some wallets return hex
+  return new Uint8Array(ShieldedCoinPublicKey.codec.decode(networkId, MidnightBech32m.parse(key)).data);
 }
 
 // Compact's Either type — Left = shielded coin key, Right = unshielded/raw key
@@ -340,285 +352,177 @@ export function makeEitherLeft(bytes: Uint8Array) {
   return { is_left: true, left: { bytes }, right: { bytes: new Uint8Array(32) } };
 }
 
-// Format an Either<Bytes, Bytes> address for display
 export function formatAddress(either: any): string {
   if (!either) return '—';
   const bytes = either.is_left ? either.left?.bytes : either.right?.bytes;
-  if (!bytes) return '—';
-  return '0x' + Array.from(bytes as number[]).map((b) => b.toString(16).padStart(2, '0')).join('');
+  return bytes ? '0x' + toHex(bytes) : '—';
 }
 ```
 
+Argument shapes come from the generated `contract/index.d.ts`: `Bytes<32>` is a plain `Uint8Array`, while `ZswapCoinPublicKey` / `UserAddress` are `{ bytes }`.
+
 ---
 
-## 4) Patched Public Data Provider ⚠️ Critical
+## 4) Public Data Provider (no patch needed)
 
-The preview and preprod indexers have a GraphQL bug with `offset: null` in latest-state queries. The default SDK `queryContractState()` without a config block hits this bug. **Always wrap `indexerPublicDataProvider` with this patch — without it, state reads will fail on these networks.**
+Earlier versions of this skill wrapped `indexerPublicDataProvider` to dodge an `offset: null` GraphQL bug on the hosted indexers. **Delete that wrapper.** Indexer 4.4.101 answers no-offset queries with the latest state (verified against Preview), and Midnight.js 5 sends a nullable offset itself. Use `indexerPublicDataProvider(network.indexer)` as in §3.
+
+Reading state changed shape in 5.x. Decode the era-tagged bytes with your own runtime:
 
 ```ts
 import { ContractState } from '@midnight-ntwrk/compact-runtime';
-import { LedgerParameters, ZswapChainState } from '@midnight-ntwrk/ledger-v8';
 
-export function createPatchedPublicDataProvider(queryUrl: string, subscriptionUrl: string) {
-  const base = indexerPublicDataProvider(queryUrl, subscriptionUrl);
-
-  async function queryLatest(query: string, address: string) {
-    const res = await fetch(queryUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ query, variables: { address } }),
-    });
-    if (!res.ok) throw new Error(`Indexer HTTP error: ${res.status}`);
-    const payload = await res.json();
-    if (payload.errors?.length) throw new Error(payload.errors.map((e: any) => e.message).join('; '));
-    return payload.data?.contractAction ?? null;
-  }
-
-  return {
-    ...base,
-    async queryContractState(contractAddress: string, config?: any) {
-      if (config) return base.queryContractState(contractAddress, config);
-
-      const action = await queryLatest(`
-        query LATEST_CONTRACT_STATE($address: HexEncoded!) {
-          contractAction(address: $address) { state }
-        }`, contractAddress);
-      return action ? ContractState.deserialize(fromHex(action.state)) : null;
-    },
-    async queryZSwapAndContractState(contractAddress: string, config?: any) {
-      if (config) return base.queryZSwapAndContractState(contractAddress, config);
-
-      const action = await queryLatest(`
-        query LATEST_BOTH_STATE($address: HexEncoded!) {
-          contractAction(address: $address) {
-            state
-            zswapState
-            transaction { block { ledgerParameters } }
-          }
-        }`, contractAddress);
-
-      if (!action?.zswapState) return null;
-      return [
-        ZswapChainState.deserialize(fromHex(action.zswapState)),
-        ContractState.deserialize(fromHex(action.state)),
-        action.transaction?.block?.ledgerParameters
-          ? LedgerParameters.deserialize(fromHex(action.transaction.block.ledgerParameters))
-          : LedgerParameters.initialParameters(),
-      ];
-    },
-  };
-}
+const read = await session.providers.publicDataProvider.queryContractState(contractAddress);
+const state = read ? yourLedger(read.contractState.deserialize({ v9: ContractState }).data) : null;
 ```
+
+Indexer endpoints: preview is `https://indexer.preview.midnight.network/api/v4/graphql`; preprod/mainnet are Blockfrost (`?project_id=<token>`). In a browser dApp, take the endpoints from the wallet (`dappConnectorNetwork`) rather than hardcoding them.
 
 ---
 
-## 5) Private State Provider (In-Memory)
+## 5) Private State Provider
 
-Sufficient for most dApps. Private state does not persist across page reloads — this is intentional for a minimal reference implementation. For production persistence, replace with `localStorage` or an encrypted server store.
+`PrivateStateProvider` is per-contract in Midnight.js 5 (`provider.forContract(address).get/set`). The old in-memory object with `setContractAddress()` no longer satisfies the interface. Use `levelPrivateStateProvider`, which uses IndexedDB in the browser:
 
 ```ts
-export function createPrivateStateProvider() {
-  let scope = '';
-  const stateStore = new Map<string, unknown>();
-  const signingKeyStore = new Map<string, unknown>();
-  const key = (id: string) => `${scope}:${id}`;
-
-  return {
-    setContractAddress(address: string) { scope = address; },
-    async set(id: string, state: unknown) { stateStore.set(key(id), state); },
-    async get(id: string) { return stateStore.get(key(id)) ?? null; },
-    async remove(id: string) { stateStore.delete(key(id)); },
-    async clear() { stateStore.clear(); },
-    async setSigningKey(addr: string, k: unknown) { signingKeyStore.set(addr, k); },
-    async getSigningKey(addr: string) { return signingKeyStore.get(addr) ?? null; },
-    async removeSigningKey(addr: string) { signingKeyStore.delete(addr); },
-    async clearSigningKeys() { signingKeyStore.clear(); },
-    async exportPrivateStates(): Promise<never> { throw new Error('Not implemented.'); },
-    async importPrivateStates(): Promise<never> { throw new Error('Not implemented.'); },
-    async exportSigningKeys(): Promise<never> { throw new Error('Not implemented.'); },
-    async importSigningKeys(): Promise<never> { throw new Error('Not implemented.'); },
-  };
-}
+levelPrivateStateProvider({
+  accountId: unshieldedAddress,                     // scope the store per wallet account
+  privateStoragePasswordProvider: async () => password, // ≥16 chars, 3 character classes
+});
 ```
+
+The template uses a random password kept in `localStorage`, which is demo-grade. Production apps should ask the user or derive the password from wallet-held material. Use one database per browser tab.
 
 ---
 
 ## 6) Deploy & Call Contracts
 
-Replace `YourContract`, `your-contract`, and `yourCircuit` with your actual names.
+Replace `YourContract`, `your-contract`, and `yourCircuit` with your actual names. Type the providers to your contract; no `as any` needed.
 
 ```ts
-import { CompiledContract } from '@midnight-ntwrk/compact-js';
-import { deployContract, submitCallTx } from '@midnight-ntwrk/midnight-js-contracts';
-import { Contract } from './your-compiled-contract'; // generated by `compact` compiler
+import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import { CompiledYourContract, type YourContract, type YourPrivateState } from '../contract/src/index';
 
-// Build the compiled contract handle (do this once, cache it)
-function getCompiledContract() {
-  return CompiledContract.make('YourContract', Contract).pipe(
-    CompiledContract.withVacantWitnesses,
-    CompiledContract.withCompiledFileAssets('./contract/your-contract'),
-  ) as any; // TypeScript: compiled contract generics are too narrow; cast is safe at runtime
-}
+const PRIVATE_STATE_ID = 'yourPrivateState';
+type YourProviders = MidnightProviders<ProvableCircuitId<YourContract>, typeof PRIVATE_STATE_ID, YourPrivateState>;
+const providersFor = (s: ConnectedSession) => s.providers as unknown as YourProviders;
 
-// Call any circuit by name
-async function callCircuit(
-  session: ConnectedSession,
-  contractAddress: string,
-  circuitId: string,
-  args: any[],
-) {
-  const compiledContract = getCompiledContract();
-  const result = await submitCallTx(session.providers as any, {
-    compiledContract,
-    contractAddress,
-    circuitId,
-    args,
+export async function deploy(session: ConnectedSession, initialPrivateState: YourPrivateState) {
+  const deployed = await deployContract(providersFor(session), {
+    compiledContract: CompiledYourContract,
+    privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState,
+    // args: [...] for constructor parameters
   });
-  console.log('Tx hash:', result.public.txHash);
-  return result;
+  return deployed.deployTxData.public.contractAddress;
+}
+
+export async function callYourCircuit(session: ConnectedSession, contractAddress: string, ...args: any[]) {
+  const contract = await findDeployedContract(providersFor(session), {
+    compiledContract: CompiledYourContract,
+    contractAddress,
+    privateStateId: PRIVATE_STATE_ID,
+  });
+  return contract.callTx.yourCircuit(...args);
 }
 ```
 
-> ⚠️ **Do not use `deployContract()` for deploy on preprod/preview.** `deployContract` calls `watchForTxData` internally, which polls the indexer until the transaction is indexed — on preprod this can take 30–120s with no feedback, and will hang indefinitely if the indexer lags. **Use the low-level `createUnprovenDeployTx` + `submitTxAsync` pattern in §8 instead.** The contract address is available from `deployTxData.public.contractAddress` immediately, before any submission. `submitTxAsync` skips the blocking `watchForTxData` call entirely.
+`CompiledYourContract` is built in `contract/src/index.ts` with `CompiledContract` from **`@midnight-ntwrk/compact-js`**. Keep `node:path` out of the browser bundle (see `references/midnight-session.md`).
+
+`deployContract` / `callTx` wait for the transaction to be indexed and store private state for you. If you need the address immediately and want to show progress while the indexer catches up, use the non-blocking path in §8.
 
 ---
 
-## 7) Transaction Flow (Dust-Free)
+## 7) Transaction Flow
 
 ```
-dApp builds unproven tx
+dApp builds unproven tx (Midnight.js)
         ↓
-proofProvider.proveTx()  →  1AM / ProofStation  →  ZK proof  (~2–5s)
+proofProvider.proveTx()       →  wallet getProvingProvider()   →  ZK proofs
         ↓
-walletProvider.balanceTx()  →  api.balanceUnsealedTransaction()  →  server adds dust fees
+walletProvider.balanceTx()    →  api.balanceUnsealedTransaction() →  wallet adds inputs + DUST fees
         ↓
-midnightProvider.submitTx()  →  api.submitTransaction()  →  Midnight chain
-
-Total user cost: 0 NIGHT, 0 dust.
+midnightProvider.submitTx()   →  api.submitTransaction()        →  Midnight chain
 ```
 
-`balanceUnsealedTransaction` is where ProofStation's server wallet pays fees on behalf of the user. **Never skip it.**
+`balanceUnsealedTransaction` (option `payFees`, default `true`) is where fees are paid: from the user's DUST, or by 1AM's sponsorship where 1AM offers it. Never skip it. The connector takes no TTL, so the wallet chooses the expiry of the intents it adds, and `providers.config.ttlSeconds` doesn't apply to them. Wallet errors carry a connector `code` (`Rejected`, `InsufficientFunds` (new in 4.1.0), `Disconnected`, …). `deployContract` / `callTx` wrap them in `ProviderFailedError`, which drops that `code`.
 
 ---
 
-## 8) Low-Level Deploy + Call (with Indexer Polling)
+## 8) Non-Blocking Deploy + Call (low level)
 
-Use these when you need finer control than `deployContract` / `submitCallTx` — e.g. saving private state, waiting for indexer confirmation, or updating UI after the transaction lands.
-
-### Deploy with Private State Persistence
+Use these when you need the contract address before the transaction is indexed, or want to drive your own progress UI. **`submitTxAsync` does not persist private state or the signing key.** You must do that yourself, or later calls won't find them. Type-checked against Midnight.js 5.0.2:
 
 ```ts
-import { createUnprovenDeployTx, submitTxAsync } from '@midnight-ntwrk/midnight-js-contracts';
 import { sampleSigningKey } from '@midnight-ntwrk/compact-runtime';
+import { createUnprovenDeployTx, submitTxAsync, submitCallTxAsync } from '@midnightntwrk/midnight-js-contracts';
 
-async function deployAndPersist(
-  session: ConnectedSession,
-  constructorArgs: any[],
-  onDeployed?: (address: string) => Promise<void>,
-): Promise<string> {
-  const compiledContract = getCompiledContract();
+export async function deployNonBlocking(session: ConnectedSession, initialPrivateState: YourPrivateState) {
+  const providers = providersFor(session);
+  const deployTxData = await createUnprovenDeployTx(providers, {
+    compiledContract: CompiledYourContract,
+    initialPrivateState,
+    signingKey: sampleSigningKey(),            // contract maintenance authority key
+  });
+  const contractAddress = deployTxData.public.contractAddress;   // known before submission
+  const txId = await submitTxAsync(providers, { unprovenTx: deployTxData.private.unprovenTx });
 
-  const deployTxData = await createUnprovenDeployTx(
-    { zkConfigProvider: session.providers.zkConfigProvider, walletProvider: session.providers.walletProvider },
-    { compiledContract, args: constructorArgs, signingKey: sampleSigningKey() },
-  );
+  // submitTxAsync does NOT store these — do it yourself:
+  await providers.privateStateProvider.forContract(contractAddress).set(PRIVATE_STATE_ID, initialPrivateState);
+  await providers.privateStateProvider.setSigningKey(contractAddress, deployTxData.private.signingKey);
 
-  const contractAddress = deployTxData.public.contractAddress;
-
-  await submitTxAsync(session.providers, { unprovenTx: deployTxData.private.unprovenTx });
-
-  // Persist private state so subsequent circuit calls can find it
-  await session.providers.privateStateProvider.setContractAddress(contractAddress);
-  await session.providers.privateStateProvider.setSigningKey(contractAddress, deployTxData.private.signingKey);
-
-  // Optional: persist to your backend
-  await onDeployed?.(contractAddress);
-
-  await waitForContractDeployment(session.providers.publicDataProvider, contractAddress);
-  return contractAddress;
+  return { contractAddress, finalized: providers.publicDataProvider.watchForTxData(txId) };
 }
-```
 
-### Call a Circuit with State Change Polling
-
-```ts
-import { createUnprovenCallTx } from '@midnight-ntwrk/midnight-js-contracts';
-
-async function callAndWait(
-  session: ConnectedSession,
-  contractAddress: string,
-  circuitId: string,
-  args: any[],
-  // Provide a predicate that returns true when the indexed state has advanced past the pre-call snapshot
-  hasStateAdvanced: (publicDataProvider: any) => Promise<boolean>,
-): Promise<string> {
-  const compiledContract = getCompiledContract();
-
-  const callTxData = await createUnprovenCallTx(session.providers, {
-    compiledContract,
+export async function callNonBlocking(session: ConnectedSession, contractAddress: string, ...args: any[]) {
+  const providers = providersFor(session);
+  const { txId } = await submitCallTxAsync(providers, {
+    compiledContract: CompiledYourContract,
     contractAddress,
-    circuitId,
+    circuitId: 'yourCircuit',
     args,
+    privateStateId: PRIVATE_STATE_ID,
   });
-
-  const txId = await submitTxAsync(session.providers, {
-    unprovenTx: callTxData.private.unprovenTx,
-    circuitId,
-  });
-
-  await waitForStateAdvance(session.providers.publicDataProvider, hasStateAdvanced);
-  return txId;
+  return providers.publicDataProvider.watchForTxData(txId);   // resolves once indexed
 }
 ```
 
 ---
 
-## 9) Polling Helpers
+## 9) Waiting for State
+
+Midnight.js 5 has watchers, so hand-rolled polling loops are rarely needed:
 
 ```ts
-// Wait until a newly deployed contract appears in the indexer
-export async function waitForContractDeployment(
-  publicDataProvider: ReturnType<typeof createPatchedPublicDataProvider>,
+import { ContractState } from '@midnight-ntwrk/compact-runtime';
+
+// Wait for a newly deployed contract to be indexed
+await session.providers.publicDataProvider.watchForDeployTxData(contractAddress);
+
+// Wait for a submitted transaction
+await session.providers.publicDataProvider.watchForTxData(txId);
+
+// Poll until a predicate on the decoded ledger holds
+export async function waitForLedger<T>(
+  session: ConnectedSession,
   contractAddress: string,
+  readLedger: (data: ReturnType<typeof ContractState.deserialize>['data']) => T,
+  done: (ledger: T) => boolean,
   pollIntervalMs = 2000,
-  maxAttempts = 30,
-): Promise<void> {
+  maxAttempts = 60,
+): Promise<T> {
   for (let i = 0; i < maxAttempts; i++) {
-    const state = await publicDataProvider.queryContractState(contractAddress);
-    if (state?.data) return;
-    await new Promise(r => setTimeout(r, pollIntervalMs));
+    const read = await session.providers.publicDataProvider.queryContractState(contractAddress);
+    if (read) {
+      const ledger = readLedger(read.contractState.deserialize({ v9: ContractState }).data);
+      if (done(ledger)) return ledger;
+    }
+    await new Promise((r) => setTimeout(r, pollIntervalMs));
   }
-  throw new Error(`Contract not indexed after ${maxAttempts * pollIntervalMs}ms — check address or indexer lag`);
+  throw new Error(`State did not reach the expected value after ${(maxAttempts * pollIntervalMs) / 1000}s`);
 }
-
-// Wait until a caller-supplied predicate signals that state has advanced
-// The predicate receives publicDataProvider so it can query whatever ledger field is relevant
-export async function waitForStateAdvance(
-  publicDataProvider: ReturnType<typeof createPatchedPublicDataProvider>,
-  hasAdvanced: (provider: typeof publicDataProvider) => Promise<boolean>,
-  pollIntervalMs = 2000,
-  maxAttempts = 30,
-): Promise<void> {
-  for (let i = 0; i < maxAttempts; i++) {
-    if (await hasAdvanced(publicDataProvider)) return;
-    await new Promise(r => setTimeout(r, pollIntervalMs));
-  }
-  throw new Error(`State did not advance after ${maxAttempts * pollIntervalMs}ms`);
-}
-```
-
-**Usage example** — pass a predicate that captures a pre-call snapshot:
-
-```ts
-const stateBefore = await getRelevantLedgerValue(session, contractAddress);
-
-await callAndWait(session, contractAddress, 'increment', [arg1], async (provider) => {
-  const contractState = await provider.queryContractState(contractAddress);
-  if (!contractState?.data) return false;
-  // Always pass contractState.data (ChargedState) to your ledger() function, not contractState itself
-  const current = yourLedgerReader(contractState.data).someField;
-  return current !== stateBefore;
-});
 ```
 
 ---
@@ -631,7 +535,8 @@ This is a minimal template. Replace `YourState`, `yourLedger`, and circuit names
 // hooks/useContract.ts
 import { useCallback, useEffect, useState } from 'react';
 import { useWallet } from '../contexts/WalletContext';
-import { waitForContractDeployment, waitForStateAdvance } from '../lib/midnight';
+import { ContractState } from '@midnight-ntwrk/compact-runtime';
+import { callNonBlocking, waitForLedger } from '../lib/midnight';
 
 export function useContract(contractAddress: string | null) {
   const { session } = useWallet();
@@ -641,12 +546,11 @@ export function useContract(contractAddress: string | null) {
 
   const fetchState = useCallback(async () => {
     if (!session || !contractAddress) return;
-    const contractState = await session.providers.publicDataProvider.queryContractState(contractAddress);
-    // ⚠️ Pass contractState.data (a ChargedState), NOT the ContractState itself.
-    // The compiled contract's ledger() function expects a ChargedState and accesses .state on it.
-    // Passing a raw ContractState (from ContractState.deserialize) will fail with
-    // "expected instance of ChargedState" because ContractState has no .state property.
-    if (contractState?.data) setContractState(yourLedger(contractState.data));
+    const read = await session.providers.publicDataProvider.queryContractState(contractAddress);
+    // Midnight.js 5 returns era-tagged bytes. Decode with YOUR compact-runtime copy, then pass
+    // .data (a ChargedState) to ledger() — passing the ContractState itself fails with
+    // "expected instance of ChargedState".
+    if (read) setContractState(yourLedger(read.contractState.deserialize({ v9: ContractState }).data));
   }, [session, contractAddress]);
 
   useEffect(() => { fetchState(); }, [fetchState]);
@@ -658,18 +562,8 @@ export function useContract(contractAddress: string | null) {
     try {
       const snapshotBefore = contractState?.someField;
 
-      const callTxData = await createUnprovenCallTx(session.providers, {
-        compiledContract: getCompiledContract(),
-        contractAddress,
-        circuitId: 'someCircuit',
-        args,
-      });
-      await submitTxAsync(session.providers, { unprovenTx: callTxData.private.unprovenTx, circuitId: 'someCircuit' });
-
-      await waitForStateAdvance(session.providers.publicDataProvider, async (provider) => {
-        const s = await provider.queryContractState(contractAddress);
-        return s?.data ? yourLedger(s.data).someField !== snapshotBefore : false;
-      });
+      await callNonBlocking(session, contractAddress, ...args);   // resolves once indexed
+      await waitForLedger(session, contractAddress, yourLedger, (l) => l.someField !== snapshotBefore);
 
       // Optimistic local update (optional — feels instant)
       setContractState(prev => prev ? { ...prev /* apply expected delta */ } : prev);
@@ -694,7 +588,7 @@ Key design points:
 
 ## 11) Optional: Payload Encryption
 
-Encrypt on-chain strings using a key derived deterministically from a wallet signature. Requires `api.signData`.
+Encrypt on-chain strings using a key derived from a wallet signature. Requires `api.signData`. In DApp Connector 4.x it takes `{ encoding, keyType: 'unshielded' }` and returns a `Signature` **object** (`{ scheme, data, signature, verifyingKey }`), not a string. Key derivation is only stable if the wallet's signature is **deterministic** for the same message. 4.1.0 wallets may sign with `ecdsa_secp256k1_sha256` or `schnorr_bip340`, so the helper checks determinism before deriving.
 
 ```ts
 // src/lib/encryption.ts
@@ -703,11 +597,15 @@ Encrypt on-chain strings using a key derived deterministically from a wallet sig
 // Key is deterministic: same wallet + same contract = same key across sessions.
 export async function deriveContractKey(api: any, networkId: string, contractAddress: string): Promise<CryptoKey> {
   const message = `midnight-app-key|${networkId}|${contractAddress}`;
-  const signature = await api.signData(message, { encoding: 'text' });
-  if (!signature) throw new Error('signData returned empty — cannot derive encryption key');
+  const sign = () => api.signData(message, { encoding: 'text', keyType: 'unshielded' });
+  const [first, second] = [await sign(), await sign()];
+  if (!first?.signature) throw new Error('signData returned no signature — cannot derive encryption key');
+  if (first.signature !== second.signature) {
+    throw new Error(`Wallet signatures are not deterministic (${first.scheme ?? 'unknown scheme'}); derive the key another way`);
+  }
 
   const keyMaterial = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(signature), 'HKDF', false, ['deriveKey'],
+    'raw', new TextEncoder().encode(first.signature), 'HKDF', false, ['deriveKey'],
   );
   return crypto.subtle.deriveKey(
     {
@@ -786,20 +684,11 @@ const nextConfig = {
 export default nextConfig;
 ```
 
-**3. Disable Turbopack** — Next.js 15+ enables Turbopack by default. Custom webpack config requires webpack mode:
+**3. Webpack, not Turbopack.** Next 15 builds with webpack by default (`next dev`, `next build`). On Next 16, add `--webpack`. The flag doesn't exist in Next 15.5 and makes the command fail there. You cannot use custom webpack experiments and Turbopack together.
 
-```json
-// package.json
-{
-  "scripts": {
-    "dev": "next dev --webpack"
-  }
-}
-```
+**4. Never prerender the wallet UI.** `level` resolves to a native module on the server, so load the client component from a `'use client'` page with `dynamic(() => import('./YourClient'), { ssr: false })`. Otherwise `next build` fails with `No native build was found … classic-level`.
 
-Or if using Next.js config-based Turbopack opt-in, explicitly set `turbopack: {}` only when not using custom webpack experiments. **You cannot use both simultaneously.**
-
-**TypeScript casts** — SDK generics don't compose cleanly with compiled contract output. Use `as any` on `createUnprovenDeployTx`, `submitTxAsync`, and `submitCallTx` call sites. The types are correct at runtime; the static generics are too narrow for the compiler-generated contract shape. `FetchZkConfigProvider<any>` is the correct annotation.
+**TypeScript** — no `as any` needed with Midnight.js 5. Type the compiled contract (`CompiledContract.make<Contract<YourPrivateState>>(...)`) and narrow the session's providers to `MidnightProviders<ProvableCircuitId<YourContract>, Id, YourPrivateState>` (see §6). The old casts hid real argument-shape bugs.
 
 ---
 
@@ -809,12 +698,17 @@ Compiled contracts produce assets that must be served over HTTP with CORS enable
 
 ```
 your-server.com/<zk-path>/
+  compiler/
+    contract-manifest.json  # integrity manifest — REQUIRED by FetchZkConfigProvider (compactc ≥0.33)
+    contract-info.json      # declares runtime-version
   keys/
     circuitName.prover      # 2–10 MB each
     circuitName.verifier    # ~2 KB each
   zkir/
-    circuitName.bzkir       # 1–3 KB each
+    circuitName.bzkir       # ZKIR v3
 ```
+
+Without `compiler/`, every contract operation fails with `EraMismatchError: artifact-era-undeclared`.
 
 Required header: `Access-Control-Allow-Origin: *`
 
@@ -823,7 +717,7 @@ For local Vite development, sync assets into `public/` with an npm script:
 ```json
 {
   "scripts": {
-    "sync:zk": "mkdir -p public/contract/your-contract && cp -r contracts/managed/your-contract/keys public/contract/your-contract/ && cp -r contracts/managed/your-contract/zkir public/contract/your-contract/"
+    "sync:zk": "mkdir -p public/zk/your-contract && cp -r contracts/managed/your-contract/compiler contracts/managed/your-contract/keys contracts/managed/your-contract/zkir public/zk/your-contract/"
   }
 }
 ```
@@ -842,8 +736,11 @@ The 1AM wallet calls ProofStation internally via `balanceUnsealedTransaction`. Y
 | `/prove` | POST | Generate ZK proof |
 | `/verify` | POST | Verify a ZK proof |
 | `/prove-and-balance` | POST | Prove + balance in one call |
-| `/balance-only` | POST | Balance a pre-proven tx |
-| `/wallet-status` | GET | Sponsorship wallet dust balance |
+| `/balance` | POST | Balance a pre-proven tx |
+| `/check` | POST | Check a proof preimage |
+| `/wallet-status` | GET | Sponsorship wallet DUST balance |
+
+(Endpoint list as reported by the preview server's own 404 hint on 21 Nov 2026; `/health` responded. 1AM's sponsorship policy after the Ledger 9 DUST reset is not something this skill can verify; check 1AM's docs.)
 
 Base URLs:
 - Preview: `https://api-preview.1am.xyz`
@@ -858,11 +755,11 @@ Auth: `X-API-Key: pk_live_xxx` (only needed for direct calls — prefer routing 
 
 | Network | Use for | Indexer | RPC |
 |---|---|---|---|
-| `preview` | Active development | `indexer.preview.midnight.network` | `rpc.preview.midnight.network` |
-| `preprod` | Pre-release testing | `indexer.preprod.midnight.network` | `rpc.preprod.midnight.network` |
-| `mainnet` | Production | `indexer.mainnet.midnight.network` | `rpc.mainnet.midnight.network` |
+| `preview` | Active development | `indexer.preview.midnight.network/api/v4/graphql` | `rpc.preview.midnight.network` |
+| `preprod` | Pre-release testing | Blockfrost `midnight-preprod.blockfrost.io/api/v0?project_id=…` | Blockfrost `rpc.midnight-preprod.blockfrost.io` |
+| `mainnet` | Production | Blockfrost `midnight-mainnet.blockfrost.io/api/v0?project_id=…` | Blockfrost `rpc.midnight-mainnet.blockfrost.io` |
 
-Use `preview` during development. `getConfiguration()` returns the correct URLs for whichever network the user has selected in the wallet — always use those values dynamically; never hardcode them.
+The old `indexer.preprod/mainnet.midnight.network` hosts return 410 (retired 9 Oct 2026). **Preview relaunched as a new chain on 7 Nov 2026**: old contract addresses and balances are gone, so redeploy, re-request tNIGHT and re-register DUST. Preprod upgraded in place on 9 Nov 2026 (non-cNIGHT DUST registrations cleared). Use `preview` during development, and always take endpoints from the wallet (`dappConnectorNetwork(api)`); never hardcode them.
 
 ---
 
@@ -874,13 +771,13 @@ Use `preview` during development. `getConfiguration()` returns the correct URLs 
 |---|---|---|
 | `connect(networkId)` | `ConnectedAPI` | `'preview'` \| `'preprod'` \| `'mainnet'` |
 | `name` | `string` | `'1AM'` |
-| `apiVersion` | `string` | `'4.0.0'` |
+| `apiVersion` | `string` | Connector spec version the wallet implements (`'4.1.0'` for current wallets); check it at runtime |
 
 ### ConnectedAPI
 
 | Method | Returns | Notes |
 |---|---|---|
-| `getConfiguration()` | `{ networkId, indexerUri, indexerWsUri, proverServerUri, substrateNodeUri }` | Source of truth for all URLs — always use dynamically |
+| `getConfiguration()` | `{ networkId, indexerUri, indexerWsUri, proverServerUri?, substrateNodeUri }` | Source of truth for URLs; `dappConnectorNetwork(api)` wraps it |
 | `getShieldedAddresses()` | `{ shieldedAddress, shieldedCoinPublicKey, shieldedEncryptionPublicKey }` | |
 | `getUnshieldedAddress()` | `{ unshieldedAddress }` | |
 | `getDustAddress()` | `{ dustAddress }` | |
@@ -888,10 +785,13 @@ Use `preview` during development. `getConfiguration()` returns the correct URLs 
 | `getUnshieldedBalances()` | `Record<string, bigint>` | |
 | `getDustBalance()` | `{ balance, cap }` | |
 | `getProvingProvider(zkConfigProvider)` | `ProvingProvider` | Pass your `FetchZkConfigProvider` |
-| `balanceUnsealedTransaction(hex)` | `{ tx: string }` | Adds dust fees — never skip |
-| `submitTransaction(hex)` | `string \| void` | Returns txId or void |
-| `signData(data, options)` | `string` | Signature for key derivation |
-| `makeTransfer(outputs)` | `{ tx }` | Token transfer |
+| `balanceUnsealedTransaction(hex, { payFees? })` | `{ tx: string }` | Adds inputs + DUST fees — never skip |
+| `submitTransaction(hex)` | `void` | Midnight.js reads the tx id from the transaction itself |
+| `signData(data, { encoding, keyType: 'unshielded' })` | `{ scheme?, data, signature, verifyingKey }` | 4.1.0 adds ECDSA (`ecdsa_secp256k1_sha256`) alongside `schnorr_bip340` |
+| `makeTransfer(outputs, { payFees? })` | `{ tx }` | Token transfer |
+| `getTxHistory(page, size)` / `hintUsage(methods)` | | Optional helpers |
+
+Errors carry a `code` from `ErrorCodes`: `InternalError`, `Rejected`, `InvalidRequest`, `PermissionRejected`, `Disconnected`, `InsufficientFunds` (new in 4.1.0).
 
 ---
 
@@ -900,17 +800,17 @@ Use `preview` during development. `getConfiguration()` returns the correct URLs 
 | Pitfall | Fix |
 |---|---|
 | Missing `padStart(2, '0')` in `toHex` | Single-digit hex bytes corrupt the transaction. Always use it. |
-| `setNetworkId()` not called first | Call it immediately after `getConfiguration()`. Missing it causes silent type mismatches throughout the SDK. |
+| Importing `setNetworkId` / `midnight-js-network-id` | Removed in Midnight.js 5. The network id lives in `providers.config`, from `dappConnectorNetwork(api)`. |
 | `0x` prefix not stripped in `fromHex` | The wallet may return hex with or without `0x`. The `fromHex` helper above handles both. |
-| Using `deployContract()` on preprod/preview | It calls `watchForTxData` and blocks for 30–120s with no feedback. Use `createUnprovenDeployTx` + `submitTxAsync` instead (§8). |
-| Using `createProofProvider()` from `@midnight-ntwrk/midnight-js-types` | Does not pass `CostModel` correctly. Use the custom `proveTx` wrapper in §3 — call `unprovenTx.prove(provingProvider, CostModel.initialCostModel())` directly. |
-| `api.submitTransaction()` returning non-string | Normalize the return: check for string, then `.transactionId`, then `.id`, then fall back to `txHex.slice(0, 64)`. Already done in the `midnightProvider` in §3. |
-| `balanceUnsealedTransaction` returning null | Guard with `if (!balanced?.tx) throw new Error(...)` before calling `fromHex`. Already done in `walletProvider.balanceTx` in §3. |
-| Passing `ContractState` to `ledger()` instead of `ChargedState` | `queryContractState()` returns a `ContractState`. Its `.data` property is the `ChargedState` that `ledger()` expects. Always call `yourLedger(contractState.data)`, never `yourLedger(contractState)`. |
+| `deployContract()` feels slow | It waits for indexing. For immediate feedback use the non-blocking path in §8, and remember to store private state + signing key yourself. |
+| Hand-rolled `proveTx` / `balanceTx` / `submitTx` objects | Midnight.js 5 providers are era-aware (`supportedEras`). Use `dappConnectorProofProvider` / `dappConnectorWalletProviders`. |
+| Coin public key bytes all wrong / zero | The connector returns Bech32m. Use `coinPublicKeyToBytes(key, networkId)` from §3, not a hex parser. |
+| `EraMismatchError: artifact-era-undeclared` | Serve `compiler/` with your ZK assets (§13). |
+| `ledger()` fails on `queryContractState` result | 5.x returns era-tagged bytes: `yourLedger(read.contractState.deserialize({ v9: ContractState }).data)`. |
 | Reading state immediately after deploy | The indexer is not synchronous with chain finality. Always poll — never read state right after submit. |
-| ZK assets 404 | Run `sync:zk` before `npm run dev`. Vite only serves files that exist in `public/` at startup. |
-| Reusing old contract address after recompile | Any contract change regenerates the verifier key. Old addresses will fail proof verification. Always redeploy. |
+| ZK assets 404 | Run `sync:zk` (copies `compiler/`, `keys/`, `zkir/`) before `npm run dev`. Vite only serves files that exist in `public/` at startup. |
+| Reusing old contract address after recompile | Any contract change, including moving from compiler 0.31 to 0.36.x, regenerates verifier keys. Redeploy. Preview addresses from before 7 Nov 2026 are gone. |
 | Circuit too small on preview | Preview ProofStation requires minimum circuit size `k≥6`. If you see `prove: no SRS params for k=6`, add dummy ledger fields to increase circuit size as a workaround. |
 | Hardcoding indexer/RPC URLs | Always read URLs from `getConfiguration()`. Users may be on a different network than you expect. |
 | Next.js: `isomorphic-ws` / WASM / top-level await errors | See §12 for the required webpack config, WebSocket shim, and Turbopack disable instructions. |
-| TypeScript errors on SDK call sites | Use `as any` casts on `createUnprovenDeployTx`, `submitTxAsync`, `submitCallTx`, and `FetchZkConfigProvider<any>`. Types are correct at runtime; the generics are too narrow for compiler-generated contract output. |
+| TypeScript errors on SDK call sites | Type the compiled contract and narrow providers (§6) instead of casting. The errors usually point at real argument-shape bugs. |

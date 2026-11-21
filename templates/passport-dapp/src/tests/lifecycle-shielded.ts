@@ -4,7 +4,7 @@
 //   sendShielded + sendImmediateShielded + insertCoin of the change).
 
 import { firstValueFrom } from 'rxjs';
-import { rawTokenType, encodeRawTokenType } from '@midnight-ntwrk/ledger-v8';
+import { rawTokenType, encodeRawTokenType } from '@midnightntwrk/ledger-v9';
 
 import { runScenario, step, waitForLedger, sleep } from './runner.js';
 import { setupWallet, deployAccount, deployFaucet } from '../node/setup.js';

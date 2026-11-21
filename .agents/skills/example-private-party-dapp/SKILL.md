@@ -35,7 +35,7 @@ A **private party contract** lets an organizer collect RSVPs while attendee iden
 - `public/zk/private-party/` — ZK proving assets synced from contract build
 
 **Shared references** (canonical provider + troubleshooting — do not duplicate in prompts):
-- `references/gotchas.md` — preprod deploy hangs, GraphQL `offset: null`, ZK asset paths
+- `references/gotchas.md` — Ledger 9 errors (version mismatch, `EraMismatchError`, Blockfrost 410/403), ZK asset paths
 - `references/versions.json` — pinned `@midnight-ntwrk/*` versions
 
 **Primary references:**
@@ -53,8 +53,8 @@ A **private party contract** lets an organizer collect RSVPs while attendee iden
 - **Organizer becomes public** — `claimFees` calls `sendUnshielded(...)` to organizer's `UserAddress`
 - **`disclose()` is a developer assertion** — it marks values safe for public domains; it does not perform the disclosure itself
 - **`persistentCommit` output is safe on ledger without `disclose()`** — sufficiently random salt (`_secret`) required
-- Use `createUnprovenDeployTx` + `submitTxAsync` — not `deployContract()` (hangs on preprod)
-- Wrap `indexerPublicDataProvider` with patched `queryContractState` (GraphQL `offset: null` bug)
+- Use `deployContract` / `findDeployedContract` with providers typed to the contract (no `as any`)
+- Plain `indexerPublicDataProvider(network.indexer)`; the old `offset: null` patch is obsolete on indexer 4.4.101
 - Entry fee is `Uint<16>` on ledger but cast to `Uint<128>` for unshielded ops; 1 NIGHT = 1_000_000 Stars
 - Persist organizer/attendee `_secret` in `localStorage` — losing it means losing auth for that role
 - **Network: this template targets `preprod` everywhere** (wallet connect, indexer, proof server). If your deployment target is `preview`, change `DEFAULT_NETWORK` in `lib/midnight.ts` (§9) — that's the single source of truth; nothing else should hardcode a network string.
@@ -104,7 +104,7 @@ private-party-dapp/
 │       └── managed/private-party/  # compiler output (gitignored)
 ├── scripts/
 │   └── sync-zk-assets.mjs          # → public/zk/private-party/
-└── public/zk/private-party/        # keys + zkir (gitignored until sync)
+└── public/zk/private-party/        # compiler/ + keys/ + zkir/ (gitignored until sync)
 ```
 
 **Optional test harness** (official repo — not in browser template):
@@ -138,27 +138,31 @@ Browser: **1AM wallet**, network set to match `DEFAULT_NETWORK` in `lib/midnight
 
 ```json
 {
-  "name": "private-party-dapp",
+  "name": "private-party-dapp-template",
   "version": "0.1.0",
   "private": true,
+  "author": "Kali-Decoder",
   "type": "module",
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "npm run sync:assets && next build --webpack",
+    "dev": "next dev",
+    "build": "npm run sync:assets && next build",
     "compact": "npm run compact --prefix contract",
     "sync:assets": "node scripts/sync-zk-assets.mjs",
     "postinstall": "npm install --prefix contract"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.16.0",
-    "@midnight-ntwrk/compact-js": "4.0.4",
-    "@midnight-ntwrk/ledger-v8": "8.0.3",
-    "@midnight-ntwrk/midnight-js-contracts": "4.0.4",
-    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-network-id": "4.0.4",
-    "@midnight-ntwrk/midnight-js-types": "4.0.4",
-    "@midnight-ntwrk/wallet-sdk-address-format": "3.1.0",
+    "@midnight-ntwrk/compact-js": "3.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0",
+    "@midnightntwrk/dapp-connector-api": "4.1.0",
+    "@midnightntwrk/ledger-v9": "1.0.2",
+    "@midnightntwrk/midnight-js-contracts": "5.0.2",
+    "@midnightntwrk/midnight-js-dapp-connector-proof-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-fetch-zk-config-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-indexer-public-data-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-level-private-state-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-types": "5.0.2",
+    "@midnightntwrk/midnight-js-utils": "5.0.2",
+    "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -167,10 +171,7 @@ Browser: **1AM wallet**, network set to match `DEFAULT_NETWORK` in `lib/midnight
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.7.0",
-    "stream-browserify": "^3.0.0",
-    "@tailwindcss/postcss": "^4.0.0",
-    "tailwindcss": "^4.0.0"
+    "typescript": "^5.7.0"
   }
 }
 ```
@@ -186,10 +187,11 @@ Browser: **1AM wallet**, network set to match `DEFAULT_NETWORK` in `lib/midnight
   "private": true,
   "type": "module",
   "scripts": {
-    "compact": "compact compile src/private-party.compact src/managed/private-party"
+    "compact": "compact compile +0.36.1 src/private-party.compact src/managed/private-party"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.16.0"
+    "@midnight-ntwrk/compact-js": "3.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0"
   }
 }
 ```
@@ -200,7 +202,7 @@ Compile:
 
 ```bash
 npm run compact
-# → contract/src/managed/private-party/{contract,keys,zkir}/
+# → contract/src/managed/private-party/{compiler,contract,keys,zkir}/
 npm run sync:assets
 # → public/zk/private-party/
 ```
@@ -214,7 +216,7 @@ Expected circuits: `rsvp`, `startParty`, `checkIn`, `closeEntry`, `claimFees`.
 In scaffold mode, use this exactly. In tutorial mode, build it up circuit by circuit in this order: ledger declarations → constructor → `rsvp` → `startParty` → `checkIn` → `closeEntry` → `claimFees` → helper circuits.
 
 ```compact
-pragma language_version 0.23;
+pragma language_version >= 0.28.0;
 import CompactStandardLibrary;
 
 export enum PartyState {
@@ -277,7 +279,6 @@ export circuit checkIn(address: UserAddress, _secret: Bytes<32>): [] {
     assert(hashedPartyGoers.member(commitHash), "You are not on the list");
     assert(!checkedInParty.member(disclose(address)), "You have already checked in");
 
-    // Privacy boundary: unshielded payment makes guest address public
     receiveUnshielded(nativeToken(), entryFee as Uint<128>);
     checkedInParty.insert(disclose(address));
 
@@ -345,37 +346,25 @@ No witnesses — use `withVacantWitnesses`. **Use lazy `await import()` pattern*
 
 ```typescript
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
-import { sampleSigningKey, ContractState } from '@midnight-ntwrk/compact-runtime';
 
-let _contractModule: any = null;
-let _compiledContract: any = null;
-let _ledgerFn: any = null;
+export {
+  Contract,
+  ledger,
+  pureCircuits,
+  type Ledger,
+} from './managed/private-party/contract/index.js';
+import { Contract } from './managed/private-party/contract/index.js';
 
-export async function getCompiledContract(): Promise<any> {
-  if (!_compiledContract) {
-    if (!_contractModule) {
-      _contractModule = await import('./managed/private-party/contract/index.js');
-    }
-    _compiledContract = CompiledContract.make(
-      'private-party',
-      _contractModule.Contract,
-    );
-    _compiledContract = CompiledContract.withVacantWitnesses(_compiledContract);
-  }
-  return _compiledContract;
-}
+// Browser bundle: no node:path / node:url. Keys + ZKIR load through the session's FetchZkConfigProvider.
+export const zkConfigPath = '/zk/private-party';
 
-export async function getLedger(): Promise<any> {
-  if (!_ledgerFn) {
-    if (!_contractModule) {
-      _contractModule = await import('./managed/private-party/contract/index.js');
-    }
-    _ledgerFn = _contractModule.ledger;
-  }
-  return _ledgerFn;
-}
+export type PartyPrivateState = Record<string, never>;
+export type PrivatePartyContract = Contract<PartyPrivateState>;
 
-export { sampleSigningKey, ContractState };
+export const CompiledPrivatePartyContract = CompiledContract.make<PrivatePartyContract>('private-party', Contract).pipe(
+  CompiledContract.withVacantWitnesses,
+  CompiledContract.withCompiledFileAssets(zkConfigPath),
+);
 ```
 
 Key points:
@@ -390,7 +379,7 @@ Key points:
 Decode Bech32 unshielded addresses for `UserAddress` circuit args. The `{ bytes: Uint8Array }` format is required for `UserAddress` — **not** for `Bytes<32>` args, which take a raw `Uint8Array`.
 
 ```typescript
-import { MidnightBech32m, UnshieldedAddress } from '@midnight-ntwrk/wallet-sdk-address-format';
+import { MidnightBech32m, UnshieldedAddress } from '@midnightntwrk/wallet-sdk-address-format';
 
 export function bech32ToUserAddress(bech32: string, networkId: string): { bytes: Uint8Array } {
   const parsed = MidnightBech32m.parse(bech32).decode(UnshieldedAddress, networkId);
@@ -403,7 +392,7 @@ export function bech32ToUserAddress(bech32: string, networkId: string): { bytes:
 ## 8) `lib/secret.ts`
 
 ```typescript
-import { toHex, fromHex } from './midnight';
+import { fromHex, toHex } from './midnight';
 
 export function generateSecret(): Uint8Array {
   const bytes = new Uint8Array(32);
@@ -411,11 +400,18 @@ export function generateSecret(): Uint8Array {
   return bytes;
 }
 
-export function saveSecret(role: 'organizer' | 'attendee', contractAddress: string, secret: Uint8Array) {
+export function saveSecret(
+  role: 'organizer' | 'attendee',
+  contractAddress: string,
+  secret: Uint8Array,
+) {
   localStorage.setItem(`private-party:${role}:${contractAddress}`, toHex(secret));
 }
 
-export function loadSecret(role: 'organizer' | 'attendee', contractAddress: string): Uint8Array | null {
+export function loadSecret(
+  role: 'organizer' | 'attendee',
+  contractAddress: string,
+): Uint8Array | null {
   const hex = localStorage.getItem(`private-party:${role}:${contractAddress}`);
   return hex ? fromHex(hex) : null;
 }
@@ -428,176 +424,105 @@ export function loadSecret(role: 'organizer' | 'attendee', contractAddress: stri
 This is the file that causes the most real-world breakage (see §15). It is given in full here rather than as bullets — do not improvise it.
 
 ```typescript
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
+// Ledger 9 / Midnight.js 5 browser session for DApp Connector wallets (1AM, Lace).
+// Canonical copy: references/midnight-session.md. Keep the templates in sync with it.
+import type { ConnectedAPI, InitialAPI } from '@midnightntwrk/dapp-connector-api';
+import {
+  dappConnectorNetwork,
+  dappConnectorProofProvider,
+  dappConnectorWalletProviders,
+} from '@midnightntwrk/midnight-js-dapp-connector-proof-provider';
+import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
+import { FetchZkConfigProvider } from '@midnightntwrk/midnight-js-fetch-zk-config-provider';
+import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import type { MidnightNetwork } from '@midnightntwrk/midnight-js-utils';
+import { CostModel } from '@midnightntwrk/ledger-v9';
+import { ContractState } from '@midnight-ntwrk/compact-runtime';
+import { MidnightBech32m, ShieldedCoinPublicKey } from '@midnightntwrk/wallet-sdk-address-format';
 
-export type NetworkName = 'preprod' | 'preview';
-
-// Single source of truth for network — change this, not any hardcoded
-// 'preprod' string elsewhere in the app, if you target a different network.
-export const DEFAULT_NETWORK: NetworkName = 'preprod';
-
-export interface NetworkConfig {
-  networkId: NetworkName;
-  indexerUri: string;
-  indexerWsUri: string;
-  proofServerUri: string;
-}
-
-const NETWORKS: Record<NetworkName, NetworkConfig> = {
-  preprod: {
-    networkId: 'preprod',
-    indexerUri: 'https://indexer.preprod.midnight.network/api/v1/graphql',
-    indexerWsUri: 'wss://indexer.preprod.midnight.network/api/v1/graphql/ws',
-    proofServerUri: 'https://proof-server.preprod.midnight.network',
-  },
-  preview: {
-    networkId: 'preview',
-    indexerUri: 'https://indexer.preview.midnight.network/api/v1/graphql',
-    indexerWsUri: 'wss://indexer.preview.midnight.network/api/v1/graphql/ws',
-    proofServerUri: 'https://proof-server.preview.midnight.network',
-  },
+export type ConnectedSession = {
+  api: ConnectedAPI;
+  /** Network id + endpoints, read from the wallet. There is no global setNetworkId any more. */
+  network: MidnightNetwork;
+  providers: MidnightProviders;
+  unshieldedAddress: string;
+  coinPublicKeyBytes: Uint8Array;
 };
 
-export interface ConnectedSession {
-  unshieldedAddress: string;
-  config: NetworkConfig;
-  providers: {
-    walletProvider: any;
-    zkConfigProvider: any;
-    privateStateProvider: any;
-    publicDataProvider: any;
-  };
+export function fromHex(hex: string): Uint8Array {
+  const h = hex.startsWith('0x') ? hex.slice(2) : hex;
+  return Uint8Array.from(h.match(/.{1,2}/g) ?? [], (b) => parseInt(b, 16));
 }
 
 export function toHex(bytes: Uint8Array): string {
-  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export function fromHex(hex: string): Uint8Array {
-  const clean = hex.startsWith('0x') ? hex.slice(2) : hex;
-  const out = new Uint8Array(clean.length / 2);
-  for (let i = 0; i < out.length; i++) {
-    out[i] = parseInt(clean.substr(i * 2, 2), 16);
+/**
+ * Demo-grade password for the encrypted IndexedDB private-state store: random, kept in localStorage.
+ * Production apps should ask the user or derive it from wallet-held material.
+ */
+function demoStoragePassword(): Promise<string> {
+  const k = 'midnight-private-storage-password';
+  let pw = localStorage.getItem(k);
+  if (!pw) {
+    pw = `Mn-${crypto.randomUUID()}-${crypto.randomUUID()}`;
+    localStorage.setItem(k, pw);
   }
-  return out;
+  return Promise.resolve(pw);
 }
 
-// Wallet APIs return coin public keys in inconsistent shapes depending on
-// wallet version — normalize all of them to a 32-byte Uint8Array.
-export function coinPublicKeyToBytes(cpk: unknown): Uint8Array {
-  if (cpk instanceof Uint8Array) return cpk;
-  if (typeof cpk === 'string') return fromHex(cpk);
-  if (Array.isArray(cpk)) return new Uint8Array(cpk);
-  if (cpk && typeof cpk === 'object' && 'bytes' in (cpk as any)) {
-    return coinPublicKeyToBytes((cpk as any).bytes);
-  }
-  throw new Error(`Unrecognized coin public key shape: ${JSON.stringify(cpk)}`);
+export async function detectWallet(): Promise<InitialAPI> {
+  const midnight = (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight ?? {};
+  const w = midnight['1am'] ?? Object.values(midnight)[0];
+  if (!w) throw new Error('No Midnight wallet extension found');
+  return w;
 }
 
-export async function detectWallet(): Promise<any> {
-  const w = (window as any).midnight;
-  if (!w) throw new Error('No Midnight-compatible wallet found in window.midnight');
-  if (w['1am']) return w['1am'];
-  const first = Object.values(w)[0];
-  if (!first) throw new Error('window.midnight is present but empty');
-  return first;
-}
+export async function createConnectedSession(api: ConnectedAPI, zkAssetPath: string): Promise<ConnectedSession> {
+  const network = await dappConnectorNetwork(api);
+  const [{ unshieldedAddress }, shielded] = await Promise.all([
+    api.getUnshieldedAddress(),
+    api.getShieldedAddresses(),
+  ]);
 
-function createPrivateStateProvider() {
-  const store = new Map<string, unknown>();
-  const contractAddresses = new Map<string, string>();
-  const signingKeys = new Map<string, unknown>();
+  // zkAssetPath must serve compiler/ (contract-manifest.json, contract-info.json), keys/ and zkir/.
+  const zkConfigProvider = new FetchZkConfigProvider<string>(
+    new URL(zkAssetPath, window.location.origin).toString(),
+    { fetchFunc: window.fetch.bind(window) },
+  );
+  const proofProvider = await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel());
+  const { walletProvider, midnightProvider } = await dappConnectorWalletProviders(api);
+
   return {
-    async get(id: string) { return store.get(id) ?? null; },
-    async set(id: string, state: unknown) { store.set(id, state); },
-    async remove(id: string) { store.delete(id); },
-    async setContractAddress(address: string) { contractAddresses.set('__current__', address); },
-    async getContractAddress() { return contractAddresses.get('__current__') ?? null; },
-    async setSigningKey(contractAddress: string, key: unknown) { signingKeys.set(contractAddress, key); },
-    async getSigningKey(contractAddress: string) { return signingKeys.get(contractAddress) ?? null; },
-  };
-}
-
-// The default indexer provider throws on `offset: null` against the
-// preprod/preview indexer (see §15). This wraps it with a raw fetch that
-// omits the offending field.
-function createPatchedPublicDataProvider(queryUrl: string, subscriptionUrl: string) {
-  const base = indexerPublicDataProvider(queryUrl, subscriptionUrl);
-  return {
-    ...base,
-    async queryContractState(contractAddress: string) {
-      const res = await fetch(queryUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: `
-            query ContractState($address: String!) {
-              contractAction(address: $address) {
-                state
-              }
-            }
-          `,
-          variables: { address: contractAddress },
-        }),
-      });
-      const json = await res.json();
-      const state = json?.data?.contractAction?.state;
-      return state ? { state } : null;
-    },
-  };
-}
-
-export async function pollForState(
-  queryUrl: string,
-  contractAddress: string,
-  { retries = 20, delayMs = 1500 }: { retries?: number; delayMs?: number } = {},
-): Promise<string> {
-  for (let i = 0; i < retries; i++) {
-    const res = await fetch(queryUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `
-          query ContractState($address: String!) {
-            contractAction(address: $address) { state }
-          }
-        `,
-        variables: { address: contractAddress },
+    api,
+    network,
+    providers: {
+      privateStateProvider: levelPrivateStateProvider({
+        accountId: unshieldedAddress,
+        privateStoragePasswordProvider: demoStoragePassword,
       }),
-    });
-    const json = await res.json();
-    const state = json?.data?.contractAction?.state;
-    if (state) return state as string;
-    await new Promise((r) => setTimeout(r, delayMs));
-  }
-  throw new Error(`Timed out waiting for contract state at ${contractAddress}`);
+      publicDataProvider: indexerPublicDataProvider(network.indexer),
+      zkConfigProvider,
+      proofProvider,
+      walletProvider,
+      midnightProvider,
+      config: { networkId: network.networkId, ttlSeconds: 3600 },
+    },
+    unshieldedAddress,
+    // The connector returns keys in Bech32m, not hex.
+    coinPublicKeyBytes: new Uint8Array(
+      ShieldedCoinPublicKey.codec.decode(network.networkId, MidnightBech32m.parse(shielded.shieldedCoinPublicKey)).data,
+    ),
+  };
 }
 
-export async function createConnectedSession(
-  walletApi: any,
-  zkPath: string,
-  network: NetworkName = DEFAULT_NETWORK,
-): Promise<ConnectedSession> {
-  const config = NETWORKS[network];
-  const state = await walletApi.state();
-  const unshieldedAddress: string = state.address ?? state.unshieldedAddress;
-
-  const walletProvider = {
-    coinPublicKey: coinPublicKeyToBytes(state.coinPublicKey),
-    balanceTx: (tx: unknown) => walletApi.balanceTransaction(tx),
-    submitTx: (tx: unknown) => walletApi.submitTransaction(tx),
-  };
-
-  const zkConfigProvider = new FetchZkConfigProvider(zkPath);
-  const privateStateProvider = createPrivateStateProvider();
-  const publicDataProvider = createPatchedPublicDataProvider(config.indexerUri, config.indexerWsUri);
-
-  return {
-    unshieldedAddress,
-    config,
-    providers: { walletProvider, zkConfigProvider, privateStateProvider, publicDataProvider },
-  };
+/** Latest on-chain state of a contract, decoded with this app's own compact-runtime copy. */
+export async function queryLatestState(session: ConnectedSession, contractAddress: string) {
+  const read = await session.providers.publicDataProvider.queryContractState(contractAddress);
+  if (!read) return null;
+  return read.contractState.deserialize({ v9: ContractState });
 }
 ```
 
@@ -605,13 +530,20 @@ export async function createConnectedSession(
 
 ## 10) `lib/party.ts`
 
-Uses `getCompiledContract()` (lazy singleton) and the correct arg format for Compact 0.23+.
+Uses `deployContract` / `findDeployedContract` with typed providers. Argument shapes follow the generated `.d.ts`: `Bytes<32>` secrets are plain `Uint8Array`, `UserAddress` is `{ bytes }`.
 
 ```typescript
-import { createUnprovenDeployTx, submitCallTxAsync, submitTxAsync } from '@midnight-ntwrk/midnight-js-contracts';
-import { getCompiledContract, getLedger, sampleSigningKey, ContractState } from '../contract/src/index';
+import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import {
+  CompiledPrivatePartyContract,
+  ledger,
+  type PartyPrivateState,
+  type PrivatePartyContract,
+} from '../contract/src/index';
 import type { ConnectedSession } from './midnight';
-import { fromHex, pollForState } from './midnight';
+import { queryLatestState } from './midnight';
 import { bech32ToUserAddress } from './address';
 
 const PRIVATE_STATE_ID = 'PrivatePartyState';
@@ -624,6 +556,20 @@ const PARTY_STATE_NAMES = [
   'DOORS_CLOSED',
   'FEES_CLAIMED',
 ] as const;
+
+export type PartyStateName = (typeof PARTY_STATE_NAMES)[number];
+
+type PartyProviders = MidnightProviders<ProvableCircuitId<PrivatePartyContract>, typeof PRIVATE_STATE_ID, PartyPrivateState>;
+const providersFor = (session: ConnectedSession) => session.providers as unknown as PartyProviders;
+
+async function connect(session: ConnectedSession, contractAddress: string) {
+  return findDeployedContract(providersFor(session), {
+    compiledContract: CompiledPrivatePartyContract,
+    contractAddress,
+    privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState: {},
+  });
+}
 
 function setSize(value: unknown): number {
   if (typeof value === 'number') return value;
@@ -641,70 +587,68 @@ export async function deployParty(
   entryFeeStars: number,
   organizerSecret: Uint8Array,
 ): Promise<string> {
-  const cc = await getCompiledContract();
-  const deployTxData = await (createUnprovenDeployTx as any)(
-    {
-      zkConfigProvider: session.providers.zkConfigProvider,
-      walletProvider: session.providers.walletProvider,
-    },
-    {
-      compiledContract: cc,
-      args: [BigInt(partySize), BigInt(entryFeeStars), organizerSecret],
-      privateStateId: PRIVATE_STATE_ID,
-      initialPrivateState: {},
-      signingKey: sampleSigningKey(),
-    },
-  );
-
-  const contractAddress = deployTxData.public.contractAddress;
-  await (submitTxAsync as any)(session.providers, { unprovenTx: deployTxData.private.unprovenTx });
-  await session.providers.privateStateProvider.setContractAddress(contractAddress);
-  await session.providers.privateStateProvider.set(PRIVATE_STATE_ID, {});
-  await session.providers.privateStateProvider.setSigningKey(
-    contractAddress,
-    deployTxData.private.signingKey,
-  );
-  return contractAddress;
+  const deployed = await deployContract(providersFor(session), {
+    compiledContract: CompiledPrivatePartyContract,
+    args: [BigInt(partySize), BigInt(entryFeeStars), organizerSecret],
+    privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState: {},
+  });
+  return deployed.deployTxData.public.contractAddress;
 }
 
-async function call(
+export async function rsvp(
   session: ConnectedSession,
   contractAddress: string,
-  circuitId: string,
-  args: unknown[],
+  userAddress: { bytes: Uint8Array },
+  attendeeSecret: Uint8Array,
 ) {
-  const cc = await getCompiledContract();
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: cc,
-    contractAddress,
-    circuitId,
-    args,
-    privateStateId: PRIVATE_STATE_ID,
-  });
+  const party = await connect(session, contractAddress);
+  await party.callTx.rsvp(userAddress, attendeeSecret);
 }
 
-export const rsvp = (session: ConnectedSession, contractAddress: string, userAddress: { bytes: Uint8Array }, attendeeSecret: Uint8Array) =>
-  call(session, contractAddress, 'rsvp', [userAddress, attendeeSecret]);
+export async function startParty(
+  session: ConnectedSession,
+  contractAddress: string,
+  organizerSecret: Uint8Array,
+) {
+  const party = await connect(session, contractAddress);
+  await party.callTx.startParty(organizerSecret);
+}
 
-export const startParty = (session: ConnectedSession, contractAddress: string, organizerSecret: Uint8Array) =>
-  call(session, contractAddress, 'startParty', [organizerSecret]);
+export async function checkIn(
+  session: ConnectedSession,
+  contractAddress: string,
+  userAddress: { bytes: Uint8Array },
+  attendeeSecret: Uint8Array,
+) {
+  const party = await connect(session, contractAddress);
+  await party.callTx.checkIn(userAddress, attendeeSecret);
+}
 
-export const checkIn = (session: ConnectedSession, contractAddress: string, userAddress: { bytes: Uint8Array }, attendeeSecret: Uint8Array) =>
-  call(session, contractAddress, 'checkIn', [userAddress, attendeeSecret]);
+export async function closeEntry(
+  session: ConnectedSession,
+  contractAddress: string,
+  organizerSecret: Uint8Array,
+) {
+  const party = await connect(session, contractAddress);
+  await party.callTx.closeEntry(organizerSecret);
+}
 
-export const closeEntry = (session: ConnectedSession, contractAddress: string, organizerSecret: Uint8Array) =>
-  call(session, contractAddress, 'closeEntry', [organizerSecret]);
+export async function claimFees(
+  session: ConnectedSession,
+  contractAddress: string,
+  organizerAddress: { bytes: Uint8Array },
+  organizerSecret: Uint8Array,
+) {
+  const party = await connect(session, contractAddress);
+  await party.callTx.claimFees(organizerAddress, organizerSecret);
+}
 
-export const claimFees = (session: ConnectedSession, contractAddress: string, organizerAddress: { bytes: Uint8Array }, organizerSecret: Uint8Array) =>
-  call(session, contractAddress, 'claimFees', [organizerAddress, organizerSecret]);
-
-export async function decodePartyState(stateHex: string) {
-  const contractState = ContractState.deserialize(fromHex(stateHex));
-  const ledger = await getLedger();
-  const l = ledger(contractState.data) as any;
+export function decodePartyState(data: Parameters<typeof ledger>[0]) {
+  const l = ledger(data);
   const stateIdx = Number(l.partyState);
   return {
-    partyState: PARTY_STATE_NAMES[stateIdx] ?? `UNKNOWN(${stateIdx})`,
+    partyState: (PARTY_STATE_NAMES[stateIdx] ?? `UNKNOWN(${stateIdx})`) as PartyStateName | string,
     partyStateIndex: stateIdx,
     maxListSize: Number(l.maxListSize),
     entryFee: Number(l.entryFee),
@@ -713,13 +657,13 @@ export async function decodePartyState(stateHex: string) {
   };
 }
 
-export async function fetchPartyState(queryUrl: string, contractAddress: string) {
-  const hex = await pollForState(queryUrl, contractAddress);
-  return decodePartyState(hex);
+export async function fetchPartyState(session: ConnectedSession, contractAddress: string) {
+  const state = await queryLatestState(session, contractAddress);
+  return state ? decodePartyState(state.data) : null;
 }
 
 export function userAddressFromSession(session: ConnectedSession) {
-  return bech32ToUserAddress(session.unshieldedAddress, session.config.networkId);
+  return bech32ToUserAddress(session.unshieldedAddress, session.network.networkId);
 }
 ```
 
@@ -738,7 +682,7 @@ Full component — no placeholder handlers.
 ```tsx
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   checkIn,
   claimFees,
@@ -750,7 +694,7 @@ import {
   userAddressFromSession,
   ZK_PATH,
 } from '@/lib/party';
-import { createConnectedSession, detectWallet, DEFAULT_NETWORK, type ConnectedSession } from '@/lib/midnight';
+import { createConnectedSession, detectWallet, type ConnectedSession } from '@/lib/midnight';
 import { generateSecret, loadSecret, saveSecret } from '@/lib/secret';
 
 type Role = 'organizer' | 'attendee';
@@ -764,23 +708,58 @@ export default function PartyClient() {
   const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchPartyState>> | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!session || !contractAddress) return;
-    try {
-      setStatus(await fetchPartyState(session.config.indexerUri, contractAddress));
-    } catch (e) {
-      setError(String(e));
-    }
+    setStatus(await fetchPartyState(session, contractAddress));
   }, [session, contractAddress]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
-  async function guard(fn: () => Promise<void>) {
+  const organizerSecret = useMemo(
+    () => (contractAddress ? loadSecret('organizer', contractAddress) : null),
+    [contractAddress, status],
+  );
+
+  const attendeeSecret = useMemo(
+    () => (contractAddress ? loadSecret('attendee', contractAddress) : null),
+    [contractAddress, status],
+  );
+
+  async function onConnect() {
     setBusy(true);
     setError(null);
+    setMessage(null);
     try {
-      await fn();
+      const wallet = await detectWallet();
+      const api = await wallet.connect('preprod');
+      setSession(await createConnectedSession(api, ZK_PATH));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDeploy() {
+    if (!session) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const secret = generateSecret();
+      const addr = await deployParty(
+        session,
+        Number(partySize),
+        Number(entryFee),
+        secret,
+      );
+      setContractAddress(addr);
+      saveSecret('organizer', addr, secret);
+      setMessage(`Party deployed. Share this address with guests: ${addr}`);
       await refresh();
     } catch (e) {
       setError(String(e));
@@ -789,138 +768,235 @@ export default function PartyClient() {
     }
   }
 
-  const onConnect = () => guard(async () => {
-    const wallet = await detectWallet();
-    const api = await wallet.connect(DEFAULT_NETWORK);
-    setSession(await createConnectedSession(api, ZK_PATH));
-  });
-
-  const onDeploy = () => guard(async () => {
-    if (!session) return;
-    const secret = generateSecret();
-    const addr = await deployParty(session, Number(partySize), Number(entryFee), secret);
-    setContractAddress(addr);
-    saveSecret('organizer', addr, secret);
-  });
-
-  const onRsvp = () => guard(async () => {
+  async function onRsvp() {
     if (!session || !contractAddress) return;
-    let secret = loadSecret('attendee', contractAddress);
-    if (!secret) {
-      secret = generateSecret();
-      saveSecret('attendee', contractAddress, secret);
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      let secret = loadSecret('attendee', contractAddress);
+      if (!secret) {
+        secret = generateSecret();
+        saveSecret('attendee', contractAddress, secret);
+      }
+      await rsvp(session, contractAddress, userAddressFromSession(session), secret);
+      setMessage('RSVP submitted privately — your address is not on-chain yet.');
+      await refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
     }
-    await rsvp(session, contractAddress, userAddressFromSession(session), secret);
-  });
+  }
 
-  const onStartParty = () => guard(async () => {
-    if (!session || !contractAddress) return;
-    const secret = loadSecret('organizer', contractAddress);
-    if (!secret) throw new Error('No organizer secret found for this contract in this browser');
-    await startParty(session, contractAddress, secret);
-  });
+  async function onStartParty() {
+    if (!session || !contractAddress || !organizerSecret) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await startParty(session, contractAddress, organizerSecret);
+      setMessage('Party started — guests can check in.');
+      await refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
-  const onCheckIn = () => guard(async () => {
-    if (!session || !contractAddress) return;
-    const secret = loadSecret('attendee', contractAddress);
-    if (!secret) throw new Error('RSVP first — no attendee secret found for this contract');
-    await checkIn(session, contractAddress, userAddressFromSession(session), secret);
-  });
+  async function onCheckIn() {
+    if (!session || !contractAddress || !attendeeSecret) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await checkIn(session, contractAddress, userAddressFromSession(session), attendeeSecret);
+      setMessage(
+        'Checked in — unshielded entry fee paid. Your address is now public on the ledger.',
+      );
+      await refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
-  const onCloseEntry = () => guard(async () => {
-    if (!session || !contractAddress) return;
-    const secret = loadSecret('organizer', contractAddress);
-    if (!secret) throw new Error('No organizer secret found for this contract in this browser');
-    await closeEntry(session, contractAddress, secret);
-  });
+  async function onCloseEntry() {
+    if (!session || !contractAddress || !organizerSecret) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await closeEntry(session, contractAddress, organizerSecret);
+      setMessage('Doors closed.');
+      await refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
-  const onClaimFees = () => guard(async () => {
-    if (!session || !contractAddress) return;
-    const secret = loadSecret('organizer', contractAddress);
-    if (!secret) throw new Error('No organizer secret found for this contract in this browser');
-    await claimFees(session, contractAddress, userAddressFromSession(session), secret);
-  });
+  async function onClaimFees() {
+    if (!session || !contractAddress || !organizerSecret) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await claimFees(
+        session,
+        contractAddress,
+        userAddressFromSession(session),
+        organizerSecret,
+      );
+      setMessage('Fees claimed to your unshielded address.');
+      await refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const canRsvp = status?.partyState === 'NOT_STARTED';
+  const canStart =
+    status?.partyState === 'NOT_STARTED' || status?.partyState === 'READY';
+  const canCheckIn = status?.partyState === 'STARTED' && Boolean(attendeeSecret);
+  const canClose = status?.partyState === 'STARTED' && Boolean(organizerSecret);
+  const canClaim = status?.partyState === 'DOORS_CLOSED' && Boolean(organizerSecret);
 
   return (
-    <div className="mx-auto max-w-xl p-6 text-zinc-100">
-      <h1 className="text-2xl font-semibold">Private Party</h1>
-      <p className="mt-1 text-muted">Attendees stay private until check-in pays unshielded NIGHT.</p>
+    <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720, margin: '2rem auto', padding: '0 1rem' }}>
+      <h1>Private Party</h1>
+      <p>
+        Attendees RSVP privately. Checking in pays unshielded NIGHT and crosses the{' '}
+        <strong>privacy boundary</strong> — guest addresses become public.
+      </p>
 
       {!session ? (
-        <button type="button" onClick={onConnect} disabled={busy}
-          className="mt-4 rounded bg-brand px-4 py-2 hover:bg-brand-hover disabled:opacity-50">
-          Connect Wallet
+        <button type="button" onClick={onConnect} disabled={busy}>
+          Connect 1AM Wallet
         </button>
       ) : (
-        <div className="mt-4 space-y-4">
-          <p className="text-sm text-muted">Connected: {session.unshieldedAddress}</p>
+        <>
+          <p>Connected: {session.unshieldedAddress}</p>
 
-          <label className="block">
-            Role
-            <select value={role} onChange={(e) => setRole(e.target.value as Role)}
-              className="ml-2 rounded border border-border bg-surface px-2 py-1 text-zinc-100">
-              <option value="organizer">Organizer</option>
-              <option value="attendee">Attendee</option>
-            </select>
-          </label>
-
-          <label className="block">
-            Contract address
-            <input value={contractAddress} onChange={(e) => setContractAddress(e.target.value.trim())}
-              placeholder="mn_contract1..."
-              className="mt-1 w-full rounded border border-border bg-surface px-2 py-1 text-zinc-100 placeholder:text-zinc-500" />
-          </label>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            <label>
+              Role{' '}
+              <select value={role} onChange={(e) => setRole(e.target.value as Role)}>
+                <option value="organizer">Organizer</option>
+                <option value="attendee">Attendee</option>
+              </select>
+            </label>
+            <label style={{ flex: 1, minWidth: 280 }}>
+              Contract address{' '}
+              <input
+                style={{ width: '100%' }}
+                value={contractAddress}
+                onChange={(e) => setContractAddress(e.target.value.trim())}
+                placeholder="Paste deployed contract address"
+              />
+            </label>
+          </div>
 
           {status ? (
-            <p className="rounded border border-border bg-card p-3 text-sm">
-              State: {status.partyState} · RSVPs: {status.rsvpCount}/{status.maxListSize} ·
-              Checked in: {status.checkedInCount} · Fee: {status.entryFee} Stars
-            </p>
+            <section style={{ background: '#f4f4f5', padding: '1rem', borderRadius: 8, marginBottom: '1rem' }}>
+              <p>
+                <strong>State:</strong> {status.partyState}
+              </p>
+              <p>
+                RSVPs: {status.rsvpCount} / {status.maxListSize} · Checked in: {status.checkedInCount} ·
+                Entry fee: {status.entryFee} Stars
+              </p>
+            </section>
+          ) : contractAddress ? (
+            <p>Loading party state from indexer…</p>
           ) : null}
 
-          {role === 'organizer' && !contractAddress ? (
-            <div className="space-y-2 rounded border border-border bg-card p-3">
-              <label className="block">Max guests
-                <input value={partySize} onChange={(e) => setPartySize(e.target.value)}
-                  className="ml-2 w-20 rounded border border-border bg-surface px-2 py-1 text-zinc-100" />
-              </label>
-              <label className="block">Entry fee (Stars)
-                <input value={entryFee} onChange={(e) => setEntryFee(e.target.value)}
-                  className="ml-2 w-24 rounded border border-border bg-surface px-2 py-1 text-zinc-100" />
-              </label>
-              <button type="button" onClick={onDeploy} disabled={busy}
-                className="rounded bg-brand px-3 py-1.5 hover:bg-brand-hover disabled:opacity-50">
-                Deploy Party
+          {role === 'organizer' ? (
+            <section style={{ display: 'grid', gap: '0.75rem' }}>
+              {!contractAddress ? (
+                <>
+                  <label>
+                    Max guests{' '}
+                    <input
+                      type="number"
+                      min={1}
+                      value={partySize}
+                      onChange={(e) => setPartySize(e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Entry fee (Stars){' '}
+                    <input
+                      type="number"
+                      min={1}
+                      value={entryFee}
+                      onChange={(e) => setEntryFee(e.target.value)}
+                    />
+                  </label>
+                  <button type="button" onClick={onDeploy} disabled={busy}>
+                    Deploy Party Contract
+                  </button>
+                </>
+              ) : (
+                <>
+                  {organizerSecret ? (
+                    <p>Organizer secret stored in this browser.</p>
+                  ) : (
+                    <p role="alert">
+                      Organizer secret missing — deploy from this browser or you cannot manage the party.
+                    </p>
+                  )}
+                  <button type="button" onClick={onStartParty} disabled={busy || !canStart || !organizerSecret}>
+                    Start Party
+                  </button>
+                  <button type="button" onClick={onCloseEntry} disabled={busy || !canClose}>
+                    Close Doors
+                  </button>
+                  <button type="button" onClick={onClaimFees} disabled={busy || !canClaim}>
+                    Claim Fees
+                  </button>
+                </>
+              )}
+            </section>
+          ) : (
+            <section style={{ display: 'grid', gap: '0.75rem' }}>
+              <button type="button" onClick={onRsvp} disabled={busy || !contractAddress || !canRsvp}>
+                RSVP (private)
               </button>
-            </div>
-          ) : null}
-
-          {role === 'organizer' && contractAddress ? (
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={onStartParty} disabled={busy}
-                className="rounded bg-brand px-3 py-1.5 hover:bg-brand-hover disabled:opacity-50">Start party</button>
-              <button type="button" onClick={onCloseEntry} disabled={busy}
-                className="rounded bg-card border border-border px-3 py-1.5 hover:bg-[#1e1e38] disabled:opacity-50">Close doors</button>
-              <button type="button" onClick={onClaimFees} disabled={busy}
-                className="rounded bg-success px-3 py-1.5 hover:opacity-90 disabled:opacity-50">Claim fees</button>
-            </div>
-          ) : null}
-
-          {role === 'attendee' && contractAddress ? (
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={onRsvp} disabled={busy}
-                className="rounded bg-brand px-3 py-1.5 hover:bg-brand-hover disabled:opacity-50">RSVP</button>
-              <button type="button" onClick={onCheckIn} disabled={busy}
-                className="rounded bg-danger px-3 py-1.5 hover:opacity-90 disabled:opacity-50">
-                Check in (pays {status?.entryFee ?? '?'} Stars — becomes public)
+              {attendeeSecret ? (
+                <p>Attendee secret stored — use the same browser to check in.</p>
+              ) : (
+                <p>RSVP generates a secret in this browser; keep it for check-in.</p>
+              )}
+              <button type="button" onClick={onCheckIn} disabled={busy || !contractAddress || !canCheckIn}>
+                Check In (pays entry fee — becomes public)
               </button>
-            </div>
-          ) : null}
-        </div>
+            </section>
+          )}
+
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            disabled={busy || !contractAddress}
+            style={{ marginTop: '1rem' }}
+          >
+            Refresh State
+          </button>
+        </>
       )}
 
-      {error ? <p role="alert" className="mt-4 rounded border border-danger bg-[#3a1414] p-2 text-sm text-red-300">{error}</p> : null}
-    </div>
+      {message ? <p style={{ color: '#166534' }}>{message}</p> : null}
+      {error ? (
+        <p role="alert" style={{ color: '#b91c1c' }}>
+          {error}
+        </p>
+      ) : null}
+    </main>
   );
 }
 ```
@@ -940,9 +1016,11 @@ const dest = join(root, 'public/zk/private-party');
 
 rmSync(dest, { recursive: true, force: true });
 mkdirSync(dest, { recursive: true });
-for (const dir of ['keys', 'zkir']) {
+// compiler/ carries contract-manifest.json + contract-info.json; without it the provider throws EraMismatchError.
+for (const dir of ['compiler', 'keys', 'zkir']) {
   cpSync(join(src, dir), join(dest, dir), { recursive: true });
 }
+console.log('Synced ZK assets to public/zk/private-party/');
 ```
 
 Verify: `http://localhost:3000/zk/private-party/keys/rsvp.prover` returns 200.
@@ -954,29 +1032,34 @@ Verify: `http://localhost:3000/zk/private-party/keys/rsvp.prover` returns 200.
 Required — without this, webpack fails to resolve the Midnight SDK's Node built-ins and WASM.
 
 ```javascript
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        child_process: false,
+      };
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'isomorphic-ws': require.resolve('./lib/isomorphic-ws-fix.mjs'),
+      };
+    }
     config.experiments = { ...config.experiments, asyncWebAssembly: true, topLevelAwait: true };
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-      child_process: false,
-      stream: 'stream-browserify',
-    };
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'isomorphic-ws': join(process.cwd(), 'lib/isomorphic-ws-fix.mjs'),
-    };
     return config;
   },
-  // Static generation tries to resolve the SDK's Node deps and can hang the build.
-  images: { unoptimized: true },
 };
 
-import { join } from 'node:path';
 export default nextConfig;
 ```
 
@@ -1077,8 +1160,9 @@ Read `/src/test/party.test.ts` for MidnightJS provider patterns with `FluentWall
 | `Only the organizer can start` | Wrong organizer secret | Reload from `localStorage` or redeploy |
 | `Contract balance wrong` | Fee mismatch or partial check-ins | Verify `entryFee * checkedInCount` |
 | `Invalid character 'm' at position 0` | Bech32 passed as bytes | Use `bech32ToUserAddress()` |
-| Deploy hangs 30–120s | Used `deployContract()` | Use `createUnprovenDeployTx` + `submitTxAsync` |
-| GraphQL `offset: null` | Default indexer provider | Use patched `queryContractState` (§9) |
+| `Version mismatch: compiled code expects 0.21.0, runtime is 0.16.0` | Old runtime | `compact-runtime@0.21.0` + `compact compile +0.36.1` |
+| `EraMismatchError: artifact-era-undeclared` | `public/zk/...` lacks `compiler/` | Re-run `npm run sync:assets` |
+| Indexer 410 `ENDPOINT_DECOMMISSIONED` | Hardcoded old preprod host | Endpoints come from the wallet (`dappConnectorNetwork`) |
 | ZK 404 | Assets not synced | `npm run sync:assets` |
 | Lost organizer secret | No recovery on-chain | Redeploy contract; store secret in localStorage |
 | `CompiledContract.withVacantWitnesses` TypeScript error | `compact-runtime` vs `compact-js` mismatch | Import `CompiledContract` from `@midnight-ntwrk/compact-js` |

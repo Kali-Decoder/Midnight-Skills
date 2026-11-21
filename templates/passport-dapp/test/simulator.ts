@@ -8,7 +8,10 @@ import {
   createConstructorContext,
   createCircuitContext,
   sampleContractAddress,
+  type ChargedState,
   type CircuitContext,
+  type EncodedZswapLocalState,
+  type StateValue,
 } from '@midnight-ntwrk/compact-runtime';
 
 import {
@@ -37,49 +40,58 @@ export class AccountSimulator {
   readonly contract: any;
   readonly address = sampleContractAddress();
   readonly initialShares: Share[];
-  ctx: CircuitContext<AccountPrivateState>;
+  // compact-runtime 0.21 builds a fresh CircuitContext per call (circuitId is part of
+  // it, and circuits are async), so the simulator carries state between calls itself.
+  private contractState: StateValue | ChargedState;
+  private privateState: AccountPrivateState;
+  private zswapState: EncodedZswapLocalState | typeof COIN_PUBLIC_KEY;
 
-  constructor(opts: { deviceSecret: Uint8Array; recoverySecret: Uint8Array }) {
-    this.contract = new (Contract as any)(makeWitnesses());
-    this.initialShares = split(opts.recoverySecret, 2, 3);
-    const constructorCtx = createConstructorContext(
-      privateStateFromSecrets(opts),
-      COIN_PUBLIC_KEY,
+  private constructor(contract: any, shares: Share[], init: any) {
+    this.contract = contract;
+    this.initialShares = shares;
+    this.contractState = init.currentContractState.data;
+    this.privateState = init.currentPrivateState;
+    this.zswapState = init.currentZswapLocalState;
+  }
+
+  /** Runs the (async, since compact-runtime 0.21) contract constructor. */
+  static async create(opts: { deviceSecret: Uint8Array; recoverySecret: Uint8Array }): Promise<AccountSimulator> {
+    const contract = new (Contract as any)(makeWitnesses());
+    const shares = split(opts.recoverySecret, 2, 3);
+    const init = await contract.initialState(
+      createConstructorContext(privateStateFromSecrets(opts), COIN_PUBLIC_KEY),
+      deviceCommitment(opts.deviceSecret),
+      recoveryCommitment(opts.recoverySecret),
+      shares[0].value,
+      shares[1].value,
+      shares[2].value,
     );
-    const { currentContractState, currentPrivateState, currentZswapLocalState } =
-      this.contract.initialState(
-        constructorCtx,
-        deviceCommitment(opts.deviceSecret),
-        recoveryCommitment(opts.recoverySecret),
-        this.initialShares[0].value,
-        this.initialShares[1].value,
-        this.initialShares[2].value,
-      );
-    this.ctx = createCircuitContext(
-      this.address,
-      currentZswapLocalState,
-      currentContractState,
-      currentPrivateState,
-    );
+    return new AccountSimulator(contract, shares, init);
   }
 
   /** Switch the acting client: subsequent calls use these secrets. */
   as(secrets: SimulatorSecrets): this {
-    this.ctx = {
-      ...this.ctx,
-      currentPrivateState: privateStateFromSecrets(secrets),
-    };
+    this.privateState = privateStateFromSecrets(secrets);
     return this;
   }
 
-  /** Call an impure circuit; commits the resulting context on success. */
-  call(circuit: string, ...args: unknown[]): unknown {
-    const r = this.contract.impureCircuits[circuit](this.ctx, ...args);
-    this.ctx = r.context;
+  /** Call an impure circuit; commits the resulting state on success. */
+  async call(circuit: string, ...args: unknown[]): Promise<unknown> {
+    const ctx: CircuitContext<AccountPrivateState> = createCircuitContext({
+      circuitId: circuit,
+      contractAddress: this.address,
+      coinPublicKeyOrZswapState: this.zswapState,
+      contractState: this.contractState,
+      privateState: this.privateState,
+    });
+    const r = await this.contract.impureCircuits[circuit](ctx, ...args);
+    this.contractState = r.context.callContext.currentQueryContext.state;
+    this.privateState = r.context.callContext.currentPrivateState ?? this.privateState;
+    this.zswapState = r.context.callContext.currentZswapLocalState ?? this.zswapState;
     return r.result;
   }
 
   ledger(): Ledger {
-    return ledger(this.ctx.currentQueryContext.state);
+    return ledger(this.contractState);
   }
 }

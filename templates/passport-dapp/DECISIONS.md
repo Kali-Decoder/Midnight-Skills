@@ -13,6 +13,15 @@ Originally evaluated against `midnight-node:0.22.5`, `compact` 0.30.0,
 `indexer-standalone:4.3.3`, `proof-server:8.1.0`, `compact` 0.31.0
 (language 0.23, runtime 0.16.0), and `midnight-js` 4.1.1.
 
+**Ledger 9 port (2026/11/21):** moved to the Ledger 9.1 set — `compact`
+0.36.1 (language 0.28.0, runtime 0.21.0), `midnight-js` 5.0.2, Wallet SDK 2.0.1
+(`wallet-sdk-facade` 5.0.1), `ledger-v9` 1.0.2, `midnight-node:2.1.101`,
+`indexer-standalone:4.4.101`, `proof-server:9.0.2`. Contracts compile, the
+unit suite (`npm test`, 23 tests on the in-process simulator) passes, and both
+the Node code and the browser app type-check and build. The localnet lifecycle
+suites (`npm run test:*`) and the browser end-to-end demo have **not** been
+re-run on the Ledger 9 stack yet.
+
 ## C1 — Account-custody contract
 
 **Topology: one Compact contract per account (alternative A).**
@@ -97,6 +106,12 @@ guaranteed stable across Compact language versions, so ledger-stored
 commitments would not survive a toolchain upgrade. A redeploy-and-migrate
 would be needed; fine for a prototype, to be revisited when the C8 registry
 ratifies hash usage.
+
+*Ledger 9 check (2026/11/21):* recompiling `account.compact` with `compact`
+0.36.1 / runtime 0.21.0 yields the same `derive_device_commitment` and
+`derive_recovery_commitment` outputs as `compact` 0.31.0 / runtime 0.16.0 for a
+fixed secret, so existing commitments survive this particular upgrade. The
+general caveat stands for future toolchains: re-check before each upgrade.
 
 **Ad-hoc v0 tags**, pending the registry:
 `midnight:passport:device:v0`, `midnight:passport:grant:v0`,

@@ -30,8 +30,8 @@ A **privacy-preserving leaderboard** where players submit scores on-chain with t
 
 **Shared references** (canonical provider + troubleshooting — do not duplicate in prompts):
 - `references/midnight-session.md` — `createConnectedSession`, indexer patch, deploy/call helpers
-- `references/gotchas.md` — preprod deploy hangs, GraphQL `offset: null`, ZK asset paths
-- `references/versions.json` — pinned `@midnight-ntwrk/*` versions
+- `references/gotchas.md` — Ledger 9 errors (version mismatch, `EraMismatchError`, Blockfrost 410/403), ZK asset paths
+- `references/versions.json` — the Ledger 9.1 pin set (`@midnightntwrk/*` + `@midnight-ntwrk/compact-*`)
 
 **Primary references:**
 - `example-locker-dapp/` / `templates/locker-dapp/` — Next.js + 1AM pattern, low-level deploy/call
@@ -47,9 +47,9 @@ A **privacy-preserving leaderboard** where players submit scores on-chain with t
 - `useCustomName` boolean selects witness-fed name vs hash-based anonymous display name
 - `verifyOwnership` is a proof-only circuit — no ledger writes; use for "prove this is my score"
 - Persist secret key in `localStorage` so ownership proofs work after page refresh
-- Use `createUnprovenDeployTx` + `submitTxAsync` — not `deployContract()` (hangs on preprod)
-- Wrap `indexerPublicDataProvider` with patched `queryContractState` (GraphQL `offset: null` bug)
-- Leaderboard table can load from indexer **without** wallet — only submit/verify need connection
+- Use `deployContract` / `findDeployedContract` with providers typed to the contract (`templates/leaderboard-dapp/lib/leaderboard.ts`)
+- Plain `indexerPublicDataProvider(network.indexer)`; the old `offset: null` patch is obsolete on indexer 4.4.101
+- The template reads the table through the connected wallet's indexer: preprod/mainnet indexers are now Blockfrost (token required), so a no-wallet read needs your own backend proxy or a Preview-only build
 
 ---
 
@@ -189,18 +189,19 @@ Indexer-only reads mean spectators can watch the leaderboard without connecting 
 
 | Component | Version |
 |-----------|---------|
-| Compact compiler | 0.31.0 |
-| Compact runtime | 0.16.0 |
-| Ledger | 8.0.3 |
-| midnight-js | 4.0.4 |
-| proof server | 8.0.3 |
+| Compact toolchain | 0.36.1 (language 0.28.0) |
+| Compact runtime | 0.21.0 |
+| Ledger | `@midnightntwrk/ledger-v9` 1.0.2 |
+| Midnight.js | 5.0.2 |
+| DApp Connector API | 4.1.0 |
+| proof server (only if your wallet proves locally) | 9.0.2 |
 
 ```bash
-docker run -d -p 6300:6300 midnightntwrk/proof-server:8.0.3 -- \
-  midnight-proof-server --network preprod
+compact update 0.36.1
+docker run -d -p 6300:6300 midnightntwrk/proof-server:9.0.2 midnight-proof-server -v   # optional
 ```
 
-Wallet: 1AM extension on **Preprod**, proof server `http://localhost:6300`, tNIGHT + tDUST from faucet.
+Wallet: a Ledger 9 build of 1AM (or Lace) on **Preview** or **Preprod**, with tNIGHT from the faucet registered for DUST (re-register on Preprod after 9 Nov 2026; Preview relaunched on 7 Nov 2026). Template status (21 Nov 2026): contract compiles with 0.36.1, and the app type-checks and passes `next build`.
 
 ---
 

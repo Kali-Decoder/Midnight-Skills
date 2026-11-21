@@ -5,7 +5,7 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
-import { deployContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { deployContract } from '@midnightntwrk/midnight-js-contracts';
 
 import * as FaucetModule from '../../contracts/managed/faucet/contract/index.js';
 import { Contract as IdentityRegistryContract, IdentityRegistry } from '../wallet/identity.js';

@@ -37,8 +37,9 @@ A **private reserve auction contract** lets a seller hide the reserve price on-c
 - **Privacy boundary** — `claimItem` calls `receiveUnshielded(nativeToken(), publicPrice)` then `winnerClaimed.insert(disclose(address))`
 - **Seller becomes public** — `claimProceeds` calls `sendUnshielded(...)` to seller's `UserAddress`
 - **`disclose()` is a developer assertion** — it marks values safe for public domains; it does not perform the disclosure itself
-- Use `createUnprovenDeployTx` + `submitTxAsync` — not `deployContract()` (hangs on preview)
-- Wrap `indexerPublicDataProvider` with patched `queryContractState` (GraphQL `offset: null` bug)
+- Use `deployContract` / `findDeployedContract` with providers typed to the contract (Midnight.js 5)
+- Plain `indexerPublicDataProvider(network.indexer)`; the old `offset: null` patch is obsolete on indexer 4.4.101
+- **Preview relaunched as a new chain on 7 Nov 2026**: auctions and addresses stored before then are gone, so clear saved state and redeploy
 - Reserve price is `Uint<32>` on ledger (in Stars) but cast to `Uint<128>` for unshielded ops; 1 NIGHT = 1_000_000 Stars
 - UI accepts/display NIGHT; converts to Stars (×1,000,000) for contract
 - Persist seller/bidder `_secret` in `localStorage` — losing it means losing auth for that role
@@ -90,7 +91,7 @@ private-reserve-auction-dapp/
 │       ├── index.ts                # CompiledContract.withVacantWitnesses
 │       └── managed/private-reserve-auction/  # compiler output (gitignored)
 ├── scripts/
-│   └── sync-zk-assets.mjs          # → public/zk/private-reserve-auction/
+│   └── sync-zk-assets.mjs          # → public/zk/private-reserve-auction/{compiler,keys,zkir}/  (compiler/ is required by Midnight.js 5)
 └── public/zk/private-reserve-auction/        # keys + zkir (gitignored until sync)
 ```
 
@@ -102,12 +103,12 @@ private-reserve-auction-dapp/
 node --version   # 20+
 docker --version # optional local devnet tests
 
-curl --proto '=https' --tlsv1.2 -sSf \
-  https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
-source $HOME/.local/bin/env
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/midnightntwrk/compact/releases/download/compact-v0.5.1/compact-installer.sh | sh
+compact update 0.36.1      # Ledger 9.1 toolchain, language 0.28.0
 ```
 
-Browser: **1AM wallet** on `preview` with tNIGHT for bids and reserve payment.
+Browser: a **Ledger 9 build of the 1AM wallet** on `preview`, with tNIGHT (from `https://faucet.preview.midnight.network/`) registered for DUST.
 
 ---
 
@@ -127,15 +128,18 @@ Browser: **1AM wallet** on `preview` with tNIGHT for bids and reserve payment.
     "postinstall": "echo 'All deps at root level'"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-js": "^2.5.0",
-    "@midnight-ntwrk/compact-runtime": "0.16.0",
-    "@midnight-ntwrk/ledger-v8": "8.0.3",
-    "@midnight-ntwrk/midnight-js-contracts": "4.0.4",
-    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-network-id": "4.0.4",
-    "@midnight-ntwrk/midnight-js-types": "4.0.4",
-    "@midnight-ntwrk/wallet-sdk-address-format": "3.1.0",
+    "@midnight-ntwrk/compact-js": "3.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0",
+    "@midnightntwrk/ledger-v9": "1.0.2",
+    "@midnightntwrk/midnight-js-contracts": "5.0.2",
+    "@midnightntwrk/midnight-js-fetch-zk-config-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-indexer-public-data-provider": "5.0.2",
+    "@midnightntwrk/dapp-connector-api": "4.1.0",
+    "@midnightntwrk/midnight-js-dapp-connector-proof-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-level-private-state-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-types": "5.0.2",
+    "@midnightntwrk/midnight-js-utils": "5.0.2",
+    "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
     "@tailwindcss/postcss": "^4.3.2",
     "next": "^15.0.0",
     "postcss": "^8.5.16",
@@ -163,10 +167,10 @@ Browser: **1AM wallet** on `preview` with tNIGHT for bids and reserve payment.
   "private": true,
   "type": "module",
   "scripts": {
-    "compact": "compact compile src/private-reserve-auction.compact src/managed/private-reserve-auction"
+    "compact": "compact compile +0.36.1 src/private-reserve-auction.compact src/managed/private-reserve-auction"
   },
   "devDependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.16.0"
+    "@midnight-ntwrk/compact-runtime": "0.21.0"
   }
 }
 ```
@@ -175,9 +179,9 @@ Compile:
 
 ```bash
 npm run compact
-# → contract/src/managed/private-reserve-auction/{contract,keys,zkir}/
+# → contract/src/managed/private-reserve-auction/{compiler,contract,keys,zkir}/
 npm run sync:assets
-# → public/zk/private-reserve-auction/
+# → public/zk/private-reserve-auction/{compiler,keys,zkir}/  (compiler/ is required by Midnight.js 5)
 ```
 
 Expected circuits: `bid`, `closeAuction`, `revealPrice`, `claimItem`, `claimProceeds`.
@@ -187,7 +191,7 @@ Expected circuits: `bid`, `closeAuction`, `revealPrice`, `claimItem`, `claimProc
 ## 5) `contract/src/private-reserve-auction.compact`
 
 ```compact
-pragma language_version 0.23;
+pragma language_version >= 0.28.0;
 import CompactStandardLibrary;
 
 export enum AuctionState {
@@ -326,41 +330,20 @@ circuit getDappPublicKey(_secret: Bytes<32>): Bytes<32> {
 
 ## 6) `contract/src/index.ts`
 
-No witnesses — use `withVacantWitnesses`. **Use lazy `await import()` pattern** to avoid SSR issues and ensure `CompiledContract` is resolved from the correct module.
+No witnesses, so use `withVacantWitnesses`. `CompiledContract` comes from `@midnight-ntwrk/compact-js`. A plain static import is fine with Midnight.js 5: keep a single copy of each WASM package and load the page client-only (`ssr: false`), and the old lazy-import workaround isn't needed.
 
 ```typescript
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
-import { sampleSigningKey, ContractState } from '@midnight-ntwrk/compact-runtime';
+import { Contract } from './managed/private-reserve-auction/contract/index.js';
+export { ledger } from './managed/private-reserve-auction/contract/index.js';
 
-let _contractModule: any = null;
-let _compiledContract: any = null;
-let _ledgerFn: any = null;
+export type AuctionPrivateState = Record<string, never>;
+export type AuctionContract = Contract<AuctionPrivateState>;
 
-export async function getCompiledContract(zkPath?: string): Promise<any> {
-  if (!_compiledContract) {
-    if (!_contractModule) {
-      _contractModule = await import('./managed/private-reserve-auction/contract/index.js');
-    }
-    _compiledContract = CompiledContract.make(
-      'private-reserve-auction',
-      _contractModule.Contract,
-    );
-    _compiledContract = CompiledContract.withVacantWitnesses(_compiledContract);
-  }
-  return _compiledContract;
-}
-
-export async function getLedger(): Promise<any> {
-  if (!_ledgerFn) {
-    if (!_contractModule) {
-      _contractModule = await import('./managed/private-reserve-auction/contract/index.js');
-    }
-    _ledgerFn = _contractModule.ledger;
-  }
-  return _ledgerFn;
-}
-
-export { sampleSigningKey, ContractState };
+export const CompiledAuctionContract = CompiledContract.make<AuctionContract>('private-reserve-auction', Contract).pipe(
+  CompiledContract.withVacantWitnesses,
+  CompiledContract.withCompiledFileAssets('/zk/private-reserve-auction'), // label only in the browser
+);
 ```
 
 ---
@@ -370,7 +353,7 @@ export { sampleSigningKey, ContractState };
 Decode Bech32 unshielded addresses for `UserAddress` circuit args.
 
 ```typescript
-import { MidnightBech32m, UnshieldedAddress } from '@midnight-ntwrk/wallet-sdk-address-format';
+import { MidnightBech32m, UnshieldedAddress } from '@midnightntwrk/wallet-sdk-address-format';
 
 export function bech32ToUserAddress(bech32: string, networkId: string): { bytes: Uint8Array } {
   const parsed = MidnightBech32m.parse(bech32).decode(UnshieldedAddress, networkId);
@@ -414,350 +397,173 @@ export function loadSecret(
 
 ## 9) Provider Setup — `lib/midnight.ts`
 
+Use the canonical Ledger 9 session (`references/midnight-session.md`) unchanged:
+
 ```typescript
-import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
+import type { ConnectedAPI, InitialAPI } from '@midnightntwrk/dapp-connector-api';
+import {
+  dappConnectorNetwork,
+  dappConnectorProofProvider,
+  dappConnectorWalletProviders,
+} from '@midnightntwrk/midnight-js-dapp-connector-proof-provider';
+import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
+import { FetchZkConfigProvider } from '@midnightntwrk/midnight-js-fetch-zk-config-provider';
+import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import type { MidnightNetwork } from '@midnightntwrk/midnight-js-utils';
+import { CostModel } from '@midnightntwrk/ledger-v9';
 import { ContractState } from '@midnight-ntwrk/compact-runtime';
-import type { MidnightProvider, WalletProvider } from '@midnight-ntwrk/midnight-js-types';
+import { MidnightBech32m, ShieldedCoinPublicKey } from '@midnightntwrk/wallet-sdk-address-format';
 
 export type ConnectedSession = {
-  api: any;
-  config: any;
-  providers: {
-    privateStateProvider: ReturnType<typeof createPrivateStateProvider>;
-    publicDataProvider: ReturnType<typeof createPatchedPublicDataProvider>;
-    zkConfigProvider: FetchZkConfigProvider<any>;
-    proofProvider: { proveTx: (unprovenTx: any) => Promise<any> };
-    walletProvider: WalletProvider;
-    midnightProvider: MidnightProvider;
-  };
+  api: ConnectedAPI;
+  /** Network id + endpoints, read from the wallet. There is no global setNetworkId any more. */
+  network: MidnightNetwork;
+  providers: MidnightProviders;
   unshieldedAddress: string;
   coinPublicKeyBytes: Uint8Array;
 };
 
 export function fromHex(hex: string): Uint8Array {
   const h = hex.startsWith('0x') ? hex.slice(2) : hex;
-  return Uint8Array.from(h.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
+  return Uint8Array.from(h.match(/.{1,2}/g) ?? [], (b) => parseInt(b, 16));
 }
 
 export function toHex(bytes: Uint8Array): string {
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function coinPublicKeyToBytes(pk: unknown): Uint8Array {
-  if (pk instanceof Uint8Array) return pk.length === 32 ? pk : pk.slice(0, 32);
-  if (typeof pk === 'string') {
-    const hex = pk.startsWith('0x') ? pk.slice(2) : pk;
-    if (hex.length === 64 && /^[0-9a-fA-F]+$/.test(hex)) return fromHex(hex);
-    return new Uint8Array(32);
+/**
+ * Demo-grade password for the encrypted IndexedDB private-state store: random, kept in localStorage.
+ * Production apps should ask the user or derive it from wallet-held material.
+ */
+function demoStoragePassword(): Promise<string> {
+  const k = 'midnight-private-storage-password';
+  let pw = localStorage.getItem(k);
+  if (!pw) {
+    pw = `Mn-${crypto.randomUUID()}-${crypto.randomUUID()}`;
+    localStorage.setItem(k, pw);
   }
-  if (Array.isArray(pk)) {
-    return new Uint8Array(pk.length >= 32 ? pk.slice(0, 32) : [...pk, ...new Uint8Array(32 - pk.length)]);
-  }
-  if (pk && typeof pk === 'object' && 'bytes' in (pk as object)) {
-    return coinPublicKeyToBytes((pk as { bytes: unknown }).bytes);
-  }
-  return new Uint8Array(32);
+  return Promise.resolve(pw);
 }
 
-function createPrivateStateProvider() {
-  let scope = '';
-  const stateStore = new Map<string, unknown>();
-  const signingKeyStore = new Map<string, unknown>();
-  const key = (id: string) => `${scope}:${id}`;
-  return {
-    setContractAddress(address: string) {
-      scope = address;
-    },
-    async set(id: string, state: unknown) {
-      stateStore.set(key(id), state);
-    },
-    async get(id: string) {
-      return stateStore.get(key(id)) ?? null;
-    },
-    async remove(id: string) {
-      stateStore.delete(key(id));
-    },
-    async clear() {
-      stateStore.clear();
-    },
-    async setSigningKey(addr: string, k: unknown) {
-      signingKeyStore.set(addr, k);
-    },
-    async getSigningKey(addr: string) {
-      return signingKeyStore.get(addr) ?? null;
-    },
-    async removeSigningKey(addr: string) {
-      signingKeyStore.delete(addr);
-    },
-    async clearSigningKeys() {
-      signingKeyStore.clear();
-    },
-    async exportPrivateStates(): Promise<never> {
-      throw new Error('Not implemented.');
-    },
-    async importPrivateStates(): Promise<never> {
-      throw new Error('Not implemented.');
-    },
-    async exportSigningKeys(): Promise<never> {
-      throw new Error('Not implemented.');
-    },
-    async importSigningKeys(): Promise<never> {
-      throw new Error('Not implemented.');
-    },
-  };
+export async function detectWallet(): Promise<InitialAPI> {
+  const midnight = (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight ?? {};
+  const w = midnight['1am'] ?? Object.values(midnight)[0];
+  if (!w) throw new Error('No Midnight wallet extension found');
+  return w;
 }
 
-function createPatchedPublicDataProvider(queryUrl: string, subscriptionUrl: string) {
-  const base = indexerPublicDataProvider(queryUrl, subscriptionUrl);
-  return {
-    ...base,
-    async queryContractState(contractAddress: string, config?: unknown) {
-      if (config) return base.queryContractState(contractAddress, config as never);
-      const res = await fetch(queryUrl, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: `query LATEST_CONTRACT_STATE($address: HexEncoded!) {
-            contractAction(address: $address) { state }
-          }`,
-          variables: { address: contractAddress },
-        }),
-      });
-      if (!res.ok) throw new Error(`Indexer HTTP error: ${res.status}`);
-      const payload = await res.json();
-      if (payload.errors?.length) {
-        throw new Error(payload.errors.map((e: { message: string }) => e.message).join('; '));
-      }
-      const action = payload.data?.contractAction ?? null;
-      return action ? ContractState.deserialize(fromHex(action.state)) : null;
-    },
-  };
-}
-
-export async function createConnectedSession(
-  api: any,
-  zkAssetBasePath: string,
-): Promise<ConnectedSession> {
-  const [config, unshieldedAddress, shieldedAddress] = await Promise.all([
-    api.getConfiguration(),
+export async function createConnectedSession(api: ConnectedAPI, zkAssetPath: string): Promise<ConnectedSession> {
+  const network = await dappConnectorNetwork(api);
+  const [{ unshieldedAddress }, shielded] = await Promise.all([
     api.getUnshieldedAddress(),
     api.getShieldedAddresses(),
   ]);
 
-  setNetworkId(config.networkId);
-
-  const zkConfigProvider = new FetchZkConfigProvider(
-    new URL(zkAssetBasePath, window.location.origin).toString(),
-    window.fetch.bind(window),
+  // zkAssetPath must serve compiler/ (contract-manifest.json, contract-info.json), keys/ and zkir/.
+  const zkConfigProvider = new FetchZkConfigProvider<string>(
+    new URL(zkAssetPath, window.location.origin).toString(),
+    { fetchFunc: window.fetch.bind(window) },
   );
-  const provingProvider = await api.getProvingProvider(zkConfigProvider);
-
-  const proofProvider = {
-    async proveTx(unprovenTx: any) {
-      const { CostModel } = await import('@midnight-ntwrk/ledger-v8');
-      return unprovenTx.prove(provingProvider, CostModel.initialCostModel());
-    },
-  };
-
-  const walletProvider: WalletProvider = {
-    getCoinPublicKey: () => shieldedAddress.shieldedCoinPublicKey,
-    getEncryptionPublicKey: () => shieldedAddress.shieldedEncryptionPublicKey,
-    balanceTx: async (tx: any) => {
-      const txHex = toHex(tx.serialize());
-      const balanced = await api.balanceUnsealedTransaction(txHex);
-      if (!balanced?.tx) throw new Error('balanceUnsealedTransaction returned invalid result');
-      const { Transaction } = await import('@midnight-ntwrk/ledger-v8');
-      return Transaction.deserialize('signature', 'proof', 'binding', fromHex(balanced.tx));
-    },
-  };
-
-  const midnightProvider: MidnightProvider = {
-    submitTx: async (tx: any) => {
-      const txHex = toHex(tx.serialize());
-      const result = await api.submitTransaction(txHex);
-      if (typeof result === 'string' && result) return result;
-      if (result?.transactionId) return result.transactionId;
-      if (result?.id) return result.id;
-      return txHex.slice(0, 64);
-    },
-  };
+  const proofProvider = await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel());
+  const { walletProvider, midnightProvider } = await dappConnectorWalletProviders(api);
 
   return {
     api,
-    config,
+    network,
     providers: {
-      privateStateProvider: createPrivateStateProvider(),
-      publicDataProvider: createPatchedPublicDataProvider(config.indexerUri, config.indexerWsUri),
+      privateStateProvider: levelPrivateStateProvider({
+        accountId: unshieldedAddress,
+        privateStoragePasswordProvider: demoStoragePassword,
+      }),
+      publicDataProvider: indexerPublicDataProvider(network.indexer),
       zkConfigProvider,
       proofProvider,
       walletProvider,
       midnightProvider,
+      config: { networkId: network.networkId, ttlSeconds: 3600 },
     },
-    unshieldedAddress: unshieldedAddress.unshieldedAddress,
-    coinPublicKeyBytes: coinPublicKeyToBytes(shieldedAddress.shieldedCoinPublicKey),
+    unshieldedAddress,
+    // The connector returns keys in Bech32m, not hex.
+    coinPublicKeyBytes: new Uint8Array(
+      ShieldedCoinPublicKey.codec.decode(network.networkId, MidnightBech32m.parse(shielded.shieldedCoinPublicKey)).data,
+    ),
   };
 }
 
-export async function pollForState(
-  queryUrl: string,
-  contractAddress: string,
-  maxAttempts = 120,
-  intervalMs = 2000,
-): Promise<string> {
-  for (let i = 0; i < maxAttempts; i++) {
-    const res = await fetch(queryUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        query: `query LATEST_CONTRACT_STATE($address: HexEncoded!) {
-          contractAction(address: $address) { state }
-        }`,
-        variables: { address: contractAddress },
-      }),
-    });
-    if (res.ok) {
-      const payload = await res.json();
-      const state = payload.data?.contractAction?.state;
-      if (state) return state;
-    }
-    await new Promise((r) => setTimeout(r, intervalMs));
-  }
-  throw new Error(`Contract state not indexed after ${(maxAttempts * intervalMs) / 1000}s`);
-}
-
-export async function detectWallet(): Promise<any> {
-  const w =
-    (window as any).midnight?.['1am'] ??
-    Object.values((window as any).midnight ?? {})[0];
-  if (!w) throw new Error('No Midnight wallet extension found');
-  return w;
+/** Latest on-chain state of a contract, decoded with this app's own compact-runtime copy. */
+export async function queryLatestState(session: ConnectedSession, contractAddress: string) {
+  const read = await session.providers.publicDataProvider.queryContractState(contractAddress);
+  if (!read) return null;
+  return read.contractState.deserialize({ v9: ContractState });
 }
 ```
 
-**Key implementation details:**
-
-- `createPatchedPublicDataProvider` wraps the SDK's `indexerPublicDataProvider` and intercepts `queryContractState`. When no config is passed (the polling path), it falls back to a raw `fetch` + hand-written GraphQL query that omits the `offset` parameter entirely — this sidesteps the GraphQL `offset: null` bug without needing a separate SDK version fix.
-
-- `coinPublicKeyToBytes` defensively normalizes four input shapes: `Uint8Array`, hex string, plain `number[]`, and `{ bytes: ... }` wrapper. This is necessary because different wallet SDK versions return coin public keys in different formats.
-
-- `createPrivateStateProvider` is a clean in-memory Map-based provider with no `@midnight-ntwrk` dependency — avoids pulling in the SDK's own private state provider which would add another WASM bundle.
-
-- **Lazy WASM imports** — `proofProvider.proveTx` dynamically imports `@midnight-ntwrk/ledger-v8` for `CostModel`, and `balanceTx` does the same for `Transaction`. This avoids loading WASM-backed modules at module-evaluation time, which matters because the same pattern prevents the "dual WASM instance" bug (see troubleshooting). If you statically import `ledger-v8` at the top of this file, it will conflict with `compact-runtime`'s own WASM instance.
-
-- `createConnectedSession` front-loads `getConfiguration`, `getUnshieldedAddress`, and `getShieldedAddresses` into a single `Promise.all`. If any of these throw (e.g. wallet not fully initialized, or user rejected the connection prompt), the entire session creation fails. The caller should catch this and surface a meaningful error — see `connectWallet` in `AuctionClient.tsx`.
-
-- `detectWallet` throws if no wallet is found rather than returning `null`. Callers must `.catch()` or the rejection will be unhandled. The UI component uses `.then().catch()` to translate this into a `false` state — see the bug note in troubleshooting.
+**Why this shape (Midnight.js 5):**
+- No `setNetworkId`: `dappConnectorNetwork(api)` gives the network id + endpoints, and the id goes in `providers.config`.
+- No hand-rolled providers: `dappConnectorProofProvider` / `dappConnectorWalletProviders` are era-aware and do the hex round-trips, so the old lazy `import('@midnightntwrk/ledger-v9')` dance for `CostModel` / `Transaction` is gone.
+- No patched indexer provider: indexer 4.4.101 handles no-offset queries.
+- `levelPrivateStateProvider` (IndexedDB) replaces the in-memory `setContractAddress()` store, which no longer satisfies the 5.x interface.
 
 ---
 
 ## 10) `lib/auction.ts`
 
-Uses `getCompiledContract()` (lazy singleton) and the correct arg format for Compact 0.23+.
-
 ```typescript
-import { createUnprovenDeployTx, submitCallTxAsync, submitTxAsync } from '@midnight-ntwrk/midnight-js-contracts';
-import { getCompiledContract, getLedger, sampleSigningKey, ContractState } from '../contract/src/index';
-import type { ConnectedSession } from './midnight';
-import { fromHex, pollForState } from './midnight';
+import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import { CompiledAuctionContract, ledger, type AuctionContract, type AuctionPrivateState } from '../contract/src/index';
+import { queryLatestState, type ConnectedSession } from './midnight';
 import { bech32ToUserAddress } from './address';
 
 const PRIVATE_STATE_ID = 'PrivateAuctionState';
 export const ZK_PATH = '/zk/private-reserve-auction';
-
 const AUCTION_STATE_NAMES = ['OPEN', 'CLOSED', 'SETTLED'] as const;
-
 export type AuctionStateName = (typeof AUCTION_STATE_NAMES)[number];
 
-let _compiledContract: any = null;
-async function makeCompiledContract() {
-  if (!_compiledContract) {
-    _compiledContract = await getCompiledContract(ZK_PATH);
-  }
-  return _compiledContract;
-}
+type AuctionProviders = MidnightProviders<ProvableCircuitId<AuctionContract>, typeof PRIVATE_STATE_ID, AuctionPrivateState>;
+const providersFor = (s: ConnectedSession) => s.providers as unknown as AuctionProviders;
+const stars = (night: number) => BigInt(Math.round(night * 1_000_000));
 
-function setSize(value: unknown): number {
-  if (typeof value === 'number') return value;
-  if (value && typeof value === 'object' && 'size' in value) {
-    const size = (value as { size: unknown }).size;
-    if (typeof size === 'function') return Number((size as () => number)());
-    if (typeof size === 'number') return size;
-  }
-  return 0;
-}
-
-export async function deployAuction(
-  session: ConnectedSession,
-  reservePriceNight: number,
-  maxBidders: number,
-  sellerSecret: Uint8Array,
-): Promise<string> {
-  const reservePriceStars = reservePriceNight * 1_000_000;
-  const cc = await makeCompiledContract();
-  const deployTxData = await (createUnprovenDeployTx as any)(
-    {
-      zkConfigProvider: session.providers.zkConfigProvider,
-      walletProvider: session.providers.walletProvider,
-    },
-    {
-      compiledContract: cc,
-      args: [BigInt(reservePriceStars), BigInt(maxBidders), sellerSecret],
-      privateStateId: PRIVATE_STATE_ID,
-      initialPrivateState: {},
-      signingKey: sampleSigningKey(),
-    },
-  );
-
-  const contractAddress = deployTxData.public.contractAddress;
-  await (submitTxAsync as any)(session.providers, { unprovenTx: deployTxData.private.unprovenTx });
-  await session.providers.privateStateProvider.setContractAddress(contractAddress);
-  await session.providers.privateStateProvider.set(PRIVATE_STATE_ID, {});
-  await session.providers.privateStateProvider.setSigningKey(
-    contractAddress,
-    deployTxData.private.signingKey,
-  );
-  return contractAddress;
-}
-
-async function call(
-  session: ConnectedSession,
-  contractAddress: string,
-  circuitId: string,
-  args: unknown[],
-) {
-  const cc = await makeCompiledContract();
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: cc,
-    contractAddress,
-    circuitId,
-    args,
+export async function deployAuction(session: ConnectedSession, reservePriceNight: number, maxBidders: number, sellerSecret: Uint8Array) {
+  const deployed = await deployContract(providersFor(session), {
+    compiledContract: CompiledAuctionContract,
+    args: [stars(reservePriceNight), BigInt(maxBidders), sellerSecret],
     privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState: {},
   });
+  return deployed.deployTxData.public.contractAddress;
 }
 
-export const placeBid = (session: ConnectedSession, contractAddress: string, bidAmountNight: number, userAddress: { bytes: Uint8Array }, bidderSecret: Uint8Array) =>
-  call(session, contractAddress, 'bid', [BigInt(bidAmountNight * 1_000_000), userAddress, bidderSecret]);
+const connect = (session: ConnectedSession, contractAddress: string) =>
+  findDeployedContract(providersFor(session), {
+    compiledContract: CompiledAuctionContract,
+    contractAddress,
+    privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState: {},
+  });
 
-export const closeAuction = (session: ConnectedSession, contractAddress: string, sellerSecret: Uint8Array) =>
-  call(session, contractAddress, 'closeAuction', [sellerSecret]);
+export const placeBid = async (session: ConnectedSession, contractAddress: string, bidNight: number, user: { bytes: Uint8Array }, bidderSecret: Uint8Array) =>
+  (await connect(session, contractAddress)).callTx.bid(stars(bidNight), user, bidderSecret);
 
-export const revealPrice = (session: ConnectedSession, contractAddress: string, reservePriceNight: number, sellerSecret: Uint8Array) =>
-  call(session, contractAddress, 'revealPrice', [BigInt(reservePriceNight * 1_000_000), sellerSecret]);
+export const closeAuction = async (session: ConnectedSession, contractAddress: string, sellerSecret: Uint8Array) =>
+  (await connect(session, contractAddress)).callTx.closeAuction(sellerSecret);
 
-export const claimItem = (session: ConnectedSession, contractAddress: string, userAddress: { bytes: Uint8Array }, bidderSecret: Uint8Array) =>
-  call(session, contractAddress, 'claimItem', [userAddress, bidderSecret]);
+export const revealPrice = async (session: ConnectedSession, contractAddress: string, reservePriceNight: number, sellerSecret: Uint8Array) =>
+  (await connect(session, contractAddress)).callTx.revealPrice(stars(reservePriceNight), sellerSecret);
 
-export const claimProceeds = (session: ConnectedSession, contractAddress: string, sellerAddress: { bytes: Uint8Array }, sellerSecret: Uint8Array) =>
-  call(session, contractAddress, 'claimProceeds', [sellerAddress, sellerSecret]);
+export const claimItem = async (session: ConnectedSession, contractAddress: string, user: { bytes: Uint8Array }, bidderSecret: Uint8Array) =>
+  (await connect(session, contractAddress)).callTx.claimItem(user, bidderSecret);
 
-export async function decodeAuctionState(stateHex: string) {
-  const contractState = ContractState.deserialize(fromHex(stateHex));
-  const ledger = await getLedger();
-  const l = ledger(contractState.data) as any;
+export const claimProceeds = async (session: ConnectedSession, contractAddress: string, seller: { bytes: Uint8Array }, sellerSecret: Uint8Array) =>
+  (await connect(session, contractAddress)).callTx.claimProceeds(seller, sellerSecret);
+
+export async function fetchAuctionState(session: ConnectedSession, contractAddress: string) {
+  const state = await queryLatestState(session, contractAddress);
+  if (!state) return null;
+  const l = ledger(state.data);
   const stateIdx = Number(l.auctionState);
   return {
     auctionState: (AUCTION_STATE_NAMES[stateIdx] ?? `UNKNOWN(${stateIdx})`) as AuctionStateName | string,
@@ -765,27 +571,19 @@ export async function decodeAuctionState(stateHex: string) {
     maxBidders: Number(l.maxBids),
     publicPriceNight: Number(l.publicPrice) / 1_000_000,
     highestBidNight: Number(l.highestBid) / 1_000_000,
-    bidCount: setSize(l.bidCount),
-    bidderCount: setSize(l.bidders),
+    bidCount: Number(l.bidCount),             // Counter → bigint
+    bidderCount: Number(l.bidders.size()),    // ledger Map/Set → size()
   };
 }
 
-export async function fetchAuctionState(queryUrl: string, contractAddress: string) {
-  const hex = await pollForState(queryUrl, contractAddress);
-  return decodeAuctionState(hex);
-}
-
-export function userAddressFromSession(session: ConnectedSession) {
-  return bech32ToUserAddress(session.unshieldedAddress, session.config.networkId);
-}
+export const userAddressFromSession = (session: ConnectedSession) =>
+  bech32ToUserAddress(session.unshieldedAddress, session.network.networkId);
 ```
 
 **Key details:**
-- `args` use `BigInt(...)` for `Uint<32>` fields, not plain numbers
-- `Bytes<32>` args are passed as raw `Uint8Array`, **not** wrapped in `{ bytes: ... }`. `UserAddress` args require the `{ bytes }` wrapper
-- `ledger()` is resolved via `getLedger()` from the contract's own compiled module
-- `setSize()` handles both `.size` (property) and `.size()` (method) since compiled `Set`/`Counter` ledger fields vary by SDK version
-- Reserve price in NIGHT is converted to Stars (×1,000,000) before passing to contract
+- Argument shapes come from the generated `.d.ts`: `Uint<…>` → `bigint`, `Bytes<32>` secrets → plain `Uint8Array`, `UserAddress` → `{ bytes }`
+- Typed providers mean wrong shapes fail at compile time instead of at proving time
+- Reserve price and bids in NIGHT are converted to Stars (×1,000,000) before reaching the contract
 
 ---
 
@@ -795,7 +593,7 @@ export function userAddressFromSession(session: ConnectedSession) {
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { detectWallet, createConnectedSession, pollForState } from '@/lib/midnight';
+import { detectWallet, createConnectedSession } from '@/lib/midnight';
 import {
   deployAuction,
   placeBid,
@@ -869,7 +667,7 @@ export default function AuctionClient() {
   const refresh = useCallback(async () => {
     if (!session || !contractAddress) return;
     try {
-      const state = await fetchAuctionState(session.config.indexerUri, contractAddress);
+      const state = await fetchAuctionState(session, contractAddress);
       if (mountedRef.current) setAuctionState(state);
     } catch (e) {
       if (mountedRef.current) setError(e instanceof Error ? e.message : 'Refresh failed');
@@ -911,7 +709,7 @@ export default function AuctionClient() {
       saveSecret('seller', addr, secret);
 
       setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session.config.indexerUri, addr);
+      const state = await fetchAuctionState(session, addr);
       setAuctionState(state);
     });
   }, [session, withLoading, reservePriceNight, maxBidders]);
@@ -927,7 +725,7 @@ export default function AuctionClient() {
       await placeBid(session, contractAddress, Number(bidAmountNight), userAddressFromSession(session), secret);
 
       setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session.config.indexerUri, contractAddress);
+      const state = await fetchAuctionState(session, contractAddress);
       setAuctionState(state);
     });
   }, [session, contractAddress, withLoading, bidAmountNight]);
@@ -939,7 +737,7 @@ export default function AuctionClient() {
     await withLoading('Closing auction…', async (setStatus) => {
       await closeAuction(session, contractAddress, secret);
       setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session.config.indexerUri, contractAddress);
+      const state = await fetchAuctionState(session, contractAddress);
       setAuctionState(state);
     });
   }, [session, contractAddress, withLoading]);
@@ -951,7 +749,7 @@ export default function AuctionClient() {
     await withLoading('Revealing reserve price…', async (setStatus) => {
       await revealPrice(session, contractAddress, Number(reservePriceNight), secret);
       setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session.config.indexerUri, contractAddress);
+      const state = await fetchAuctionState(session, contractAddress);
       setAuctionState(state);
     });
   }, [session, contractAddress, withLoading, reservePriceNight]);
@@ -963,7 +761,7 @@ export default function AuctionClient() {
     await withLoading('Claiming item (proving + submitting)…', async (setStatus) => {
       await claimItem(session, contractAddress, userAddressFromSession(session), secret);
       setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session.config.indexerUri, contractAddress);
+      const state = await fetchAuctionState(session, contractAddress);
       setAuctionState(state);
     });
   }, [session, contractAddress, withLoading]);
@@ -975,7 +773,7 @@ export default function AuctionClient() {
     await withLoading('Claiming proceeds…', async (setStatus) => {
       await claimProceeds(session, contractAddress, userAddressFromSession(session), secret);
       setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session.config.indexerUri, contractAddress);
+      const state = await fetchAuctionState(session, contractAddress);
       setAuctionState(state);
     });
   }, [session, contractAddress, withLoading]);
@@ -1036,7 +834,7 @@ export default function AuctionClient() {
             {session.unshieldedAddress}
           </p>
           <p className="text-zinc-500 mt-1">
-            Network: <span className="font-medium text-zinc-700 dark:text-zinc-300">{session.config.networkId}</span>
+            Network: <span className="font-medium text-zinc-700 dark:text-zinc-300">{session.network.networkId}</span>
           </p>
         </div>
       )}
@@ -1345,20 +1143,21 @@ Verify: `http://localhost:3000/zk/private-reserve-auction/keys/bid.prover` retur
 | `Price mismatch — cannot change reserve` | Wrong price in revealPrice | Use same reserve price as deploy |
 | `Not the highest bidder` | Claiming with non-winning secret | Use the secret of the highest bidder |
 | `Invalid character 'm' at position 0` | Bech32 passed as bytes | Use `bech32ToUserAddress()` |
-| Deploy hangs 30–120s | Used `deployContract()` | Use `createUnprovenDeployTx` + `submitTxAsync` |
-| GraphQL `offset: null` | Default indexer provider | Use patched `queryContractState` |
+| `Version mismatch: compiled code expects 0.21.0, runtime is 0.16.0` | Old runtime | `compact-runtime@0.21.0` + `compact compile +0.36.1` |
+| Saved auction not found on Preview | Preview relaunched as a new chain (7 Nov 2026) | Clear stored addresses and redeploy |
+| `EraMismatchError: artifact-era-undeclared` | `public/zk/...` lacks `compiler/` | Re-run `npm run sync:assets` |
 | ZK 404 | Assets not synced | `npm run sync:assets` |
 | Lost seller secret | No recovery on-chain | Redeploy contract; store secret in localStorage |
 | `CompiledContract.withVacantWitnesses` TypeScript error | `compact-runtime` vs `compact-js` mismatch | Import `CompiledContract` from `@midnight-ntwrk/compact-js` |
 | `ContractMaintenanceAuthority` WASM identity error | Dual `compact-runtime` instances | Delete `contract/node_modules` |
 | `bigint` type mismatch on constructor args | Passed `number` where `bigint` expected | Wrap in `BigInt(value)` for `Uint<32>` fields |
 | `Bytes<32>` wrapped in `{ bytes: ... }` mismatch | Confusing it with `UserAddress` | Raw `Uint8Array` for `Bytes<32>`; `{ bytes }` only for `UserAddress` |
-| `bidCount` shows NaN | Field name mismatch (`maxBidders` vs `maxBids`) | Access `l.maxBids` not `l.maxBidders` |
+| `bidCount` shows NaN | Field name mismatch (`maxBidders` vs `maxBids`) | Access `l.maxBids` not `l.maxBidders` (typed `ledger()` now flags this at compile time) |
 | `Counter` type `= undefined` error | Counter doesn't support assignment | Don't initialize in constructor; use `.increment(1)` |
 | Network mismatch | `wallet.connect('preprod')` but targeting Preview | Use `wallet.connect('preview')` |
 | `walletInstalled` stuck at `null` (loading forever) | `detectWallet()` throws but no `.catch()` handler | Add `.catch(() => setWalletInstalled(false))` — see `AuctionClient.tsx` useEffect |
 | `getProvingProvider` or `getConfiguration` throws during connect | Wallet not fully initialized or user rejected prompt | Wrap `createConnectedSession` call in try/catch; surface `e.message` as connection error |
-| `CostModel` or `Transaction` identity mismatch | Static `import '@midnight-ntwrk/ledger-v8'` at module top level loads a second WASM instance | Use dynamic `await import('@midnight-ntwrk/ledger-v8')` inside the function body (see `proofProvider.proveTx` and `walletProvider.balanceTx`) |
+| `expected instance of ChargedState` / identity mismatch | Two copies of a WASM package (mixed `@midnight-ntwrk` / `@midnightntwrk` Midnight.js, or duplicate runtimes) | One copy per package: `npm ls @midnight-ntwrk/compact-runtime @midnightntwrk/ledger-v9`; decode state with your own runtime import |
 
 ---
 
@@ -1369,7 +1168,7 @@ When generating this dApp for a user:
 - [ ] Write `private-reserve-auction.compact` with all five exported circuits + helper circuits
 - [ ] Compile; sync ZK assets to `public/zk/private-reserve-auction/`
 - [ ] Use `CompiledContract.withVacantWitnesses` from `@midnight-ntwrk/compact-js` (not `compact-runtime`)
-- [ ] Lazy `getCompiledContract()` / `getLedger()` singleton pattern (avoid dual WASM instance bug)
+- [ ] Single copy of each WASM package (`npm ls`); page loads the client with `ssr: false`
 - [ ] Wire `createConnectedSession` with patched indexer
 - [ ] Constructor args: `[BigInt(reservePriceStars), BigInt(maxBidders), rawUint8Array]`
 - [ ] Decode unshielded Bech32 via `wallet-sdk-address-format`

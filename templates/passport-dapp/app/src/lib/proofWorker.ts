@@ -19,7 +19,7 @@ let zkirPromise: Promise<any> | null = null;
 function getZkir(): Promise<any> {
   if (!zkirPromise) {
     console.debug('[proof-worker] loading zkir wasm…');
-    zkirPromise = import('@midnight-ntwrk/zkir-v2').then((m) => {
+    zkirPromise = import('@midnightntwrk/zkir-v2').then((m) => {
       console.debug('[proof-worker] zkir wasm ready');
       return m;
     });

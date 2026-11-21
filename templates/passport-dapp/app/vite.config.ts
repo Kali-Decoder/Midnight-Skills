@@ -64,19 +64,18 @@ export default defineConfig({
     },
     // The shared ../src/wallet code would otherwise resolve @midnight-ntwrk
     // packages from the PARENT node_modules — a second physical module
-    // instance, so setNetworkId() lands in a different module state than
-    // the one midnight-js-contracts reads. Dedupe forces one copy.
+    // instance (two WASM ledgers, two compact-runtimes), and a state decoded
+    // by one copy is refused by the other. Dedupe forces one copy.
     dedupe: [
       '@midnight-ntwrk/compact-js',
       '@midnight-ntwrk/compact-runtime',
-      '@midnight-ntwrk/ledger-v8',
-      '@midnight-ntwrk/onchain-runtime-v3',
-      '@midnight-ntwrk/midnight-js-contracts',
-      '@midnight-ntwrk/midnight-js-network-id',
-      '@midnight-ntwrk/midnight-js-types',
-      '@midnight-ntwrk/midnight-js-indexer-public-data-provider',
-      '@midnight-ntwrk/midnight-js-http-client-proof-provider',
-      '@midnight-ntwrk/midnight-js-fetch-zk-config-provider',
+      '@midnightntwrk/ledger-v9',
+      '@midnightntwrk/onchain-runtime-v4',
+      '@midnightntwrk/midnight-js-contracts',
+      '@midnightntwrk/midnight-js-types',
+      '@midnightntwrk/midnight-js-indexer-public-data-provider',
+      '@midnightntwrk/midnight-js-http-client-proof-provider',
+      '@midnightntwrk/midnight-js-fetch-zk-config-provider',
       'rxjs',
     ],
   },
@@ -105,11 +104,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: [
-      '@midnight-ntwrk/ledger-v8',
-      '@midnight-ntwrk/onchain-runtime-v3',
+      '@midnightntwrk/ledger-v9',
+      '@midnightntwrk/onchain-runtime-v4',
       '@midnight-ntwrk/compact-runtime',
-      '@midnight-ntwrk/zswap',
-      '@midnight-ntwrk/zkir-v2',
+      '@midnightntwrk/zkir-v2',
     ],
     // CJS dependencies of the excluded (WASM) packages still need the
     // ESM-interop pre-bundle.

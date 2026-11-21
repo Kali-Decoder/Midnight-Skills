@@ -16,7 +16,7 @@ npm run sync:assets
 npm run dev
 ```
 
-Requires: **1AM wallet** on preprod, **Compact compiler 0.31.0**, Docker proof server (`midnightntwrk/proof-server:8.0.3`), funded tNIGHT + tDUST.
+Requires: **1AM wallet** (Ledger 9 build) on preprod or preview, **Compact toolchain 0.36.1** (`compact update 0.36.1`), funded tNIGHT registered for DUST. Proving goes through the wallet (DApp Connector 4.1.0); a local `midnightntwrk/proof-server:9.0.2` is only needed if your wallet is set to prove locally.
 
 ## Layout
 

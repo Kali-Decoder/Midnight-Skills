@@ -1,7 +1,5 @@
-import { CompiledContract } from '@midnight-ntwrk/compact-runtime';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-import { witnesses } from './witnesses';
+import { CompiledContract } from '@midnight-ntwrk/compact-js';
+import { witnesses, type LockerPrivateState } from './witnesses';
 
 export {
   Contract,
@@ -11,10 +9,14 @@ export {
 } from './managed/locker/contract/index.js';
 import { Contract } from './managed/locker/contract/index.js';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-export const zkConfigPath = path.resolve(currentDir, 'managed', 'locker');
+// Browser bundle: no node:path / node:url. Midnight.js loads keys + ZKIR through the session's
+// FetchZkConfigProvider (served from /zk/locker), so this path is only a label for compact-js.
+export const zkConfigPath = '/zk/locker';
 
-export const CompiledLockerContract = CompiledContract.make('locker', Contract).pipe(
+export type LockerContract = Contract<LockerPrivateState>;
+export type { LockerPrivateState };
+
+export const CompiledLockerContract = CompiledContract.make<LockerContract>('locker', Contract).pipe(
   CompiledContract.withWitnesses(witnesses),
   CompiledContract.withCompiledFileAssets(zkConfigPath),
 );

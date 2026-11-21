@@ -1,8 +1,14 @@
-import { createUnprovenDeployTx, submitCallTxAsync, submitTxAsync } from '@midnight-ntwrk/midnight-js-contracts';
-import { ContractState, sampleSigningKey } from '@midnight-ntwrk/compact-runtime';
-import { CompiledPrivatePartyContract, Contract, ledger } from '../contract/src/index';
+import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import {
+  CompiledPrivatePartyContract,
+  ledger,
+  type PartyPrivateState,
+  type PrivatePartyContract,
+} from '../contract/src/index';
 import type { ConnectedSession } from './midnight';
-import { fromHex, pollForState } from './midnight';
+import { queryLatestState } from './midnight';
 import { bech32ToUserAddress } from './address';
 
 const PRIVATE_STATE_ID = 'PrivatePartyState';
@@ -18,8 +24,16 @@ const PARTY_STATE_NAMES = [
 
 export type PartyStateName = (typeof PARTY_STATE_NAMES)[number];
 
-function makeCompiledContract() {
-  return CompiledPrivatePartyContract as any;
+type PartyProviders = MidnightProviders<ProvableCircuitId<PrivatePartyContract>, typeof PRIVATE_STATE_ID, PartyPrivateState>;
+const providersFor = (session: ConnectedSession) => session.providers as unknown as PartyProviders;
+
+async function connect(session: ConnectedSession, contractAddress: string) {
+  return findDeployedContract(providersFor(session), {
+    compiledContract: CompiledPrivatePartyContract,
+    contractAddress,
+    privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState: {},
+  });
 }
 
 function setSize(value: unknown): number {
@@ -38,29 +52,13 @@ export async function deployParty(
   entryFeeStars: number,
   organizerSecret: Uint8Array,
 ): Promise<string> {
-  const deployTxData = await (createUnprovenDeployTx as any)(
-    {
-      zkConfigProvider: session.providers.zkConfigProvider,
-      walletProvider: session.providers.walletProvider,
-    },
-    {
-      compiledContract: makeCompiledContract(),
-      args: [partySize, entryFeeStars, { bytes: organizerSecret }],
-      privateStateId: PRIVATE_STATE_ID,
-      initialPrivateState: {},
-      signingKey: sampleSigningKey(),
-    },
-  );
-
-  const contractAddress = deployTxData.public.contractAddress;
-  await (submitTxAsync as any)(session.providers, { unprovenTx: deployTxData.private.unprovenTx });
-  await session.providers.privateStateProvider.setContractAddress(contractAddress);
-  await session.providers.privateStateProvider.set(PRIVATE_STATE_ID, {});
-  await session.providers.privateStateProvider.setSigningKey(
-    contractAddress,
-    deployTxData.private.signingKey,
-  );
-  return contractAddress;
+  const deployed = await deployContract(providersFor(session), {
+    compiledContract: CompiledPrivatePartyContract,
+    args: [BigInt(partySize), BigInt(entryFeeStars), organizerSecret],
+    privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState: {},
+  });
+  return deployed.deployTxData.public.contractAddress;
 }
 
 export async function rsvp(
@@ -69,13 +67,8 @@ export async function rsvp(
   userAddress: { bytes: Uint8Array },
   attendeeSecret: Uint8Array,
 ) {
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
-    contractAddress,
-    circuitId: 'rsvp',
-    args: [userAddress, { bytes: attendeeSecret }],
-    privateStateId: PRIVATE_STATE_ID,
-  });
+  const party = await connect(session, contractAddress);
+  await party.callTx.rsvp(userAddress, attendeeSecret);
 }
 
 export async function startParty(
@@ -83,13 +76,8 @@ export async function startParty(
   contractAddress: string,
   organizerSecret: Uint8Array,
 ) {
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
-    contractAddress,
-    circuitId: 'startParty',
-    args: [{ bytes: organizerSecret }],
-    privateStateId: PRIVATE_STATE_ID,
-  });
+  const party = await connect(session, contractAddress);
+  await party.callTx.startParty(organizerSecret);
 }
 
 export async function checkIn(
@@ -98,13 +86,8 @@ export async function checkIn(
   userAddress: { bytes: Uint8Array },
   attendeeSecret: Uint8Array,
 ) {
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
-    contractAddress,
-    circuitId: 'checkIn',
-    args: [userAddress, { bytes: attendeeSecret }],
-    privateStateId: PRIVATE_STATE_ID,
-  });
+  const party = await connect(session, contractAddress);
+  await party.callTx.checkIn(userAddress, attendeeSecret);
 }
 
 export async function closeEntry(
@@ -112,13 +95,8 @@ export async function closeEntry(
   contractAddress: string,
   organizerSecret: Uint8Array,
 ) {
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
-    contractAddress,
-    circuitId: 'closeEntry',
-    args: [{ bytes: organizerSecret }],
-    privateStateId: PRIVATE_STATE_ID,
-  });
+  const party = await connect(session, contractAddress);
+  await party.callTx.closeEntry(organizerSecret);
 }
 
 export async function claimFees(
@@ -127,18 +105,12 @@ export async function claimFees(
   organizerAddress: { bytes: Uint8Array },
   organizerSecret: Uint8Array,
 ) {
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
-    contractAddress,
-    circuitId: 'claimFees',
-    args: [organizerAddress, { bytes: organizerSecret }],
-    privateStateId: PRIVATE_STATE_ID,
-  });
+  const party = await connect(session, contractAddress);
+  await party.callTx.claimFees(organizerAddress, organizerSecret);
 }
 
-export function decodePartyState(stateHex: string) {
-  const contractState = ContractState.deserialize(fromHex(stateHex));
-  const l = ledger(contractState.data) as any;
+export function decodePartyState(data: Parameters<typeof ledger>[0]) {
+  const l = ledger(data);
   const stateIdx = Number(l.partyState);
   return {
     partyState: (PARTY_STATE_NAMES[stateIdx] ?? `UNKNOWN(${stateIdx})`) as PartyStateName | string,
@@ -150,11 +122,11 @@ export function decodePartyState(stateHex: string) {
   };
 }
 
-export async function fetchPartyState(queryUrl: string, contractAddress: string) {
-  const hex = await pollForState(queryUrl, contractAddress);
-  return decodePartyState(hex);
+export async function fetchPartyState(session: ConnectedSession, contractAddress: string) {
+  const state = await queryLatestState(session, contractAddress);
+  return state ? decodePartyState(state.data) : null;
 }
 
 export function userAddressFromSession(session: ConnectedSession) {
-  return bech32ToUserAddress(session.unshieldedAddress, session.config.networkId);
+  return bech32ToUserAddress(session.unshieldedAddress, session.network.networkId);
 }

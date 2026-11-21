@@ -52,11 +52,10 @@ export default function LeaderboardClient() {
   }, []);
 
   const refresh = useCallback(async () => {
-    if (!contractAddress) return;
-    const indexerUrl =
-      session?.config.indexerUri ?? 'https://indexer.preprod.midnight.network/api/v4/graphql';
+    // Reads go through the connected wallet's indexer (preprod/mainnet indexers need a Blockfrost token).
+    if (!contractAddress || !session) return;
     try {
-      const state = await fetchLeaderboardState(indexerUrl, contractAddress);
+      const state = await fetchLeaderboardState(session, contractAddress);
       setEntries(state.entries);
       setError(null);
     } catch (e) {

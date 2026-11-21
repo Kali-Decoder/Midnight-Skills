@@ -1,6 +1,4 @@
-import { CompiledContract } from '@midnight-ntwrk/compact-runtime';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
+import { CompiledContract } from '@midnight-ntwrk/compact-js';
 
 export {
   Contract,
@@ -10,13 +8,13 @@ export {
 } from './managed/private-party/contract/index.js';
 import { Contract } from './managed/private-party/contract/index.js';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-export const zkConfigPath = path.resolve(currentDir, 'managed', 'private-party');
+// Browser bundle: no node:path / node:url. Keys + ZKIR load through the session's FetchZkConfigProvider.
+export const zkConfigPath = '/zk/private-party';
 
-export const CompiledPrivatePartyContract = CompiledContract.make(
-  'private-party',
-  Contract,
-).pipe(
+export type PartyPrivateState = Record<string, never>;
+export type PrivatePartyContract = Contract<PartyPrivateState>;
+
+export const CompiledPrivatePartyContract = CompiledContract.make<PrivatePartyContract>('private-party', Contract).pipe(
   CompiledContract.withVacantWitnesses,
   CompiledContract.withCompiledFileAssets(zkConfigPath),
 );

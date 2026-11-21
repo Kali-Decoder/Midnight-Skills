@@ -11,7 +11,8 @@ Midnight's privacy model is opt-in privacy on top of a public chain. The ZK proo
 - `docs.midnight.network/concepts/how-midnight-works/keeping-data-private`
 - `docs.midnight.network/concepts/how-midnight-works/semantics`
 - `docs.midnight.network/concepts/how-midnight-works/smart-contracts`
-- Official security docs: "coming soon" as of 2026 — this skill fills that gap
+- Official docs: `docs.midnight.network/compact` (language reference + standard library) and the toolchain release notes. There is still no dedicated security guide, which this skill fills in
+- Targets Compact 0.36.1 / language 0.28.0 (Ledger 9). Every full example below compiles with 0.36.1, and the hash-auth example was also executed (right key passes, wrong key is rejected)
 
 ---
 
@@ -228,7 +229,7 @@ export circuit transfer(to: Bytes<32>, amount: Uint<64>): [] {
 Proves knowledge of a secret key without revealing it. The sequence counter prevents replay across rounds.
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version >= 0.28.0;
 import CompactStandardLibrary;
 
 export ledger admin: Bytes<32>;
@@ -237,17 +238,19 @@ export ledger round: Counter;
 witness secretKey(): Bytes<32>;
 
 constructor() {
-  admin = publicKey(secretKey(), 0);
-  round.increment(1);
+  admin = disclose(publicKey(secretKey(), roundBytes(0)));
 }
 
 export circuit adminAction(): [] {
   const sk = secretKey();
-  const currentRound = round as Field as Bytes<32>;
-  assert(admin == publicKey(sk, currentRound), "not authorized");
+  assert(admin == disclose(publicKey(sk, roundBytes(round.read()))), "not authorized");
   // ... do the action
   round.increment(1);  // invalidates old proofs against this round
-  admin = disclose(publicKey(sk, round as Field as Bytes<32>));
+  admin = disclose(publicKey(sk, roundBytes(round.read())));
+}
+
+pure circuit roundBytes(r: Uint<64>): Bytes<32> {
+  return (r as Field) as Bytes<32>;
 }
 
 pure circuit publicKey(sk: Bytes<32>, roundBytes: Bytes<32>): Bytes<32> {
@@ -264,7 +267,7 @@ pure circuit publicKey(sk: Bytes<32>, roundBytes: Bytes<32>): Bytes<32> {
 Proves a token exists in the Merkle tree and has not been spent, without revealing which token.
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version >= 0.28.0;
 import CompactStandardLibrary;
 
 export ledger commitments: HistoricMerkleTree<16, Bytes<32>>;
@@ -285,7 +288,7 @@ export circuit spend(): [] {
 
   // 1. Prove token is in the tree (without revealing which)
   assert(
-    commitments.checkRoot(merkleTreePathRoot<16, Bytes<32>>(path)),
+    commitments.checkRoot(disclose(merkleTreePathRoot<16, Bytes<32>>(path))), // the root is public; the path stays private
     "commitment not in tree"
   );
 
@@ -316,7 +319,7 @@ pure circuit nullifier(sk: Bytes<32>): Bytes<32> {
 Authorize a set of users without revealing which one is acting.
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version >= 0.28.0;
 import CompactStandardLibrary;
 
 export ledger allowlist: MerkleTree<16, Bytes<32>>;
@@ -336,7 +339,7 @@ export circuit allowlistedAction(): [] {
   const path = findAllowlistPath(pk);
 
   assert(
-    allowlist.checkRoot(merkleTreePathRoot<16, Bytes<32>>(path)),
+    allowlist.checkRoot(disclose(merkleTreePathRoot<16, Bytes<32>>(path))), // the root is public; the path stays private
     "not on allowlist"
   );
 
@@ -348,6 +351,22 @@ pure circuit allowlistKey(sk: Bytes<32>): Bytes<32> {
   return persistentHash<Vector<2, Bytes<32>>>([pad(32, "myapp:allowlist:v1"), sk]);
 }
 ```
+
+---
+
+## 5b) Ledger 9 Audit Surface (language 0.28.0)
+
+Ledger 9 added features that create new things to review. All of these behaviors were checked with the 0.36.1 compiler.
+
+| Feature | What leaks / what to check |
+|---|---|
+| `emit(...)` events | **Everything emitted is public**, indexed (`contractEvents`) and permanent. Treat an event like a ledger write: only emit `disclose()`d values. Emitting from the constructor is a compile error. |
+| Cross-contract calls (`contract X { circuit ...; }`) | The callee reference **and every argument** must be disclosed. The compiler rejects undisclosed ones (`contract call argument 1 might disclose the witness value`). The call graph is visible on-chain, so a call reveals which contract you touched and with what. Cycles fail at run time. Per the language reference, circuits that satisfy a contract type may not call witnesses. |
+| Callee trust | A contract-typed argument is supplied by the caller. Verify it is the contract you expect (compare against a stored address) before trusting its return values. |
+| `kernel.caller()` | Returns `Maybe<PublicAddress>`. Useful for contract-to-contract authorization, but it is the *immediate* caller. Check `is_some` and don't assume an end user. |
+| `secp256k1EcdsaVerify(msgHash, sig, pk)` | Verifies a *hash*, not a message: hash the message yourself, with domain separation, inside the circuit. Always `assert` on the result. Since 0.35 it rejects the identity point as `pk`. The compiler changelog (0.33.x) says it accepts both low-s and high-s signatures, so treat signatures as malleable: never use one (or its hash) as a nullifier/replay key. Bind a nonce or round instead. |
+| `keccak256` / `sha512` | Fine for Ethereum interop. Prefer `persistentHash` / `persistentCommit` for Midnight-native commitments, and never hash small value spaces without a nonce. |
+| Recompiling for Ledger 9 | Moving from compiler 0.31 to 0.36.x changes verifier keys. Redeploy, or install new keys via the maintenance authority, and re-audit cross-contract callers and callees together. |
 
 ---
 

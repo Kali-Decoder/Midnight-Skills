@@ -15,9 +15,9 @@ This skill generates a complete, runnable Midnight DApp. It covers every file in
 **Package versions below are a dated snapshot (May 2026).** Resolve the current tested set from the [support matrix](https://docs.midnight.network/relnotes/support-matrix) before pinning — see `references/volatile.md`. Never install `@latest`.
 
 **Key architecture notes:**
-- Uses `@midnight-ntwrk/testkit-js` `FluentWalletBuilder` for wallet creation
-- Uses `@midnight-ntwrk/midnight-js-contracts` `deployContract` and `submitCallTx`
-- Compact pragma is `>= 0.23`
+- Uses `@midnightntwrk/testkit-js` 5.0.2 `MidnightWalletProvider` (built on `FluentWalletBuilder`) for an era-aware, Wallet SDK 2.x wallet
+- Uses `@midnightntwrk/midnight-js-contracts` `deployContract` and `submitCallTx`
+- Compact pragma is `>= 0.28.0` (toolchain 0.36.1, runtime 0.21.0, Ledger 9)
 - Indexer API paths use `/api/v4/graphql` for local devnet
 - `MidnightWalletProvider` class wraps `WalletFacade` to implement `MidnightProvider` and `WalletProvider` interfaces
 - `syncWallet` function provides detailed progress logging during wallet sync
@@ -94,18 +94,17 @@ compact --version
     "validate": "yarn env:up && yarn test:local; yarn env:down"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.16.0",
-    "@midnight-ntwrk/ledger-v8": "8.0.3",
-    "@midnight-ntwrk/midnight-js-contracts": "4.0.4",
-    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-network-id": "4.0.4",
-    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-types": "4.0.4",
-    "@midnight-ntwrk/midnight-js-utils": "4.0.4",
-    "@midnight-ntwrk/testkit-js": "4.0.4",
-    "@midnight-ntwrk/wallet-sdk-facade": "3.0.0",
+    "@midnight-ntwrk/compact-runtime": "0.21.0",
+    "@midnightntwrk/ledger-v9": "1.0.2",
+    "@midnightntwrk/midnight-js-contracts": "5.0.2",
+    "@midnightntwrk/midnight-js-http-client-proof-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-indexer-public-data-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-level-private-state-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-node-zk-config-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-types": "5.0.2",
+    "@midnightntwrk/midnight-js-utils": "5.0.2",
+    "@midnightntwrk/testkit-js": "5.0.2",
+    "@midnightntwrk/wallet-sdk-facade": "5.0.1",
     "axios": "^1.15.0",
     "pino": "^9.0.0",
     "pino-pretty": "^13.0.0",
@@ -114,16 +113,15 @@ compact --version
     "ws": "^8.14.2"
   },
   "devDependencies": {
-    "@midnight-ntwrk/midnight-js-compact": "4.0.4",
+    "@midnightntwrk/midnight-js-compact": "5.0.2",
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.9",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   },
   "resolutions": {
-    "@midnight-ntwrk/ledger-v8": "8.0.3",
-    "@midnight-ntwrk/midnight-js-network-id": "4.0.4",
-    "@midnight-ntwrk/compact-runtime": "0.16.0"
+    "@midnightntwrk/ledger-v9": "1.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0"
   },
   "packageManager": "yarn@1.22.22"
 }
@@ -184,7 +182,7 @@ export default defineConfig({
 Create this file manually — the compiler output in `managed/` is generated from it.
 
 ```compact
-pragma language_version >= 0.23;
+pragma language_version >= 0.28.0;
 
 export ledger message: Opaque<"string">;
 
@@ -216,7 +214,7 @@ This generates `contracts/managed/hello-world/contract/index.js` (and keys, zkir
 Create this file manually — it imports from the compiled contract output. The compiled contract module must exist (from running `compact compile`) for the imports to resolve.
 
 ```typescript
-import { CompiledContract } from '@midnight-ntwrk/compact-runtime';
+import { CompiledContract } from '@midnight-ntwrk/compact-js';   // not compact-runtime
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -233,7 +231,9 @@ import { Contract } from './managed/hello-world/contract/index.js';
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 export const zkConfigPath = path.resolve(currentDir, 'managed', 'hello-world');
 
-export const CompiledHelloWorldContract = CompiledContract.make(
+export type HelloWorldContract = Contract<undefined>;
+
+export const CompiledHelloWorldContract = CompiledContract.make<HelloWorldContract>(
   'HelloWorldContract',
   Contract,
 ).pipe(
@@ -282,165 +282,23 @@ export function getConfig(): NetworkConfig {
 
 ## 9) `src/wallet.ts`
 
+testkit-js 5.x ships the wallet provider: `MidnightWalletProvider.build(logger, env, seed)` creates a Wallet SDK 2.x `WalletFacade` from the seed (via `FluentWalletBuilder`), and implements Midnight.js 5's era-aware `WalletProvider` + `MidnightProvider` (balancing, signing unshielded intents, submitting). Don't hand-roll one: the Ledger 8-era copy used `wallet.start(zswapKeys, dustKey)` and key-object balancing, which Wallet SDK 2.x no longer accepts.
+
 ```typescript
-import {
-  type CoinPublicKey,
-  DustSecretKey,
-  type EncPublicKey,
-  type FinalizedTransaction,
-  LedgerParameters,
-  ZswapSecretKeys,
-} from '@midnight-ntwrk/ledger-v8';
-import {
-  type MidnightProvider,
-  type UnboundTransaction,
-  type WalletProvider,
-} from '@midnight-ntwrk/midnight-js-types';
-import { ttlOneHour } from '@midnight-ntwrk/midnight-js-utils';
-import { type WalletFacade, type FacadeState } from '@midnight-ntwrk/wallet-sdk-facade';
-import {
-  type DustWalletOptions,
-  type EnvironmentConfiguration,
-  FluentWalletBuilder,
-} from '@midnight-ntwrk/testkit-js';
-import * as Rx from 'rxjs';
+import { MidnightWalletProvider } from '@midnightntwrk/testkit-js';
+import type { WalletFacade, FacadeState } from '@midnightntwrk/wallet-sdk-facade';
 import type { Logger } from 'pino';
 
-export class MidnightWalletProvider implements MidnightProvider, WalletProvider {
-  readonly wallet: WalletFacade;
+export { MidnightWalletProvider };
 
-  private constructor(
-    private readonly logger: Logger,
-    wallet: WalletFacade,
-    private readonly zswapSecretKeys: ZswapSecretKeys,
-    private readonly dustSecretKey: DustSecretKey,
-  ) {
-    this.wallet = wallet;
-  }
-
-  getCoinPublicKey(): CoinPublicKey {
-    return this.zswapSecretKeys.coinPublicKey;
-  }
-
-  getEncryptionPublicKey(): EncPublicKey {
-    return this.zswapSecretKeys.encryptionPublicKey;
-  }
-
-  async balanceTx(
-    tx: UnboundTransaction,
-    ttl: Date = ttlOneHour(),
-  ): Promise<FinalizedTransaction> {
-    const recipe = await this.wallet.balanceUnboundTransaction(
-      tx,
-      {
-        shieldedSecretKeys: this.zswapSecretKeys,
-        dustSecretKey: this.dustSecretKey,
-      },
-      { ttl },
-    );
-    return await this.wallet.finalizeRecipe(recipe);
-  }
-
-  submitTx(tx: FinalizedTransaction): Promise<string> {
-    return this.wallet.submitTransaction(tx);
-  }
-
-  async start(): Promise<void> {
-    this.logger.info('Starting wallet...');
-    await this.wallet.start(this.zswapSecretKeys, this.dustSecretKey);
-  }
-
-  async stop(): Promise<void> {
-    return this.wallet.stop();
-  }
-
-  static async build(
-    logger: Logger,
-    env: EnvironmentConfiguration,
-    seed: string,
-  ): Promise<MidnightWalletProvider> {
-    const dustOptions: DustWalletOptions = {
-      ledgerParams: LedgerParameters.initialParameters(),
-      additionalFeeOverhead: 1_000n,
-      feeBlocksMargin: 5,
-    };
-
-    const builder = FluentWalletBuilder.forEnvironment(env)
-      .withDustOptions(dustOptions);
-
-    // buildWithoutStarting() returns { wallet, seeds } — seeds contains
-    // the derived key material. The cast reflects the documented testkit-js
-    // pattern; verify against your installed version if you see type errors.
-    const buildResult = await builder.withSeed(seed).buildWithoutStarting();
-    const { wallet, seeds } = buildResult as {
-      wallet: WalletFacade;
-      seeds: {
-        masterSeed: string;
-        shielded: Uint8Array;
-        dust: Uint8Array;
-      };
-    };
-
-    logger.info(`Wallet built from seed: ${seeds.masterSeed.slice(0, 8)}...`);
-
-    return new MidnightWalletProvider(
-      logger,
-      wallet,
-      ZswapSecretKeys.fromSeed(seeds.shielded),
-      DustSecretKey.fromSeed(seeds.dust),
-    );
-  }
-}
-
-function isProgressStrictlyComplete(progress: unknown): boolean {
-  if (!progress || typeof progress !== 'object') {
-    return false;
-  }
-  const candidate = progress as { isStrictlyComplete?: unknown };
-  if (typeof candidate.isStrictlyComplete !== 'function') {
-    return false;
-  }
-  return (candidate.isStrictlyComplete as () => boolean)();
-}
-
-export async function syncWallet(
-  logger: Logger,
-  wallet: WalletFacade,
-  timeout = 300_000,
-): Promise<FacadeState> {
+export async function syncWallet(logger: Logger, wallet: WalletFacade, timeout = 300_000): Promise<FacadeState> {
   logger.info('Syncing wallet...');
-  let emissionCount = 0;
-  return Rx.firstValueFrom(
-    wallet.state().pipe(
-      Rx.tap((state: FacadeState) => {
-        emissionCount++;
-        const shielded = isProgressStrictlyComplete(state.shielded.state.progress);
-        const unshielded = isProgressStrictlyComplete(state.unshielded.progress);
-        const dust = isProgressStrictlyComplete(state.dust.state.progress);
-        logger.info(
-          `Wallet sync [${emissionCount}]: shielded=${shielded}, unshielded=${unshielded}, dust=${dust}`,
-        );
-      }),
-      Rx.filter(
-        (state: FacadeState) =>
-          isProgressStrictlyComplete(state.shielded.state.progress) &&
-          isProgressStrictlyComplete(state.dust.state.progress) &&
-          isProgressStrictlyComplete(state.unshielded.progress),
-      ),
-      Rx.tap(() => logger.info(`Wallet sync complete after ${emissionCount} emissions`)),
-      Rx.timeout({
-        each: timeout,
-        with: () =>
-          Rx.throwError(
-            () => new Error(`Wallet sync timeout after ${timeout}ms (${emissionCount} emissions received)`),
-          ),
-      }),
-      Rx.catchError((err) => {
-        logger.error(`Wallet sync error: ${err}`);
-        return Rx.throwError(() => err);
-      }),
-    ),
+  const timer = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Wallet sync timeout after ${timeout}ms`)), timeout),
   );
+  const state = await Promise.race([wallet.waitForSyncedState(), timer]);
+  logger.info(`Wallet synced (protocol version ${String(state.activeProtocolVersion)})`);
+  return state;
 }
 ```
 
@@ -449,43 +307,33 @@ export async function syncWallet(
 ## 10) `src/providers.ts`
 
 ```typescript
-import { type MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
-import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
-import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
+import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
+import { type MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
+import { httpClientProofProvider } from '@midnightntwrk/midnight-js-http-client-proof-provider';
+import { NodeZkConfigProvider } from '@midnightntwrk/midnight-js-node-zk-config-provider';
+import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
+import type { HelloWorldContract } from '../contracts/index.js';
 import { type MidnightWalletProvider } from './wallet.js';
 import { type NetworkConfig } from './config.js';
 
-export type HelloWorldCircuits = 'storeMessage';
+export type HelloWorldCircuits = ProvableCircuitId<HelloWorldContract>;
+export type HelloWorldProviders = MidnightProviders<HelloWorldCircuits, string, undefined>;
 
-export type HelloWorldProviders = MidnightProviders<any>;
-
-export function buildProviders(
-  wallet: MidnightWalletProvider,
-  zkConfigPath: string,
-  config: NetworkConfig,
-): HelloWorldProviders {
+export function buildProviders(wallet: MidnightWalletProvider, zkConfigPath: string, config: NetworkConfig): HelloWorldProviders {
   const zkConfigProvider = new NodeZkConfigProvider<HelloWorldCircuits>(zkConfigPath);
-
   return {
     privateStateProvider: levelPrivateStateProvider({
       privateStateStoreName: `hello-world-${Date.now()}`,
-      walletProvider: wallet,
       privateStoragePasswordProvider: () => 'xK9#mQ2$pL8@nR5!vW3*',
-      accountId: `test-account-${Date.now()}`,
+      accountId: wallet.unshieldedKeystore.getBech32Address().asString(),
     }),
-    publicDataProvider: indexerPublicDataProvider(
-      config.indexer,
-      config.indexerWS,
-    ),
+    publicDataProvider: indexerPublicDataProvider({ queryURL: config.indexer, subscriptionURL: config.indexerWS }),
     zkConfigProvider,
-    proofProvider: httpClientProofProvider(
-      config.proofServer,
-      zkConfigProvider,
-    ),
+    proofProvider: httpClientProofProvider({ url: config.proofServer, zkConfigProvider }),
     walletProvider: wallet,
     midnightProvider: wallet,
+    config: { networkId: config.networkId, ttlSeconds: 3600 },   // replaces setNetworkId
   };
 }
 ```
@@ -497,12 +345,8 @@ export function buildProviders(
 ```typescript
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { WebSocket } from 'ws';
-import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import {
-  deployContract,
-  submitCallTx,
-} from '@midnight-ntwrk/midnight-js-contracts';
-import type { ContractAddress } from '@midnight-ntwrk/compact-runtime';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
+import { ContractState, type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import pino from 'pino';
 
 import { getConfig } from '../config.js';
@@ -513,11 +357,10 @@ import {
   ledger,
   zkConfigPath,
 } from '../../contracts/index.js';
-import type { EnvironmentConfiguration } from '@midnight-ntwrk/testkit-js';
+import type { EnvironmentConfiguration } from '@midnightntwrk/testkit-js';
 
 // Required for GraphQL subscriptions in Node.js
-// @ts-expect-error WebSocket global assignment for apollo
-globalThis.WebSocket = WebSocket;
+globalThis.WebSocket = WebSocket as unknown as typeof globalThis.WebSocket;
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('UNHANDLED REJECTION:', reason);
@@ -530,7 +373,6 @@ process.on('uncaughtException', (err) => {
 
 const ALICE_SEED =
   '0000000000000000000000000000000000000000000000000000000000000001';
-const ALICE_PRIVATE_STATE_ID = 'AlicePrivateHWState';
 
 const logger = pino({
   level: process.env['LOG_LEVEL'] ?? 'info',
@@ -545,15 +387,13 @@ describe('Hello World Contract', () => {
   const config = getConfig();
 
   async function queryLedger(providers: HelloWorldProviders) {
-    const state =
-      await providers.publicDataProvider.queryContractState(contractAddress);
-    expect(state).not.toBeNull();
-    return ledger(state!.data);
+    const read = await providers.publicDataProvider.queryContractState(contractAddress);
+    expect(read).not.toBeNull();
+    // Midnight.js 5: era-tagged bytes, decoded with this project's compact-runtime
+    return ledger(read!.contractState.deserialize({ v9: ContractState }).data);
   }
 
   beforeAll(async () => {
-    setNetworkId(config.networkId);
-
     const envConfig: EnvironmentConfiguration = {
       walletNetworkId: config.networkId,
       networkId: config.networkId,
@@ -583,11 +423,8 @@ describe('Hello World Contract', () => {
   it('Deploys the contract', async () => {
     logger.info('Creating private state...');
 
-    const deployed: any = await (deployContract as any)(aliceProviders, {
+    const deployed = await deployContract(aliceProviders, {
       compiledContract: CompiledHelloWorldContract,
-      privateStateId: ALICE_PRIVATE_STATE_ID,
-      initialPrivateState: {},
-      args: [],
     });
 
     logger.info('Setting the contract address...');
@@ -603,13 +440,11 @@ describe('Hello World Contract', () => {
   it('Stores Hello World!', async () => {
     const message = 'Hello World!';
 
-    await (submitCallTx as any)(aliceProviders, {
+    const hw = await findDeployedContract(aliceProviders, {
       compiledContract: CompiledHelloWorldContract,
       contractAddress,
-      privateStateId: ALICE_PRIVATE_STATE_ID,
-      circuitId: 'storeMessage',
-      args: [message],
     });
+    await hw.callTx.storeMessage(message);
 
     const state = await queryLedger(aliceProviders);
     expect(state.message).toEqual(message);
@@ -624,7 +459,7 @@ describe('Hello World Contract', () => {
 ```yaml
 services:
   proof-server:
-    image: 'midnightntwrk/proof-server:8.0.3'
+    image: 'midnightntwrk/proof-server:9.0.2'
     command: ['midnight-proof-server', '-v']
     ports:
       - '127.0.0.1:6300:6300'
@@ -638,7 +473,7 @@ services:
       start_period: 10s
 
   indexer:
-    image: 'midnightntwrk/indexer-standalone:4.0.0'
+    image: 'midnightntwrk/indexer-standalone:4.4.101'
     ports:
       - '127.0.0.1:8088:8088'
     environment:
@@ -660,7 +495,7 @@ services:
         condition: service_healthy
 
   node:
-    image: 'midnightntwrk/midnight-node:0.22.3'
+    image: 'midnightntwrk/midnight-node:2.1.101'
     ports:
       - '127.0.0.1:9944:9944'
     healthcheck:
@@ -720,10 +555,10 @@ Expected output:
 | `NODE_OPTIONS` error in test | Missing experimental flag | Ensure `NODE_OPTIONS='--experimental-vm-modules'` in test script |
 | `Wallet sync timeout` | Docker services not healthy | Verify `yarn env:up` finished — all 3 containers must be healthy |
 | `v4/graphql` 404 | Old indexer URL | Local devnet uses `/api/v4/graphql` — correct in `config.ts` |
-| `FluentWalletBuilder is not a function` | Wrong testkit-js import | Import from `@midnight-ntwrk/testkit-js` |
+| `FluentWalletBuilder is not a function` | Wrong testkit-js import | Import from `@midnightntwrk/testkit-js` |
 | `levelPrivateStateProvider` options error | Missing required fields | Must pass `privateStateStoreName`, `walletProvider`, `privateStoragePasswordProvider` (strong password, min 16 chars, no sequential patterns), and `accountId` |
 | TS: `Cannot find module` for contracts | Wrong `tsconfig.json` include | Must be `"contract/**/*.ts"` (singular), not `"contracts/**/*.ts"` |
-| `submitCallTx` not found | Wrong import | Import from `@midnight-ntwrk/midnight-js-contracts` |
+| `submitCallTx` not found | Wrong import | Import from `@midnightntwrk/midnight-js-contracts` |
 | Old contract address fails after recompile | Verifier key changed | Redeploy — compiled keys change when contract source changes |
 
 ---
@@ -742,5 +577,5 @@ Expected output:
 5. In `src/test/hw.test.ts`:
    - Replace `submitCallTx` args with your circuit calls
    - Replace `ledger()` with your contract's `ledger()` function
-   - Update `ALICE_PRIVATE_STATE_ID` and `initialPrivateState` shape
+   - If your contract has witnesses, add `privateStateId` + `initialPrivateState` to `deployContract` and type the providers with your private-state type
 6. Update `src/config.ts` if targeting non-local networks

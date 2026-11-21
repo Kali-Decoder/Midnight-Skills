@@ -34,8 +34,20 @@ they cover the three most common things that go wrong.
 
 ## Pinned Versions
 
-These are the actual versions from the working codebase. Deviating
-causes dependency resolution failures (see §9).
+> **Ledger 9 status (21 Nov 2026) — NEEDS CHECK against Kuira.** The
+> contract side below is updated to the Ledger 9.1 toolchain: `voting.compact`
+> compiles with Compact 0.36.1 (language 0.28.0) for runtime 0.21.0. The Kuira
+> SDK is not. Its newest release is `0.1.0-alpha05` (Maven Central, July 2026),
+> which predates the Ledger 9 upgrade. Kuira's embedded wallet, on-device prover
+> and localnet are Ledger 8-era until Kuira ships a Ledger 9 build. Mainnet
+> stopped decoding Ledger 8 transactions on 6 Nov 2026, and Preview relaunched as
+> a new Ledger 9 chain on 7 Nov 2026. Until then, this app cannot transact on
+> public networks, and its runtime pin must match whatever runtime the Kuira
+> build embeds (see §9). Check the Kuira release notes before relying on it.
+
+These are the versions from the working codebase, with the contract
+toolchain moved to Ledger 9. Deviating on the Gradle side causes
+dependency resolution failures (see §9).
 
 | Layer | Version |
 |---|---|
@@ -56,9 +68,9 @@ causes dependency resolution failures (see §9).
 | `fragment-ktx` | `1.8.5` |
 | `hilt-navigation-compose` | `1.1.0` |
 | `security-crypto` | `1.1.0-alpha07` |
-| `@midnight-ntwrk/compact-runtime` | `0.16.0` |
-| Compact compiler | `0.31.0` (pinned on compile command) |
-| Compact language pragma | `>= 0.22` |
+| `@midnight-ntwrk/compact-runtime` | `0.21.0` |
+| Compact compiler | `0.36.1` (pinned on compile command) |
+| Compact language pragma | `>= 0.28.0` |
 
 ---
 
@@ -126,8 +138,8 @@ it; in CI you must create it manually or use an env var.
 ```bash
 java --version               # JDK 17+
 node --version                # Node.js 18+
-compact update 0.31.0         # Install Compact compiler
-compact list                  # Verify 0.31.0 is the default
+compact update 0.36.1         # Install Compact compiler
+compact list                  # Verify 0.36.1 is installed (the compile script pins +0.36.1)
 ```
 
 ### 2.2) Android Setup
@@ -542,14 +554,14 @@ config doesn't include the right domain, cleartext still fails.
   "private": true,
   "description": "Voting contract for the Kuira Voting dApp. Compiled artifacts under src/managed/voting/ are consumed by the Android app via the kuiraContract Gradle plugin.",
   "scripts": {
-    "compile:voting": "compact compile +0.31.0 src/voting.compact src/managed/voting && node scripts/patch-voting.js",
+    "compile:voting": "compact compile +0.36.1 src/voting.compact src/managed/voting && node scripts/patch-voting.js",
     "inspect:voting": "mn contract inspect --managed src/managed/voting"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.16.0"
+    "@midnight-ntwrk/compact-runtime": "0.21.0"
   },
   "engines": {
-    "compactc": "0.31.0"
+    "compactc": "0.36.1"
   }
 }
 ```
@@ -573,7 +585,7 @@ If they differ, either bump `@midnight-ntwrk/compact-runtime` in
 `package.json` to match, or recompile with the correct toolchain
 version.
 
-**The `+0.31.0` pin** on the `compact compile` command is critical.
+**The `+0.36.1` pin** on the `compact compile` command is critical.
 Without it, the command uses whatever compiler `compact` toolchain
 has as default, which may mismatch the runtime version the contract
 was last compiled with. Always pin.
@@ -613,7 +625,7 @@ recompiling.
 ### 5.3) `contract/src/voting.compact`
 
 ```compact
-pragma language_version >= 0.22;
+pragma language_version >= 0.28.0;
 
 import CompactStandardLibrary;
 
@@ -686,8 +698,8 @@ export circuit closePoll(): [] {
   The `pure` keyword means the circuit has no ledger writes and no
   public inputs; it's a helper function.
 
-- **`>= 0.22` language version range** (not exact). This accepts any
-  compatible 0.22.x compiler. The `compact compile +0.31.0` command
+- **`>= 0.28.0` language version range** (not exact). This accepts any
+  compiler implementing language 0.28.0 or later. The `compact compile +0.36.1` command
   line pin is what actually selects the compiler.
 
 - **`pollClosed` is set to `true` via `disclose()`.** When the poll
@@ -2182,7 +2194,7 @@ requested. It's best-effort — denial doesn't break functionality.
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `Error: Unknown compiler version +0.31.0` | compactc not installed at that version | `compact update 0.31.0` |
+| `Error: Unknown compiler version +0.36.1` | compactc not installed at that version | `compact update 0.36.1` |
 | `Could not find package '@midnight-ntwrk/compact-runtime'` | npm deps not installed | `cd contract && npm install` |
 | `Syntax error: expected ';'` | Language version mismatch | Check `pragma language_version` matches toolchain |
 | `The compiler cannot find module` | Import path issue | Ensure `contract-info.json` paths are relative |

@@ -1,6 +1,6 @@
 ---
 name: react-wallet-connector
-description: Generate a React + Vite TypeScript app that connects to a Midnight wallet via the DApp Connector API (@midnight-ntwrk/dapp-connector-api). Use when building a React frontend, bootstrapping a wallet connector, wiring connect/disconnect UI, reading window.midnight wallets, getting unshielded addresses, or asking about the DApp Connector API connection flow. Produces a minimal runnable template — styling is intentionally omitted so the user can add Tailwind, CSS modules, etc.
+description: Generate a React + Vite TypeScript app that connects to a Midnight wallet via the DApp Connector API (@midnightntwrk/dapp-connector-api). Use when building a React frontend, bootstrapping a wallet connector, wiring connect/disconnect UI, reading window.midnight wallets, getting unshielded addresses, or asking about the DApp Connector API connection flow. Produces a minimal runnable template — styling is intentionally omitted so the user can add Tailwind, CSS modules, etc.
 ---
 
 # React Wallet Connector Skill
@@ -10,14 +10,15 @@ This skill generates a complete, runnable React application that connects to a M
 **Primary references:**
 - `docs.midnight.network` — React wallet connector guide (DApp Connector API)
 - `llms.txt` — full Midnight documentation index
-- `@midnight-ntwrk/dapp-connector-api@4.0.1` — latest stable connector package (Feb 2026)
+- `@midnightntwrk/dapp-connector-api@4.1.0` — current connector package (5 Nov 2026; Ledger 9.1 support matrix). Backwards-compatible with 4.0.x: adds ECDSA (`ecdsa_secp256k1_sha256`) signatures from `signData` (the `Signature` result now carries a `scheme`), and an `InsufficientFunds` error code. New releases publish under `@midnightntwrk`; the legacy `@midnight-ntwrk/dapp-connector-api` is mirrored only "for now", so use the new scope
 
 **Key architecture notes:**
 - Wallets inject `InitialAPI` instances on `window.midnight`, each keyed by a **UUID** — never use hardcoded keys like `window.midnight.mnLace`
 - Enumerate wallets with `Object.values(window.midnight)`; when multiple wallets exist, let the user choose
-- Import `@midnight-ntwrk/dapp-connector-api` as a side effect to augment global `window.midnight` types
+- Import `@midnightntwrk/dapp-connector-api` as a side effect to augment global `window.midnight` types
 - Request the **shielded** address only when your app actually needs it; the template uses `getUnshieldedAddress()`
 - Network IDs: `'undeployed'` (local), `'preview'`, `'preprod'`, `'mainnet'` — must match the wallet's configured network
+- **Ledger 9 (Nov 2026):** all networks run Ledger 9, so users need a Ledger 9 build of their wallet. **Preview relaunched as a new chain on 7 Nov 2026**: addresses still work, but old balances and contracts are gone, so re-fund from the faucet. Preprod/mainnet service URIs returned by `getConfiguration()` now point at Blockfrost-backed endpoints; treat them as opaque and pass them to the SDK (`dappConnectorNetwork(api)` from `@midnightntwrk/midnight-js-dapp-connector-proof-provider`)
 - Code examples omit CSS styling by design; add your preferred styling solution after scaffolding
 
 **Relationship to other skills:**
@@ -61,14 +62,14 @@ my-wallet-app/
 ```bash
 npm create vite@latest my-wallet-app -- --template react-ts
 cd my-wallet-app
-npm install @midnight-ntwrk/dapp-connector-api@4.0.1
+npm install @midnightntwrk/dapp-connector-api@4.1.0
 ```
 
 ---
 
 ## 4) `package.json`
 
-Use the Vite `react-ts` template output and ensure `@midnight-ntwrk/dapp-connector-api` is listed:
+Use the Vite `react-ts` template output and ensure `@midnightntwrk/dapp-connector-api` is listed:
 
 ```json
 {
@@ -82,7 +83,7 @@ Use the Vite `react-ts` template output and ensure `@midnight-ntwrk/dapp-connect
     "preview": "vite preview"
   },
   "dependencies": {
-    "@midnight-ntwrk/dapp-connector-api": "4.0.1",
+    "@midnightntwrk/dapp-connector-api": "4.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -96,7 +97,7 @@ Use the Vite `react-ts` template output and ensure `@midnight-ntwrk/dapp-connect
 }
 ```
 
-> Pin `@midnight-ntwrk/dapp-connector-api` to `4.0.1` unless the user specifies otherwise. Check `npm view @midnight-ntwrk/dapp-connector-api version` if install fails with `ETARGET`.
+> Pin `@midnightntwrk/dapp-connector-api` to `4.1.0` unless the user specifies otherwise. Check `npm view @midnightntwrk/dapp-connector-api version` if install fails with `ETARGET`.
 
 ---
 
@@ -189,7 +190,7 @@ export default defineConfig({
 /// <reference types="vite/client" />
 ```
 
-The `@midnight-ntwrk/dapp-connector-api` side-effect import in `App.tsx` augments `window.midnight` — no manual declaration needed.
+The `@midnightntwrk/dapp-connector-api` side-effect import in `App.tsx` augments `window.midnight` — no manual declaration needed.
 
 ---
 
@@ -211,7 +212,7 @@ export interface WalletCardProps {
 Wallets inject under `window.midnight` with UUID keys. Always enumerate — never hardcode a wallet name.
 
 ```typescript
-import type { InitialAPI } from '@midnight-ntwrk/dapp-connector-api';
+import type { InitialAPI } from '@midnightntwrk/dapp-connector-api';
 
 export const listWallets = (): InitialAPI[] => {
   const injected = window.midnight;
@@ -290,7 +291,7 @@ Connection logic using the DApp Connector API.
 ```tsx
 import React, { useState } from 'react';
 import WalletCard from './WalletCard';
-import '@midnight-ntwrk/dapp-connector-api';
+import '@midnightntwrk/dapp-connector-api';
 import { selectWallet } from './selectWallet';
 
 const App: React.FC = () => {
@@ -414,7 +415,7 @@ When `listWallets()` returns more than one entry, replace `selectWallet()` auto-
 
 ```tsx
 // src/WalletPicker.tsx
-import type { InitialAPI } from '@midnight-ntwrk/dapp-connector-api';
+import type { InitialAPI } from '@midnightntwrk/dapp-connector-api';
 import { listWallets } from './selectWallet';
 
 type Props = {
@@ -453,9 +454,11 @@ Render wallet `name` and `icon` as text only unless you sanitize HTML. Never use
 | `window.midnight` is `undefined` | No extension installed or page loaded before injection | Install a Midnight wallet; refresh after install |
 | `No Midnight wallet found` | Extension disabled or wrong detection pattern | Use `Object.values(window.midnight)` — not `window.midnight.mnLace` or other hardcoded keys |
 | Connection rejected / fails | Network mismatch | Ensure `connect('preprod')` matches the wallet's active network |
+| Error with `code: 'InsufficientFunds'` | Wallet can't cover the transaction (new in 4.1.0) | Show a funding prompt instead of a generic failure; on Preview, re-request tNIGHT after the 7 Nov 2026 relaunch and register it for DUST |
+| Old wallet build on Ledger 9 networks | Wallet predates the 6–9 Nov 2026 upgrades | Ask the user to update the extension |
 | Connection hangs | Wallet locked or not synced | Unlock wallet; wait for sync |
-| `ETARGET` on install | Stale package version | Run `npm view @midnight-ntwrk/dapp-connector-api version` and pin the latest |
-| Type errors on `window.midnight` | Missing side-effect import | Add `import '@midnight-ntwrk/dapp-connector-api'` in `App.tsx` |
+| `ETARGET` on install | Stale package version | Run `npm view @midnightntwrk/dapp-connector-api version` and pin the latest |
+| Type errors on `window.midnight` | Missing side-effect import | Add `import '@midnightntwrk/dapp-connector-api'` in `App.tsx` |
 
 ---
 
@@ -479,9 +482,9 @@ After a working connector, extend the app:
 When generating this template for a user:
 
 - [ ] Scaffold with Vite `react-ts` or write all files from this skill
-- [ ] Install `@midnight-ntwrk/dapp-connector-api@4.0.1`
+- [ ] Install `@midnightntwrk/dapp-connector-api@4.1.0`
 - [ ] Create `types.ts`, `selectWallet.ts`, `WalletCard.tsx`, `App.tsx`, `main.tsx`
-- [ ] Include side-effect import `@midnight-ntwrk/dapp-connector-api` in `App.tsx`
+- [ ] Include side-effect import `@midnightntwrk/dapp-connector-api` in `App.tsx`
 - [ ] Use `Object.values(window.midnight)` for wallet detection — never hardcode wallet keys
 - [ ] Default network to `'preprod'` unless user specifies local (`'undeployed'`) or other network
 - [ ] Omit CSS unless the user requests styling

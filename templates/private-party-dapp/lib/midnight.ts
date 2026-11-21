@@ -1,221 +1,100 @@
-import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
+// Ledger 9 / Midnight.js 5 browser session for DApp Connector wallets (1AM, Lace).
+// Canonical copy: references/midnight-session.md. Keep the templates in sync with it.
+import type { ConnectedAPI, InitialAPI } from '@midnightntwrk/dapp-connector-api';
+import {
+  dappConnectorNetwork,
+  dappConnectorProofProvider,
+  dappConnectorWalletProviders,
+} from '@midnightntwrk/midnight-js-dapp-connector-proof-provider';
+import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
+import { FetchZkConfigProvider } from '@midnightntwrk/midnight-js-fetch-zk-config-provider';
+import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import type { MidnightNetwork } from '@midnightntwrk/midnight-js-utils';
+import { CostModel } from '@midnightntwrk/ledger-v9';
 import { ContractState } from '@midnight-ntwrk/compact-runtime';
-import type { MidnightProvider, WalletProvider } from '@midnight-ntwrk/midnight-js-types';
+import { MidnightBech32m, ShieldedCoinPublicKey } from '@midnightntwrk/wallet-sdk-address-format';
 
 export type ConnectedSession = {
-  api: any;
-  config: any;
-  providers: {
-    privateStateProvider: ReturnType<typeof createPrivateStateProvider>;
-    publicDataProvider: ReturnType<typeof createPatchedPublicDataProvider>;
-    zkConfigProvider: FetchZkConfigProvider<any>;
-    proofProvider: { proveTx: (unprovenTx: any) => Promise<any> };
-    walletProvider: WalletProvider;
-    midnightProvider: MidnightProvider;
-  };
+  api: ConnectedAPI;
+  /** Network id + endpoints, read from the wallet. There is no global setNetworkId any more. */
+  network: MidnightNetwork;
+  providers: MidnightProviders;
   unshieldedAddress: string;
   coinPublicKeyBytes: Uint8Array;
 };
 
 export function fromHex(hex: string): Uint8Array {
   const h = hex.startsWith('0x') ? hex.slice(2) : hex;
-  return Uint8Array.from(h.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
+  return Uint8Array.from(h.match(/.{1,2}/g) ?? [], (b) => parseInt(b, 16));
 }
 
 export function toHex(bytes: Uint8Array): string {
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function coinPublicKeyToBytes(pk: unknown): Uint8Array {
-  if (pk instanceof Uint8Array) return pk.length === 32 ? pk : pk.slice(0, 32);
-  if (typeof pk === 'string') {
-    const hex = pk.startsWith('0x') ? pk.slice(2) : pk;
-    if (hex.length === 64 && /^[0-9a-fA-F]+$/.test(hex)) return fromHex(hex);
-    return new Uint8Array(32);
+/**
+ * Demo-grade password for the encrypted IndexedDB private-state store: random, kept in localStorage.
+ * Production apps should ask the user or derive it from wallet-held material.
+ */
+function demoStoragePassword(): Promise<string> {
+  const k = 'midnight-private-storage-password';
+  let pw = localStorage.getItem(k);
+  if (!pw) {
+    pw = `Mn-${crypto.randomUUID()}-${crypto.randomUUID()}`;
+    localStorage.setItem(k, pw);
   }
-  if (Array.isArray(pk)) {
-    return new Uint8Array(pk.length >= 32 ? pk.slice(0, 32) : [...pk, ...new Uint8Array(32 - pk.length)]);
-  }
-  if (pk && typeof pk === 'object' && 'bytes' in (pk as object)) {
-    return coinPublicKeyToBytes((pk as { bytes: unknown }).bytes);
-  }
-  return new Uint8Array(32);
+  return Promise.resolve(pw);
 }
 
-function createPrivateStateProvider() {
-  let scope = '';
-  const stateStore = new Map<string, unknown>();
-  const signingKeyStore = new Map<string, unknown>();
-  const key = (id: string) => `${scope}:${id}`;
-  return {
-    setContractAddress(address: string) {
-      scope = address;
-    },
-    async set(id: string, state: unknown) {
-      stateStore.set(key(id), state);
-    },
-    async get(id: string) {
-      return stateStore.get(key(id)) ?? null;
-    },
-    async remove(id: string) {
-      stateStore.delete(key(id));
-    },
-    async clear() {
-      stateStore.clear();
-    },
-    async setSigningKey(addr: string, k: unknown) {
-      signingKeyStore.set(addr, k);
-    },
-    async getSigningKey(addr: string) {
-      return signingKeyStore.get(addr) ?? null;
-    },
-    async removeSigningKey(addr: string) {
-      signingKeyStore.delete(addr);
-    },
-    async clearSigningKeys() {
-      signingKeyStore.clear();
-    },
-    async exportPrivateStates(): Promise<never> {
-      throw new Error('Not implemented.');
-    },
-    async importPrivateStates(): Promise<never> {
-      throw new Error('Not implemented.');
-    },
-    async exportSigningKeys(): Promise<never> {
-      throw new Error('Not implemented.');
-    },
-    async importSigningKeys(): Promise<never> {
-      throw new Error('Not implemented.');
-    },
-  };
+export async function detectWallet(): Promise<InitialAPI> {
+  const midnight = (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight ?? {};
+  const w = midnight['1am'] ?? Object.values(midnight)[0];
+  if (!w) throw new Error('No Midnight wallet extension found');
+  return w;
 }
 
-function createPatchedPublicDataProvider(queryUrl: string, subscriptionUrl: string) {
-  const base = indexerPublicDataProvider(queryUrl, subscriptionUrl);
-  return {
-    ...base,
-    async queryContractState(contractAddress: string, config?: unknown) {
-      if (config) return base.queryContractState(contractAddress, config as never);
-      const res = await fetch(queryUrl, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: `query LATEST_CONTRACT_STATE($address: HexEncoded!) {
-            contractAction(address: $address) { state }
-          }`,
-          variables: { address: contractAddress },
-        }),
-      });
-      if (!res.ok) throw new Error(`Indexer HTTP error: ${res.status}`);
-      const payload = await res.json();
-      if (payload.errors?.length) {
-        throw new Error(payload.errors.map((e: { message: string }) => e.message).join('; '));
-      }
-      const action = payload.data?.contractAction ?? null;
-      return action ? ContractState.deserialize(fromHex(action.state)) : null;
-    },
-  };
-}
-
-export async function createConnectedSession(
-  api: any,
-  zkAssetBasePath: string,
-): Promise<ConnectedSession> {
-  const [config, unshieldedAddress, shieldedAddress] = await Promise.all([
-    api.getConfiguration(),
+export async function createConnectedSession(api: ConnectedAPI, zkAssetPath: string): Promise<ConnectedSession> {
+  const network = await dappConnectorNetwork(api);
+  const [{ unshieldedAddress }, shielded] = await Promise.all([
     api.getUnshieldedAddress(),
     api.getShieldedAddresses(),
   ]);
 
-  setNetworkId(config.networkId);
-
-  const zkConfigProvider = new FetchZkConfigProvider(
-    new URL(zkAssetBasePath, window.location.origin).toString(),
-    window.fetch.bind(window),
+  // zkAssetPath must serve compiler/ (contract-manifest.json, contract-info.json), keys/ and zkir/.
+  const zkConfigProvider = new FetchZkConfigProvider<string>(
+    new URL(zkAssetPath, window.location.origin).toString(),
+    { fetchFunc: window.fetch.bind(window) },
   );
-  const provingProvider = await api.getProvingProvider(zkConfigProvider);
-
-  const proofProvider = {
-    async proveTx(unprovenTx: any) {
-      const { CostModel } = await import('@midnight-ntwrk/ledger-v8');
-      return unprovenTx.prove(provingProvider, CostModel.initialCostModel());
-    },
-  };
-
-  const walletProvider: WalletProvider = {
-    getCoinPublicKey: () => shieldedAddress.shieldedCoinPublicKey,
-    getEncryptionPublicKey: () => shieldedAddress.shieldedEncryptionPublicKey,
-    balanceTx: async (tx: any) => {
-      const txHex = toHex(tx.serialize());
-      const balanced = await api.balanceUnsealedTransaction(txHex);
-      if (!balanced?.tx) throw new Error('balanceUnsealedTransaction returned invalid result');
-      const { Transaction } = await import('@midnight-ntwrk/ledger-v8');
-      return Transaction.deserialize('signature', 'proof', 'binding', fromHex(balanced.tx));
-    },
-  };
-
-  const midnightProvider: MidnightProvider = {
-    submitTx: async (tx: any) => {
-      const txHex = toHex(tx.serialize());
-      const result = await api.submitTransaction(txHex);
-      if (typeof result === 'string' && result) return result;
-      if (result?.transactionId) return result.transactionId;
-      if (result?.id) return result.id;
-      return txHex.slice(0, 64);
-    },
-  };
+  const proofProvider = await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel());
+  const { walletProvider, midnightProvider } = await dappConnectorWalletProviders(api);
 
   return {
     api,
-    config,
+    network,
     providers: {
-      privateStateProvider: createPrivateStateProvider(),
-      publicDataProvider: createPatchedPublicDataProvider(config.indexerUri, config.indexerWsUri),
+      privateStateProvider: levelPrivateStateProvider({
+        accountId: unshieldedAddress,
+        privateStoragePasswordProvider: demoStoragePassword,
+      }),
+      publicDataProvider: indexerPublicDataProvider(network.indexer),
       zkConfigProvider,
       proofProvider,
       walletProvider,
       midnightProvider,
+      config: { networkId: network.networkId, ttlSeconds: 3600 },
     },
-    unshieldedAddress: unshieldedAddress.unshieldedAddress,
-    coinPublicKeyBytes: coinPublicKeyToBytes(shieldedAddress.shieldedCoinPublicKey),
+    unshieldedAddress,
+    // The connector returns keys in Bech32m, not hex.
+    coinPublicKeyBytes: new Uint8Array(
+      ShieldedCoinPublicKey.codec.decode(network.networkId, MidnightBech32m.parse(shielded.shieldedCoinPublicKey)).data,
+    ),
   };
 }
 
-export async function pollForState(
-  queryUrl: string,
-  contractAddress: string,
-  maxAttempts = 120,
-  intervalMs = 2000,
-): Promise<string> {
-  for (let i = 0; i < maxAttempts; i++) {
-    const res = await fetch(queryUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        query: `query LATEST_CONTRACT_STATE($address: HexEncoded!) {
-          contractAction(address: $address) { state }
-        }`,
-        variables: { address: contractAddress },
-      }),
-    });
-    if (res.ok) {
-      const payload = await res.json();
-      const state = payload.data?.contractAction?.state;
-      if (state) return state;
-    }
-    await new Promise((r) => setTimeout(r, intervalMs));
-  }
-  throw new Error(`Contract state not indexed after ${(maxAttempts * intervalMs) / 1000}s`);
-}
-
-export async function detectWallet(): Promise<any> {
-  const w =
-    (window as any).midnight?.['1am'] ??
-    Object.values((window as any).midnight ?? {})[0];
-  if (!w) throw new Error('No Midnight wallet extension found');
-  return w;
+/** Latest on-chain state of a contract, decoded with this app's own compact-runtime copy. */
+export async function queryLatestState(session: ConnectedSession, contractAddress: string) {
+  const read = await session.providers.publicDataProvider.queryContractState(contractAddress);
+  if (!read) return null;
+  return read.contractState.deserialize({ v9: ContractState });
 }

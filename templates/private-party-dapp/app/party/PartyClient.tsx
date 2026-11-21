@@ -30,7 +30,7 @@ export default function PartyClient() {
 
   const refresh = useCallback(async () => {
     if (!session || !contractAddress) return;
-    setStatus(await fetchPartyState(session.config.indexerUri, contractAddress));
+    setStatus(await fetchPartyState(session, contractAddress));
   }, [session, contractAddress]);
 
   useEffect(() => {

@@ -21,7 +21,10 @@ Generate a React + Vite + TypeScript app that connects Midnight wallets through 
 - [Using Midnight embedded wallets](https://www.dynamic.xyz/docs/react/wallets/using-wallets/midnight/midnight-embedded-wallets) — social/email MPC
 - [Deploying and calling Midnight contracts](https://www.dynamic.xyz/docs/react/wallets/using-wallets/midnight/midnight-contracts) — embedded settlement provider
 - [Dynamic docs index](https://www.dynamic.xyz/docs/llms.txt)
-- Pin: `@dynamic-labs/midnight@5.12.2` + `@dynamic-labs/sdk-react-core@5.12.2` (+ `@dynamic-labs/sdk-api-core@0.104.0` for `WalletAddressType`)
+- Pin: `@dynamic-labs/midnight@5.12.2` + `@dynamic-labs/sdk-react-core@5.12.2` (+ `@dynamic-labs/sdk-api-core@0.104.0` for `WalletAddressType`). Dynamic ships fast: `5.20.0` (21 Nov 2026, with `sdk-api-core@0.181.0`) is current. Upgrade all three together and re-test, since this skill's code was written against 5.12.2.
+- **Ledger 9 status (21 Nov 2026): NEEDS CHECK for embedded wallets.** Every release through 5.20.0 depends only on `@midnight-ntwrk/dapp-connector-api@4.0.1` (no Midnight.js / ledger packages), so the **external-wallet** path works on Ledger 9 whenever the user's wallet (e.g. a Ledger 9 build of 1AM) does. Connector 4.1.0 is backwards-compatible. **Embedded (WaaS) settlement** runs on Dynamic's infrastructure, and its Ledger 9 support is not verifiable from the npm packages, so confirm with Dynamic before relying on it for mainnet
+- Network state after the upgrade: Preview relaunched as a new chain on 7 Nov 2026 (re-fund, re-register DUST); Preprod cleared non-cNIGHT DUST registrations on 9 Nov 2026; mainnet DUST was reset and replayed to cap. The `dustBalance` hooks below will read 0 until registration and generation happen again
+- For contract deploy/calls from external wallets, wire Midnight.js 5 through `@midnightntwrk/midnight-js-dapp-connector-proof-provider` (`references/midnight-session.md`)
 
 **Key architecture notes:**
 - A Midnight wallet is **not** a single address — three surfaces:
@@ -34,7 +37,7 @@ Generate a React + Vite + TypeScript app that connects Midnight wallets through 
 
 - `NIGHT` exists as **both** shielded and unshielded — different pools, not duplicate balances
 - **Dynamic** — connection lifecycle, connectors, address/balance accessors, send routing
-- **1AM (external)** — key custody, derivation, proving, signing, submission via `@midnight-ntwrk/dapp-connector-api`
+- **1AM (external)** — key custody, derivation, proving, signing, submission via `@midnightntwrk/dapp-connector-api`
 - **Your app** — deposit UX: surface **both** unshielded and shielded; DUST is generated, not deposited to
 - `sendBalance` routes by recipient prefix: `mn_shield…` → shielded, otherwise unshielded. **No cross-pool transfers**
 - Always guard with `isMidnightWallet(wallet)` before Midnight methods

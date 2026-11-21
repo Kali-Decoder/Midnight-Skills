@@ -24,7 +24,7 @@ Midnight has two distinct token systems that operate independently: **ledger tok
 | Transfer mechanism | Zswap (ZK atomic swap) | Circuit call (`transfer`, `mint`, `burn`) |
 | Privacy | Shielded or unshielded at UTXO level | Private state (balances can be private) |
 | Fee resource | NIGHT generates DUST (transaction fees) | No fee role — just application logic |
-| Wallet SDK method | `wallet.makeTransfer(outputs)` | `contract.callTx.transfer(to, amount)` |
+| Wallet SDK method | `facade.transferTransaction(...)` (Wallet SDK 2.x) | `contract.callTx.transfer(to, amount)` |
 | Who manages it | Protocol + wallet SDK | Your Compact contract |
 | Analogy | Native ETH / BTC | ERC-20 |
 
@@ -70,56 +70,55 @@ const dustAddress = state.dust.address;
 
 ---
 
-## 3) Sending NIGHT Tokens (Wallet SDK)
+## 3) Sending NIGHT Tokens (Wallet SDK 2.x)
 
-Use `wallet.makeTransfer(outputs)` to transfer NIGHT. The wallet handles UTXO selection, Zswap proving, and DUST fee payment.
+Use `facade.transferTransaction(...)` (Wallet SDK 2.0.1; the 1.x `makeTransfer` is gone from the facade). The wallet selects UTXOs, proves, and pays the DUST fee; unshielded inputs must be **signed** before finalizing. Type-checked against `@midnightntwrk/wallet-sdk-facade` 5.0.1:
 
 ```typescript
-import * as Rx from 'rxjs';
-import { unshieldedToken } from '@midnight-ntwrk/ledger-v8';
+import { unshieldedToken } from '@midnightntwrk/ledger-v9';
+import { MidnightBech32m, UnshieldedAddress } from '@midnightntwrk/wallet-sdk-address-format';
+import { createKeystore } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
 
-// Get current state
-const state = await Rx.firstValueFrom(
-  wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
+// facade: WalletFacade from WalletFacade.init (see midnight-js skill), seeds: WalletSeeds
+const keystore = createKeystore({ kind: 'schnorr', secret: seeds.unshielded }, networkId);
+const signSegment = (payload: Uint8Array) => Promise.resolve(keystore.signData(payload));
+
+const state = await facade.waitForSyncedState();
+const nightTokenType = unshieldedToken().raw;                  // hex token type
+console.log('NIGHT (Stars):', state.unshielded.balances[nightTokenType] ?? 0n); // 1 NIGHT = 1_000_000 Stars
+
+// Recipients are parsed addresses, not strings
+const to = MidnightBech32m.parse('mn_addr_preview1...').decode(UnshieldedAddress, networkId);
+
+const recipe = await facade.transferTransaction(
+  [{ type: 'unshielded', outputs: [{ type: nightTokenType, receiverAddress: to, amount: 1_000_000n }] }],
+  { ttl: new Date(Date.now() + 60 * 60 * 1000) },
 );
-
-// Check unshielded NIGHT balance before sending
-const nightTokenType = unshieldedToken().raw; // hex token type identifier
-const nightBalance = state.unshielded.balances[nightTokenType] ?? 0n;
-console.log('NIGHT balance (Stars):', nightBalance);
-// 1 NIGHT = 1_000_000 Stars
-
-// Send unshielded NIGHT to an unshielded address
-const transferRecipe = await wallet.makeTransfer([
-  {
-    value: 1_000_000n,                    // 1 NIGHT in Stars
-    tokenType: nightTokenType,
-    receiverAddress: 'mn_addr_preprod1...', // recipient's unshielded address
-  },
-]);
-
-const finalized = await wallet.finalizeRecipe(transferRecipe);
-const txId = await wallet.submitTransaction(finalized);
-console.log('Transfer submitted:', txId);
+const signed = await facade.signRecipe(recipe, signSegment);    // signs the unshielded inputs
+const txId = await facade.submitTransaction(await facade.finalizeRecipe(signed));
 ```
 
 ### Multi-Output Transfer (Batch)
 
+Put several outputs (and shielded + unshielded groups) in one call. They settle atomically:
+
 ```typescript
-// Send to multiple recipients in one atomic transaction
-const transferRecipe = await wallet.makeTransfer([
-  {
-    value: 500_000n,
-    tokenType: nightTokenType,
-    receiverAddress: 'mn_addr_preprod1_alice...',
-  },
-  {
-    value: 250_000n,
-    tokenType: nightTokenType,
-    receiverAddress: 'mn_addr_preprod1_bob...',
-  },
-]);
+const recipe = await facade.transferTransaction(
+  [
+    {
+      type: 'unshielded',
+      outputs: [
+        { type: nightTokenType, receiverAddress: alice, amount: 500_000n },
+        { type: nightTokenType, receiverAddress: bob, amount: 250_000n },
+      ],
+    },
+    // { type: 'shielded', outputs: [{ type: tokenType, receiverAddress: shieldedAddr, amount }] },
+  ],
+  { ttl: new Date(Date.now() + 60 * 60 * 1000) },
+);
 ```
+
+In a browser dApp, ask the user's wallet instead: `connectedAPI.makeTransfer(desiredOutputs, { payFees })` (DApp Connector 4.1.0). If the wallet can't cover it, the call rejects with error code `InsufficientFunds`.
 
 ### Querying Unshielded NIGHT Balance (Without Wallet)
 
@@ -204,7 +203,7 @@ if (unregistered.length > 0) {
   const recipe = await wallet.registerNightUtxosForDustGeneration(
     unregistered,
     unshieldedKeystore.getPublicKey(),
-    (payload: Uint8Array) => unshieldedKeystore.signData(payload),
+    (payload: Uint8Array) => Promise.resolve(unshieldedKeystore.signData(payload)), // SignSegment returns a Promise
   );
   const finalized = await wallet.finalizeRecipe(recipe);
   await wallet.submitTransaction(finalized);
@@ -215,7 +214,7 @@ await Rx.firstValueFrom(
   wallet.state().pipe(
     Rx.throttleTime(5_000),
     Rx.filter((s: any) => s.isSynced),
-    Rx.filter((s: any) => s.dust.walletBalance(new Date()) > 0n),
+    Rx.filter((s) => s.dust.balance(new Date()) > 0n),   // Wallet SDK 2.x
   ),
 );
 ```
@@ -227,7 +226,7 @@ const state = await Rx.firstValueFrom(
   wallet.state().pipe(Rx.filter((s: any) => s.isSynced)),
 );
 
-const dustBalance = state.dust.walletBalance(new Date()); // Specks
+const dustBalance = state.dust.balance(new Date()); // Specks (Wallet SDK 2.x; `walletBalance` was 1.x)
 const dustCoins = state.dust.availableCoins.length;
 const dustPending = state.dust.pendingCoins.length;
 
@@ -235,11 +234,15 @@ console.log(`DUST: ${dustBalance.toLocaleString()} Specks`);
 console.log(`Coins: ${dustCoins} available, ${dustPending} pending`);
 ```
 
-**`pendingCoins > 0 && availableCoins === 0`** → DUST is locked by a pending or failed transaction. Restart the wallet process to release it. This is a known wallet SDK issue.
+**`pendingCoins > 0 && availableCoins === 0`** → DUST is booked by a pending transaction. In Wallet SDK 2.x the facade releases those bookings itself when the node provably rejects the submission (`TransactionInvalidError`, pool refusal, …); otherwise they free when the TTL passes or on sync. Wait, or call `facade.revertTransaction(tx)` for a transaction you know is dead, instead of restarting the process (the 1.x workaround).
 
-### DUST on sponsored networks (preview, mainnet)
+### Ledger 9 DUST reset (Nov 2026)
 
-On `preview` and `mainnet`, 1AM ProofStation sponsors all fees. Users need zero NIGHT and zero DUST. The `balanceUnsealedTransaction` call to the 1AM wallet handles fee payment server-side. Do not attempt DUST registration flows on these networks — they are unnecessary.
+Generation parameters are unchanged (5 DUST/NIGHT cap, 10^15 Specks per DUST, ~1 week to cap, 3 h grace), but state was reset: **mainnet** replayed cNIGHT registrations to full cap; **Preprod** (9 Nov 2026) cleared registrations not backed by cNIGHT, so register again; **Preview** relaunched as a new chain (7 Nov 2026), so re-request tNIGHT and register.
+
+### Fee sponsorship (1AM)
+
+1AM has advertised that its ProofStation sponsors fees for 1AM-wallet users on preview and mainnet, via `balanceUnsealedTransaction`. That is a third-party policy that may have changed with the Ledger 9 DUST reset, so check 1AM's docs before you skip DUST registration. Headless wallets and other wallets always pay from their own DUST.
 
 ---
 
@@ -252,7 +255,7 @@ For application tokens, implement them in Compact. For production use the OpenZe
 ### Minimal FungibleToken Contract
 
 ```compact
-pragma language_version >= 0.23;
+pragma language_version >= 0.28.0;
 
 import CompactStandardLibrary;
 
@@ -346,32 +349,33 @@ export const witnesses = {
 
 ### OpenZeppelin FungibleToken (Full-Featured)
 
-The OpenZeppelin library provides a production-grade implementation with `Ownable`, `Pausable`, and `FungibleToken` modules:
+The OpenZeppelin library provides `Ownable`, `Pausable`, and `FungibleToken` modules. For Ledger 9 use the `0.5.0-alpha.2` line (stable `0.4.0` still targets Compact 0.31; pre-releases are unaudited):
 
 ```bash
-# Install as a git submodule
-git init && git submodule add https://github.com/OpenZeppelin/compact-contracts.git
-cd compact-contracts && nvm install && yarn && SKIP_ZK=true yarn compact
+npm install @openzeppelin/compact-contracts@0.5.0-alpha.2
+compact compile +0.36.1 MyToken.compact artifacts/MyToken   # compiles as shown below (checked 21 Nov 2026)
 ```
 
+Accounts are `Either<Bytes<32>, ContractAddress>`. The `Bytes<32>` side is an account ID, `persistentHash(secretKey)`, where the secret comes from OZ's witness. Your TypeScript witnesses must supply it. `FungibleToken.transfer` rejects `ContractAddress` recipients until OZ migrates to Ledger 9 cross-contract calls.
+
 ```compact
-pragma language_version >= 0.22;
+pragma language_version >= 0.28.0;
 
 import CompactStandardLibrary;
-import "./compact-contracts/node_modules/@openzeppelin/compact-contracts/src/access/Ownable"
+import "./node_modules/@openzeppelin/compact-contracts/access/Ownable"
   prefix Ownable_;
-import "./compact-contracts/node_modules/@openzeppelin/compact-contracts/src/security/Pausable"
+import "./node_modules/@openzeppelin/compact-contracts/security/Pausable"
   prefix Pausable_;
-import "./compact-contracts/node_modules/@openzeppelin/compact-contracts/src/token/FungibleToken"
+import "./node_modules/@openzeppelin/compact-contracts/token/FungibleToken"
   prefix FungibleToken_;
 
 constructor(
   _name: Opaque<"string">,
   _symbol: Opaque<"string">,
   _decimals: Uint<8>,
-  _recipient: Either<ZswapCoinPublicKey, ContractAddress>,
+  _recipient: Either<Bytes<32>, ContractAddress>,
   _amount: Uint<128>,
-  _initOwner: Either<ZswapCoinPublicKey, ContractAddress>,
+  _initOwner: Either<Bytes<32>, ContractAddress>,
 ) {
   Ownable_initialize(_initOwner);
   FungibleToken_initialize(_name, _symbol, _decimals);
@@ -379,7 +383,7 @@ constructor(
 }
 
 export circuit transfer(
-  to: Either<ZswapCoinPublicKey, ContractAddress>,
+  to: Either<Bytes<32>, ContractAddress>,
   value: Uint<128>,
 ): Boolean {
   Pausable_assertNotPaused();
@@ -397,11 +401,11 @@ export circuit unpause(): [] {
 }
 ```
 
-Compile output example:
+Compile output looks like this (illustrative: exact `k`/`rows` depend on the OZ version and change with compiler 0.36.x / ZKIR v3):
 ```
-circuit "pause"    (k=10, rows=125)
-circuit "transfer" (k=11, rows=1180)
-circuit "unpause"  (k=10, rows=121)
+circuit "pause"    (k=10, rows=…)
+circuit "transfer" (k=11, rows=…)
+circuit "unpause"  (k=10, rows=…)
 ```
 
 ---
@@ -409,7 +413,7 @@ circuit "unpause"  (k=10, rows=121)
 ## 6) Calling Token Circuits from TypeScript
 
 ```typescript
-import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
+import { findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
 
 const contract = await findDeployedContract(providers, {
   contractAddress: '09dbe05f...',
@@ -497,12 +501,13 @@ Zswap is Midnight's multi-asset atomic swap protocol built on ZK-SNARK proofs. I
 
 As a DApp developer, you interact with Zswap indirectly:
 
-- `wallet.makeTransfer(outputs)` — triggers a Zswap transaction for NIGHT
+- `facade.transferTransaction(...)` — builds a transfer (shielded outputs go through Zswap)
+- `facade.initSwap(inputs, outputs, secrets, { ttl, payFees: false })` — builds a swap **offer** another party can complete and merge
 - `walletProvider.balanceTx(tx)` — the balancing step uses Zswap internally to add DUST fees and change outputs
 - `ZswapChainState` — returned by indexer queries, needed by some SDK provider methods
 - `ZswapSecretKeys` — derived from HD wallet seed (`Roles.Zswap`), used by `ShieldedWallet`
 
-Zswap does not expose a direct "swap two contracts" API at the DApp layer yet — that is exchange infrastructure. At the current SDK level, Zswap is primarily surfaced as the mechanism for NIGHT transfers and DUST fee payment.
+Zswap itself has no "swap two contracts" call. Since Ledger 9, though, contracts can call each other (phase 1, **unshielded only**; see the `compact` skill). So a contract can now orchestrate unshielded token movements across contracts in one transaction. Shielded multi-party swaps still go through Zswap offers (`initSwap` + merging).
 
 ---
 
@@ -536,7 +541,9 @@ const DUST_PER_NIGHT_MAX = 5_000_000_000n; // Specks per Star at full cap
 
 **Spending NIGHT before DUST is available** — spending a NIGHT UTXO causes its associated DUST to start decaying immediately. If you spend NIGHT before DUST reaches useful levels, you lose the generation time invested. Wait until DUST is available before spending NIGHT.
 
-**DUST locked after failed transaction** — known wallet SDK issue. `pendingCoins > 0 && availableCoins === 0` means DUST is stuck. Restart the wallet/DApp process to release the lock.
+**DUST booked after a failed transaction** — Wallet SDK 2.x releases bookings for provably rejected submissions; others free at TTL or sync. Prefer waiting or `facade.revertTransaction(tx)` over restarting.
+
+**`makeTransfer` / `walletBalance` not found** — Wallet SDK 1.x names. Use `facade.transferTransaction(...)` and `state.dust.balance(time)`.
 
 **`amount` as JS `number` instead of `BigInt`** — 1 NIGHT = 1,000,000 Stars. Realistic balances exceed `Number.MAX_SAFE_INTEGER`. Always use `BigInt` literals (`1_000_000n`).
 
@@ -546,6 +553,6 @@ const DUST_PER_NIGHT_MAX = 5_000_000_000n; // Specks per Star at full cap
 
 **`unshieldedToken().raw` varies by network** — the hex token type identifier for NIGHT is network-specific. Always call `unshieldedToken()` at runtime; never hardcode the hex string.
 
-**OZ contract import path changed between versions** — the import path changed from `@openzeppelin-compact/contracts` to `@openzeppelin/compact-contracts` between library versions. Check the README of the exact version you are using.
+**OZ versions** — the package is `@openzeppelin/compact-contracts`. Stable `0.4.0` targets Compact 0.31 / Ledger 8, while `0.5.0-alpha.2` targets Ledger 9 (language 0.28.0) and is unaudited. Import through `./node_modules/@openzeppelin/compact-contracts/token/FungibleToken` (no `src/`). In 0.5, owners and accounts are `Either<Bytes<32>, ContractAddress>`, where account IDs come from a secret-key witness. The `ZswapCoinPublicKey` form is gone.
 
 **Contract tokens do not generate DUST** — only NIGHT (the native ledger token) generates DUST. Your custom `FungibleToken` has no fee role.

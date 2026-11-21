@@ -6,7 +6,7 @@ description: >
   and Next.js. Triggers include: any mention of Midnight Network, Compact contracts,
   tNIGHT tokens, 1AM wallet integration, ZK proving assets, midnight-js SDK, or
   deploying/calling circuits (deposit, withdraw). Also use when the user encounters
-  errors like "Invalid character 'm' at position 0", "offset: null" GraphQL errors,
+  errors like "Invalid character 'm' at position 0", Ledger 9 version-mismatch or EraMismatchError errors,
   balanceUnsealedTransaction failures, or WASM/WebSocket issues in Next.js with
   Midnight packages. Use this skill even for partial tasks like wiring a single
   provider, decoding ledger state, or debugging a stuck deploy transaction.
@@ -15,7 +15,7 @@ description: >
 # Midnight Network Payment DApp
 
 A privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact
-smart contract with zero gas fees via the 1AM wallet.
+smart contract through the 1AM wallet (Ledger 9: Midnight.js 5.0.2, DApp Connector 4.1.0, Compact 0.36.1). The contract below compiles with 0.36.1, and the payment module type-checks against its generated types.
 
 ## Workflow
 
@@ -24,8 +24,8 @@ When helping the user, follow this sequence:
 1. **Detect where they are**: Contract authoring → Provider setup → Deploy → Circuit calls → Indexer/state polling → UI
 2. **Check for known gotchas first** (see `references/gotchas.md`) before writing any provider or circuit code
 3. **Copy provider wiring** from `references/midnight-session.md` (canonical `lib/midnight.ts` for all browser dApps)
-4. **Use low-level SDK functions** (`createUnprovenDeployTx`, `submitTxAsync`, `submitCallTxAsync`) — never the high-level wrappers (`deployContract`, `createProofProvider`) which are broken on preprod
-5. **Always wrap the public data provider** with the patched version to avoid the GraphQL `offset: null` bug
+4. **Use `deployContract` / `findDeployedContract`** with providers typed to the contract. For a non-blocking UI, use `createUnprovenDeployTx` + `submitTxAsync`, but then you store private state and the signing key yourself (see `1am-wallet/` §8)
+5. **No indexer patch**: the `offset: null` workaround is obsolete on indexer 4.4.101; use `indexerPublicDataProvider(network.indexer)`
 
 ---
 
@@ -59,7 +59,7 @@ Browser (Next.js)
 ## Compact Contract
 
 ```compact
-pragma language_version >= 0.20;
+pragma language_version >= 0.28.0;
 import CompactStandardLibrary;
 
 export ledger balance: Uint<128>;
@@ -105,257 +105,190 @@ Compile: `cd contract && npm run compact` → output lands in `contract/src/mana
 
 ## Provider Setup (Critical — Read Before Writing Any Code)
 
-### Session Type
+`lib/midnight.ts` is the canonical Ledger 9 session (`references/midnight-session.md`). Use it unchanged. The only per-app value is the ZK asset path (`/zk/payment`).
 
 ```ts
+// lib/midnight.ts
+import type { ConnectedAPI, InitialAPI } from '@midnightntwrk/dapp-connector-api';
+import {
+  dappConnectorNetwork,
+  dappConnectorProofProvider,
+  dappConnectorWalletProviders,
+} from '@midnightntwrk/midnight-js-dapp-connector-proof-provider';
+import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
+import { FetchZkConfigProvider } from '@midnightntwrk/midnight-js-fetch-zk-config-provider';
+import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import type { MidnightNetwork } from '@midnightntwrk/midnight-js-utils';
+import { CostModel } from '@midnightntwrk/ledger-v9';
+import { ContractState } from '@midnight-ntwrk/compact-runtime';
+import { MidnightBech32m, ShieldedCoinPublicKey } from '@midnightntwrk/wallet-sdk-address-format';
+
 export type ConnectedSession = {
-  api: any;
-  config: any;
-  providers: {
-    privateStateProvider: ReturnType<typeof createPrivateStateProvider>;
-    publicDataProvider: ReturnType<typeof createPatchedPublicDataProvider>;
-    zkConfigProvider: FetchZkConfigProvider<any>;
-    proofProvider: { proveTx: (unprovenTx: any) => Promise<any> };
-    walletProvider: WalletProvider;
-    midnightProvider: MidnightProvider;
-  };
+  api: ConnectedAPI;
+  /** Network id + endpoints, read from the wallet. There is no global setNetworkId any more. */
+  network: MidnightNetwork;
+  providers: MidnightProviders;
   unshieldedAddress: string;
-  coinPublicKeyBytes: Uint8Array;   // ← pre-converted, never pass raw pk to circuits
+  coinPublicKeyBytes: Uint8Array;
 };
-```
 
-### createConnectedSession
+export function fromHex(hex: string): Uint8Array {
+  const h = hex.startsWith('0x') ? hex.slice(2) : hex;
+  return Uint8Array.from(h.match(/.{1,2}/g) ?? [], (b) => parseInt(b, 16));
+}
 
-```ts
-export async function createConnectedSession(api: any, zkAssetBasePath: string): Promise<ConnectedSession> {
-  const [config, unshieldedAddress, shieldedAddress] = await Promise.all([
-    api.getConfiguration(),
+export function toHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Demo-grade password for the encrypted IndexedDB private-state store: random, kept in localStorage.
+ * Production apps should ask the user or derive it from wallet-held material.
+ */
+function demoStoragePassword(): Promise<string> {
+  const k = 'midnight-private-storage-password';
+  let pw = localStorage.getItem(k);
+  if (!pw) {
+    pw = `Mn-${crypto.randomUUID()}-${crypto.randomUUID()}`;
+    localStorage.setItem(k, pw);
+  }
+  return Promise.resolve(pw);
+}
+
+export async function detectWallet(): Promise<InitialAPI> {
+  const midnight = (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight ?? {};
+  const w = midnight['1am'] ?? Object.values(midnight)[0];
+  if (!w) throw new Error('No Midnight wallet extension found');
+  return w;
+}
+
+export async function createConnectedSession(api: ConnectedAPI, zkAssetPath: string): Promise<ConnectedSession> {
+  const network = await dappConnectorNetwork(api);
+  const [{ unshieldedAddress }, shielded] = await Promise.all([
     api.getUnshieldedAddress(),
     api.getShieldedAddresses(),
   ]);
 
-  setNetworkId(config.networkId);
-
-  const zkConfigProvider = new FetchZkConfigProvider(
-    new URL(zkAssetBasePath, window.location.origin).toString(),
-    window.fetch.bind(window),
+  // zkAssetPath must serve compiler/ (contract-manifest.json, contract-info.json), keys/ and zkir/.
+  const zkConfigProvider = new FetchZkConfigProvider<string>(
+    new URL(zkAssetPath, window.location.origin).toString(),
+    { fetchFunc: window.fetch.bind(window) },
   );
-  const provingProvider = await api.getProvingProvider(zkConfigProvider);
-
-  const proofProvider = {
-    async proveTx(unprovenTx: any) {
-      const { CostModel } = await import('@midnight-ntwrk/ledger-v8');
-      return unprovenTx.prove(provingProvider, CostModel.initialCostModel());
-    },
-  };
-
-  const walletProvider: WalletProvider = {
-    getCoinPublicKey: () => shieldedAddress.shieldedCoinPublicKey,
-    getEncryptionPublicKey: () => shieldedAddress.shieldedEncryptionPublicKey,
-    balanceTx: async (tx: any) => {
-      const txHex = toHex(tx.serialize());
-      const balanced = await api.balanceUnsealedTransaction(txHex);
-      if (!balanced?.tx) throw new Error('balanceUnsealedTransaction returned invalid result');
-      const { Transaction } = await import('@midnight-ntwrk/ledger-v8');
-      return Transaction.deserialize('signature', 'proof', 'binding', fromHex(balanced.tx));
-    },
-  };
-
-  const midnightProvider: MidnightProvider = {
-    submitTx: async (tx: any) => {
-      const txHex = toHex(tx.serialize());
-      const result = await api.submitTransaction(txHex);
-      if (typeof result === 'string' && result) return result;
-      if (result?.transactionId) return result.transactionId;
-      if (result?.id) return result.id;
-      return txHex.slice(0, 64); // fallback pseudo-txId
-    },
-  };
+  const proofProvider = await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel());
+  const { walletProvider, midnightProvider } = await dappConnectorWalletProviders(api);
 
   return {
-    api, config,
+    api,
+    network,
     providers: {
-      privateStateProvider: createPrivateStateProvider(),
-      publicDataProvider: createPatchedPublicDataProvider(config.indexerUri, config.indexerWsUri),
+      privateStateProvider: levelPrivateStateProvider({
+        accountId: unshieldedAddress,
+        privateStoragePasswordProvider: demoStoragePassword,
+      }),
+      publicDataProvider: indexerPublicDataProvider(network.indexer),
       zkConfigProvider,
       proofProvider,
       walletProvider,
       midnightProvider,
+      config: { networkId: network.networkId, ttlSeconds: 3600 },
     },
-    unshieldedAddress: unshieldedAddress.unshieldedAddress,
-    coinPublicKeyBytes: coinPublicKeyToBytes(shieldedAddress.shieldedCoinPublicKey),
+    unshieldedAddress,
+    // The connector returns keys in Bech32m, not hex.
+    coinPublicKeyBytes: new Uint8Array(
+      ShieldedCoinPublicKey.codec.decode(network.networkId, MidnightBech32m.parse(shielded.shieldedCoinPublicKey)).data,
+    ),
   };
 }
-```
 
-### coinPublicKeyToBytes (required — format varies by wallet version)
-
-```ts
-function coinPublicKeyToBytes(pk: unknown): Uint8Array {
-  if (pk instanceof Uint8Array) return pk.length === 32 ? pk : pk.slice(0, 32);
-  if (typeof pk === 'string') {
-    const hex = pk.startsWith('0x') ? pk.slice(2) : pk;
-    if (hex.length === 64 && /^[0-9a-fA-F]+$/.test(hex)) return fromHex(hex);
-    console.warn('coinPublicKey not hex, using fallback');
-    return new Uint8Array(32);
-  }
-  if (Array.isArray(pk)) return new Uint8Array(pk.length >= 32 ? pk.slice(0, 32) : [...pk, ...new Uint8Array(32 - pk.length)]);
-  if (pk && typeof pk === 'object' && 'bytes' in (pk as any)) return coinPublicKeyToBytes((pk as any).bytes);
-  return new Uint8Array(32);
+/** Latest on-chain state of a contract, decoded with this app's own compact-runtime copy. */
+export async function queryLatestState(session: ConnectedSession, contractAddress: string) {
+  const read = await session.providers.publicDataProvider.queryContractState(contractAddress);
+  if (!read) return null;
+  return read.contractState.deserialize({ v9: ContractState });
 }
 ```
 
-### Patched Public Data Provider
-
-```ts
-function createPatchedPublicDataProvider(queryUrl: string, subscriptionUrl: string) {
-  const base = indexerPublicDataProvider(queryUrl, subscriptionUrl);
-  return {
-    ...base,
-    async queryContractState(contractAddress: string, config?: any) {
-      if (config) return base.queryContractState(contractAddress, config);
-      const res = await fetch(queryUrl, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: `query LATEST_CONTRACT_STATE($address: HexEncoded!) {
-            contractAction(address: $address) { state }
-          }`,
-          variables: { address: contractAddress },
-        }),
-      });
-      if (!res.ok) throw new Error(`Indexer HTTP error: ${res.status}`);
-      const payload = await res.json();
-      if (payload.errors?.length) throw new Error(payload.errors.map((e: any) => e.message).join('; '));
-      const action = payload.data?.contractAction ?? null;
-      return action ? ContractState.deserialize(fromHex(action.state)) : null;
-    },
-  };
-}
-```
-
-### Private State Provider (In-Memory)
-
-```ts
-function createPrivateStateProvider() {
-  let scope = '';
-  const stateStore = new Map<string, unknown>();
-  const signingKeyStore = new Map<string, unknown>();
-  const key = (id: string) => `${scope}:${id}`;
-  return {
-    setContractAddress(address: string) { scope = address; },
-    async set(id: string, state: unknown) { stateStore.set(key(id), state); },
-    async get(id: string) { return stateStore.get(key(id)) ?? null; },
-    async remove(id: string) { stateStore.delete(key(id)); },
-    async clear() { stateStore.clear(); },
-    async setSigningKey(addr: string, k: unknown) { signingKeyStore.set(addr, k); },
-    async getSigningKey(addr: string) { return signingKeyStore.get(addr) ?? null; },
-    async removeSigningKey(addr: string) { signingKeyStore.delete(addr); },
-    async clearSigningKeys() { signingKeyStore.clear(); },
-    async exportPrivateStates(): Promise<never> { throw new Error('Not implemented.'); },
-    async importPrivateStates(): Promise<never> { throw new Error('Not implemented.'); },
-    async exportSigningKeys(): Promise<never> { throw new Error('Not implemented.'); },
-    async importSigningKeys(): Promise<never> { throw new Error('Not implemented.'); },
-  };
-}
-```
+What changed from the Ledger 8 version: no `setNetworkId` (the network id is in `providers.config`), no hand-rolled `proveTx`/`balanceTx`/`submitTx` (the DApp Connector factories are era-aware), no patched indexer provider, `levelPrivateStateProvider` instead of the in-memory `setContractAddress()` store, and the coin public key decoded from the connector's **Bech32m** form.
 
 ---
 
 ## Deploy & Circuit Calls
 
-### Deploy (use low-level API — high-level hangs on preprod)
-
 ```ts
-export async function deployPayment(session: ConnectedSession, ownerKey: Uint8Array): Promise<string> {
-  const compiledContract = makeCompiledContract();
-  const initialPrivateState = { ownerSecretKey: ownerKey };
+// lib/payment.ts
+import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import { CompiledPaymentContract, ledger, type PaymentContract, type PaymentPrivateState } from '../contract/src/index';
+import { queryLatestState, type ConnectedSession } from './midnight';
 
-  const deployTxData = await (createUnprovenDeployTx as any)(
-    { zkConfigProvider: session.providers.zkConfigProvider, walletProvider: session.providers.walletProvider },
-    { compiledContract, args: [], privateStateId: PRIVATE_STATE_ID, initialPrivateState, signingKey: sampleSigningKey() },
-  );
+const PRIVATE_STATE_ID = 'paymentPrivateState';
+export const ZK_ASSET_PATH = '/zk/payment';
 
-  const contractAddress = deployTxData.public.contractAddress;
-  await (submitTxAsync as any)(session.providers, { unprovenTx: deployTxData.private.unprovenTx });
+type PaymentProviders = MidnightProviders<ProvableCircuitId<PaymentContract>, typeof PRIVATE_STATE_ID, PaymentPrivateState>;
+const providersFor = (s: ConnectedSession) => s.providers as unknown as PaymentProviders;
 
-  await session.providers.privateStateProvider.setContractAddress(contractAddress);
-  await session.providers.privateStateProvider.set(PRIVATE_STATE_ID, initialPrivateState);
-  await session.providers.privateStateProvider.setSigningKey(contractAddress, deployTxData.private.signingKey);
-
-  return contractAddress;
+export async function deployPayment(session: ConnectedSession, ownerSecretKey: Uint8Array): Promise<string> {
+  const deployed = await deployContract(providersFor(session), {
+    compiledContract: CompiledPaymentContract,
+    privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState: { ownerSecretKey },
+  });
+  return deployed.deployTxData.public.contractAddress;
 }
-```
 
-### Deposit / Withdraw
+const connect = (session: ConnectedSession, contractAddress: string) =>
+  findDeployedContract(providersFor(session), {
+    compiledContract: CompiledPaymentContract,
+    contractAddress,
+    privateStateId: PRIVATE_STATE_ID,
+  });
 
-```ts
 export async function depositPayment(session: ConnectedSession, contractAddress: string, amount: bigint) {
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
-    contractAddress,
-    circuitId: 'deposit',
-    args: [amount],
-    privateStateId: PRIVATE_STATE_ID,
-  });
+  await (await connect(session, contractAddress)).callTx.deposit(amount);
 }
 
-export async function withdrawPayment(session: ConnectedSession, contractAddress: string, amount: bigint, recipientBytes: Uint8Array) {
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
-    contractAddress,
-    circuitId: 'withdraw',
-    args: [amount, { bytes: recipientBytes }],
-    privateStateId: PRIVATE_STATE_ID,
-  });
+export async function withdrawPayment(session: ConnectedSession, contractAddress: string, amount: bigint, recipient: Uint8Array) {
+  await (await connect(session, contractAddress)).callTx.withdraw(amount, { bytes: recipient }); // UserAddress → { bytes }
+}
+
+export async function fetchPaymentState(session: ConnectedSession, contractAddress: string) {
+  const state = await queryLatestState(session, contractAddress);
+  if (!state) return null;
+  const l = ledger(state.data);   // pass .data (ChargedState), not the ContractState
+  return { balance: l.balance, totalDeposited: l.totalDeposited, totalWithdrawn: l.totalWithdrawn };
 }
 ```
 
-### Compiled Contract Builder
+### Compiled Contract (`contract/src/index.ts`)
 
 ```ts
-function makeCompiledContract() {
-  const witnesses = {
-    ownerKey: (context: any) => [context.privateState, context.privateState.ownerSecretKey],
-  };
-  return CompiledContract.make('payment', Payment.Contract).pipe(
-    CompiledContract.withWitnesses(witnesses),
-    CompiledContract.withCompiledFileAssets(ZK_ASSET_PATH),
-  ) as any;
-}
+import { CompiledContract } from '@midnight-ntwrk/compact-js';   // not compact-runtime
+import type { WitnessContext } from '@midnight-ntwrk/compact-runtime';
+import { Contract, type Ledger } from './managed/payment/contract/index.js';
+export { ledger } from './managed/payment/contract/index.js';
+
+export type PaymentPrivateState = { ownerSecretKey: Uint8Array };
+export type PaymentContract = Contract<PaymentPrivateState>;
+
+const witnesses = {
+  ownerKey: ({ privateState }: WitnessContext<Ledger, PaymentPrivateState>): [PaymentPrivateState, Uint8Array] =>
+    [privateState, privateState.ownerSecretKey],
+};
+
+// Browser bundle: no node:path. Keys load through the session's FetchZkConfigProvider.
+export const CompiledPaymentContract = CompiledContract.make<PaymentContract>('payment', Contract).pipe(
+  CompiledContract.withWitnesses(witnesses),
+  CompiledContract.withCompiledFileAssets('/zk/payment'),
+);
 ```
 
 ---
 
-## Indexer & State Polling
+## Indexer & State
 
-```ts
-export async function pollForState(
-  queryUrl: string,
-  contractAddress: string,
-  onProgress?: (attempt: number) => void,
-  maxAttempts = 120,
-  intervalMs = 2000,
-): Promise<string> {
-  for (let i = 0; i < maxAttempts; i++) {
-    onProgress?.(i + 1);
-    const state = await fetchContractState(queryUrl, contractAddress);
-    if (state) return state;
-    await new Promise(r => setTimeout(r, intervalMs));
-  }
-  throw new Error(`State not found after ${maxAttempts * intervalMs / 1000}s`);
-}
-
-export function decodePaymentState(stateHex: string) {
-  const contractState = ContractState.deserialize(fromHex(stateHex));
-  const ledger = Payment.ledger(contractState.data); // ← pass .data, not contractState itself
-  return {
-    balance: ledger.balance as unknown as bigint,
-    totalDeposited: ledger.totalDeposited as unknown as bigint,
-    totalWithdrawn: ledger.totalWithdrawn as unknown as bigint,
-  };
-}
-```
+`deployContract` and `callTx` resolve once the transaction is indexed, so read state right after with `fetchPaymentState`. To wait for a specific change, poll `queryLatestState` (or use `publicDataProvider.watchForTxData(txId)` with the non-blocking API). Indexer endpoints come from the wallet: preview is `indexer.preview.midnight.network/api/v4/graphql`, and preprod/mainnet are Blockfrost.
 
 ---
 
@@ -390,11 +323,9 @@ export default {
 };
 ```
 
-### package.json scripts — must use `--webpack`
+### package.json scripts and page
 
-```json
-{ "dev": "next dev --webpack", "build": "next build --webpack" }
-```
+Next 15 builds with webpack by default: `{ "dev": "next dev", "build": "npm run sync:assets && next build" }`. Add `--webpack` only on Next 16; Next 15.5 rejects the flag. Load the client component from a `'use client'` page with `dynamic(() => import('./payment/PaymentClient'), { ssr: false })`, or `next build` fails while prerendering (`classic-level` native module).
 
 ---
 
@@ -413,22 +344,22 @@ Always use `BigInt` — Stars overflow JS `number` at realistic balances.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `Invalid character 'm' at position 0` | `encodeUserAddress()` got raw coin pk | Never use `encodeUserAddress`. Use `coinPublicKeyToBytes()` → pass `{ bytes: ... }` to circuits |
-| Deploy hangs 30–120s silently | `deployContract()` calls `watchForTxData` | Use `createUnprovenDeployTx` + `submitTxAsync` |
-| Proof fails | `createProofProvider()` missing CostModel | Call `unprovenTx.prove(provingProvider, CostModel.initialCostModel())` directly |
-| GraphQL `offset: null` error | Default `queryContractState` sends null offset | Use the patched public data provider (custom GraphQL query, omit offset) |
-| `Cannot read properties of null` on balance | `balanceUnsealedTransaction()` returned null | Guard: `if (!balanced?.tx) throw new Error(...)` |
-| Tx ID not found after submit | `submitTransaction()` returns object not string | Normalize: string → `.transactionId` → `.id` → hex prefix fallback |
-| `ledger()` fails with wrong type | Passing `contractState` instead of `.data` | Always pass `contractState.data` (ChargedState) to `Payment.ledger()` |
+| `Invalid character 'm' at position 0` | A Bech32m string was parsed as hex/bytes | Use `session.coinPublicKeyBytes` (decoded via `ShieldedCoinPublicKey.codec`) and pass `{ bytes }` for `UserAddress` args |
+| Deploy feels slow | `deployContract` waits for indexing | Expected; for progress UI use the non-blocking API (`1am-wallet/` §8) |
+| `Version mismatch: compiled code expects 0.21.0, runtime is 0.16.0` | Runtime older than toolchain | `compact-runtime@0.21.0`, `compact compile +0.36.1` |
+| `EraMismatchError: artifact-era-undeclared` | `public/zk/payment/` lacks `compiler/` | Sync `compiler/`, `keys/`, `zkir/` |
+| Wallet error `InsufficientFunds` | Not enough tNIGHT/DUST (DApp Connector 4.1.0) | Fund from the faucet and register for DUST (Preview relaunched 7 Nov 2026) |
+| `setNetworkId` / `midnight-js-network-id` missing | Removed in Midnight.js 5 | Use `providers.config` from the session |
+| `ledger()` fails with wrong type | Not decoded / wrong object | `ledger(read.contractState.deserialize({ v9: ContractState }).data)` (`queryLatestState` does it) |
 | ZK asset 404 → cryptic SDK error | Assets not synced to public/ | Run `npm run sync:assets` before dev; verify URLs directly in browser |
-| WASM / top-level-await errors | Missing webpack config or Turbopack | Add `asyncWebAssembly: true`, `topLevelAwait: true`; use `--webpack` flag |
+| WASM / top-level-await errors | Missing webpack config or Turbopack | Add `asyncWebAssembly: true`, `topLevelAwait: true` (Next 16: `--webpack`) |
 | Wrong wallet detected | Both Lace and 1AM present | Check `window.midnight['1am']` first; fall back to `window.midnight?.mnLace` |
 
 ---
 
 ## ZK Asset Hosting
 
-Run `npm run sync:assets` to copy `contract/src/managed/payment/{keys,zkir}/` → `public/zk/payment/`.
+Run `npm run sync:assets` to copy `contract/src/managed/payment/{compiler,keys,zkir}/` → `public/zk/payment/`. `compiler/contract-manifest.json` is required by Midnight.js 5.
 
 **Before debugging any provider/SDK error**, open the asset URLs directly:
 `http://localhost:3000/zk/payment/keys/deposit.prover` — a 404 here surfaces as a cryptic SDK error.

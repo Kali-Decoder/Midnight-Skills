@@ -8,7 +8,7 @@ Next.js + 1AM wallet frontend for the Midnight **private party** tutorial contra
 
 ```bash
 npm install
-npm run compact      # requires Compact compiler
+npm run compact      # requires Compact toolchain 0.36.1 (compact update 0.36.1)
 npm run sync:assets
 npm run dev
 ```

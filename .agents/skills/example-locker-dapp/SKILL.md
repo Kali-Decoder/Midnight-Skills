@@ -26,7 +26,7 @@ A **locker dApp** holds unshielded NIGHT in a Compact contract until `unlockTime
 
 **Shared references** (canonical provider + troubleshooting — do not duplicate in prompts):
 - `references/midnight-session.md` — `createConnectedSession`, indexer patch, deploy/call helpers
-- `references/gotchas.md` — preprod deploy hangs, GraphQL `offset: null`, ZK asset paths
+- `references/gotchas.md` — Ledger 9 errors (version mismatch, `EraMismatchError`, Blockfrost 410/403), ZK asset paths
 - `references/versions.json` — pinned `@midnight-ntwrk/*` versions
 
 **Primary references:**
@@ -39,8 +39,8 @@ A **locker dApp** holds unshielded NIGHT in a Compact contract until `unlockTime
 **Key architecture notes:**
 - Use `blockTimeGte(unlockTime)` — never compare raw block timestamps on ledger (privacy + API design)
 - Always use `Uint<64>` for Unix timestamps — `Uint<16>` cannot hold current epoch values
-- Use `createUnprovenDeployTx` + `submitTxAsync` — not `deployContract()` (hangs on preprod)
-- Wrap `indexerPublicDataProvider` with the patched `queryContractState` (GraphQL `offset: null` bug)
+- Use `deployContract` / `findDeployedContract` with providers typed to the contract (no `as any`)
+- Plain `indexerPublicDataProvider(network.indexer)`; the old `offset: null` patch is obsolete on indexer 4.4.101
 - Token amounts are in **Stars** (1 NIGHT = 1_000_000 Stars); use `BigInt` everywhere
 - Beneficiary public key bytes are stored on-chain at lock time; `beneficiaryKey` witness proves release authority
 
@@ -82,7 +82,7 @@ locker-dapp/
 │   │   ├── index.ts                # barrel → managed/locker
 │   │   └── managed/locker/         # compiler output (gitignored)
 │   └── tsconfig.json
-└── public/zk/locker/               # synced keys + zkir (gitignored in dev, committed for deploy)
+└── public/zk/locker/               # synced compiler/ + keys/ + zkir/ (gitignored in dev, committed for deploy)
 ```
 
 ---
@@ -107,26 +107,30 @@ Browser: **1AM wallet** extension on `preprod` (or Lace fallback).
 
 ```json
 {
-  "name": "locker-dapp",
+  "name": "locker-dapp-template",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "npm run sync:assets && next build --webpack",
+    "dev": "next dev",
+    "build": "npm run sync:assets && next build",
     "compact": "npm run compact --prefix contract",
     "sync:assets": "node scripts/sync-zk-assets.mjs",
     "postinstall": "npm install --prefix contract"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.16.0",
-    "@midnight-ntwrk/ledger-v8": "8.0.3",
-    "@midnight-ntwrk/midnight-js-contracts": "4.0.4",
-    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.0.4",
-    "@midnight-ntwrk/midnight-js-network-id": "4.0.4",
-    "@midnight-ntwrk/midnight-js-types": "4.0.4",
-    "@midnight-ntwrk/wallet-sdk-address-format": "3.1.0",
+    "@midnight-ntwrk/compact-js": "3.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0",
+    "@midnightntwrk/dapp-connector-api": "4.1.0",
+    "@midnightntwrk/ledger-v9": "1.0.2",
+    "@midnightntwrk/midnight-js-contracts": "5.0.2",
+    "@midnightntwrk/midnight-js-dapp-connector-proof-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-fetch-zk-config-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-indexer-public-data-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-level-private-state-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-types": "5.0.2",
+    "@midnightntwrk/midnight-js-utils": "5.0.2",
+    "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -151,10 +155,11 @@ Browser: **1AM wallet** extension on `preprod` (or Lace fallback).
   "private": true,
   "type": "module",
   "scripts": {
-    "compact": "compact compile src/locker.compact src/managed/locker"
+    "compact": "compact compile +0.36.1 src/locker.compact src/managed/locker"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.16.0"
+    "@midnight-ntwrk/compact-js": "3.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0"
   }
 }
 ```
@@ -163,7 +168,7 @@ Compile:
 
 ```bash
 npm run compact
-# → contract/src/managed/locker/{contract,keys,zkir}/
+# → contract/src/managed/locker/{compiler,contract,keys,zkir}/
 npm run sync:assets
 # → public/zk/locker/
 ```
@@ -175,7 +180,7 @@ npm run sync:assets
 Single active lock per contract instance (simple vault). Deploy multiple contract addresses for parallel locks, or extend with `Map<Bytes<32>, LockRecord>` (see §18).
 
 ```compact
-pragma language_version >= 0.23;
+pragma language_version >= 0.28.0;
 import CompactStandardLibrary;
 
 export ledger balance: Uint<128>;
@@ -196,7 +201,6 @@ constructor() {
   totalReleased = 0;
 }
 
-// Deposit unshielded NIGHT and schedule release for beneficiaryPk at releaseTime (Unix seconds).
 export circuit lockTokens(
   amount: Uint<128>,
   releaseTime: Uint<64>,
@@ -212,7 +216,6 @@ export circuit lockTokens(
   totalLocked = disclose((totalLocked + amount) as Uint<128>);
 }
 
-// Beneficiary releases locked tokens after unlockTime to recipient (unshielded UserAddress).
 export circuit release(recipient: UserAddress): [] {
   assert(disclose(lockActive), "No active lock");
   assert(blockTimeGte(disclose(unlockTime)), "Lock period not finished");
@@ -242,14 +245,18 @@ pure circuit deriveKey(sk: Bytes<32>): Bytes<32> {
 
 ```typescript
 import type { WitnessContext } from '@midnight-ntwrk/compact-runtime';
+import type { Ledger } from './managed/locker/contract/index.js';
 
 export type LockerPrivateState = {
   beneficiarySecretKey: Uint8Array;
 };
 
+// compact-runtime 0.21: WitnessContext<Ledger, PrivateState>; witnesses return a mutable [state, value] tuple.
 export const witnesses = {
-  beneficiaryKey: (context: WitnessContext<LockerPrivateState>) =>
-    [context.privateState, context.privateState.beneficiarySecretKey] as const,
+  beneficiaryKey: ({ privateState }: WitnessContext<Ledger, LockerPrivateState>): [LockerPrivateState, Uint8Array] => [
+    privateState,
+    privateState.beneficiarySecretKey,
+  ],
 };
 ```
 
@@ -260,10 +267,8 @@ The beneficiary's Zswap secret seed (32 bytes) must live in private state. When 
 ## 7) `contract/src/index.ts`
 
 ```typescript
-import { CompiledContract } from '@midnight-ntwrk/compact-runtime';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-import { witnesses } from './witnesses.js';
+import { CompiledContract } from '@midnight-ntwrk/compact-js';
+import { witnesses, type LockerPrivateState } from './witnesses';
 
 export {
   Contract,
@@ -273,10 +278,14 @@ export {
 } from './managed/locker/contract/index.js';
 import { Contract } from './managed/locker/contract/index.js';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-export const zkConfigPath = path.resolve(currentDir, 'managed', 'locker');
+// Browser bundle: no node:path / node:url. Midnight.js loads keys + ZKIR through the session's
+// FetchZkConfigProvider (served from /zk/locker), so this path is only a label for compact-js.
+export const zkConfigPath = '/zk/locker';
 
-export const CompiledLockerContract = CompiledContract.make('locker', Contract).pipe(
+export type LockerContract = Contract<LockerPrivateState>;
+export type { LockerPrivateState };
+
+export const CompiledLockerContract = CompiledContract.make<LockerContract>('locker', Contract).pipe(
   CompiledContract.withWitnesses(witnesses),
   CompiledContract.withCompiledFileAssets(zkConfigPath),
 );
@@ -286,16 +295,13 @@ export const CompiledLockerContract = CompiledContract.make('locker', Contract).
 
 ## 8) Provider Setup
 
-Copy the **full provider block** from `example-payment-dapp/SKILL.md` § "Provider Setup":
-- `ConnectedSession` type
-- `createConnectedSession` (ZK path → `/zk/locker/`)
-- `coinPublicKeyToBytes`
-- `createPatchedPublicDataProvider`
-- `createPrivateStateProvider`
+Use `templates/locker-dapp/lib/midnight.ts` as-is. It is the canonical Ledger 9 session from `references/midnight-session.md`:
+- `ConnectedSession` type (`api`, `network`, typed `providers`, `unshieldedAddress`, `coinPublicKeyBytes`)
+- `createConnectedSession(api, '/zk/locker')`: `dappConnectorNetwork` + `dappConnectorProofProvider` + `dappConnectorWalletProviders`, `levelPrivateStateProvider`, `providers.config`
+- `queryLatestState()`: decodes `queryContractState` with `deserialize({ v9: ContractState })`
+- `detectWallet()`
 
-Change only:
-- `ZK_ASSET_PATH` / `FetchZkConfigProvider` base → `/zk/locker`
-- `setNetworkId(config.networkId)` after `api.getConfiguration()`
+Nothing to change except the ZK path.
 
 Wallet detection (1AM first, Lace fallback):
 
@@ -312,52 +318,36 @@ Prefer enumerating `Object.values(window.midnight)` over hardcoded Lace keys —
 ## 9) `lib/locker.ts`
 
 ```typescript
-import { createUnprovenDeployTx, submitCallTxAsync } from '@midnight-ntwrk/midnight-js-contracts';
-import { ContractState, sampleSigningKey } from '@midnight-ntwrk/compact-runtime';
-import { CompiledLockerContract, Contract, ledger } from '../contract/src/index.js';
-import type { ConnectedSession } from './midnight.js';
-import { fromHex, pollForState } from './midnight.js';
+import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
+import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
+import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
+import { CompiledLockerContract, ledger, type LockerContract, type LockerPrivateState } from '../contract/src/index';
+import type { ConnectedSession } from './midnight';
+import { queryLatestState } from './midnight';
 
 const PRIVATE_STATE_ID = 'LockerPrivateState';
-const ZK_ASSET_PATH = '/zk/locker';
+const ZK_PATH = '/zk/locker';
 
-function makeCompiledContract() {
-  return CompiledLockerContract as any;
+// The session's providers are contract-agnostic; narrow them to this contract's circuits + private state.
+type LockerProviders = MidnightProviders<ProvableCircuitId<LockerContract>, typeof PRIVATE_STATE_ID, LockerPrivateState>;
+const providersFor = (session: ConnectedSession) => session.providers as unknown as LockerProviders;
+
+export async function deployLocker(session: ConnectedSession, beneficiarySecretKey: Uint8Array): Promise<string> {
+  // deployContract builds, proves (via the wallet), balances, submits, and stores the private state + signing key.
+  const deployed = await deployContract(providersFor(session), {
+    compiledContract: CompiledLockerContract,
+    privateStateId: PRIVATE_STATE_ID,
+    initialPrivateState: { beneficiarySecretKey },
+  });
+  return deployed.deployTxData.public.contractAddress;
 }
 
-export async function deployLocker(
-  session: ConnectedSession,
-  beneficiarySecretKey: Uint8Array,
-): Promise<string> {
-  const initialPrivateState = { beneficiarySecretKey };
-
-  const deployTxData = await (createUnprovenDeployTx as any)(
-    {
-      zkConfigProvider: session.providers.zkConfigProvider,
-      walletProvider: session.providers.walletProvider,
-    },
-    {
-      compiledContract: makeCompiledContract(),
-      args: [],
-      privateStateId: PRIVATE_STATE_ID,
-      initialPrivateState,
-      signingKey: sampleSigningKey(),
-    },
-  );
-
-  const contractAddress = deployTxData.public.contractAddress;
-  await (submitTxAsync as any)(session.providers, {
-    unprovenTx: deployTxData.private.unprovenTx,
-  });
-
-  await session.providers.privateStateProvider.setContractAddress(contractAddress);
-  await session.providers.privateStateProvider.set(PRIVATE_STATE_ID, initialPrivateState);
-  await session.providers.privateStateProvider.setSigningKey(
+async function connect(session: ConnectedSession, contractAddress: string) {
+  return findDeployedContract(providersFor(session), {
+    compiledContract: CompiledLockerContract,
     contractAddress,
-    deployTxData.private.signingKey,
-  );
-
-  return contractAddress;
+    privateStateId: PRIVATE_STATE_ID,
+  });
 }
 
 export async function lockTokens(
@@ -367,46 +357,24 @@ export async function lockTokens(
   releaseTimeUnix: bigint,
   beneficiaryPkBytes: Uint8Array,
 ) {
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
-    contractAddress,
-    circuitId: 'lockTokens',
-    args: [amount, releaseTimeUnix, { bytes: beneficiaryPkBytes }],
-    privateStateId: PRIVATE_STATE_ID,
-  });
+  const locker = await connect(session, contractAddress);
+  // beneficiaryPk is Bytes<32> (a plain Uint8Array); release() takes a UserAddress ({ bytes }).
+  await locker.callTx.lockTokens(amount, releaseTimeUnix, beneficiaryPkBytes);
 }
 
-export async function releaseTokens(
-  session: ConnectedSession,
-  contractAddress: string,
-  recipientBytes: Uint8Array,
-) {
-  await (submitCallTxAsync as any)(session.providers, {
-    compiledContract: makeCompiledContract(),
-    contractAddress,
-    circuitId: 'release',
-    args: [{ bytes: recipientBytes }],
-    privateStateId: PRIVATE_STATE_ID,
-  });
+export async function releaseTokens(session: ConnectedSession, contractAddress: string, recipientBytes: Uint8Array) {
+  const locker = await connect(session, contractAddress);
+  await locker.callTx.release({ bytes: recipientBytes });
 }
 
-export function decodeLockerState(stateHex: string) {
-  const contractState = ContractState.deserialize(fromHex(stateHex));
-  const l = ledger(contractState.data);
-  return {
-    balance: l.balance as unknown as bigint,
-    unlockTime: l.unlockTime as unknown as bigint,
-    beneficiary: l.beneficiary as unknown as Uint8Array,
-    lockActive: l.lockActive as unknown as boolean,
-    totalLocked: l.totalLocked as unknown as bigint,
-    totalReleased: l.totalReleased as unknown as bigint,
-  };
+export async function fetchLockerState(session: ConnectedSession, contractAddress: string) {
+  const state = await queryLatestState(session, contractAddress);
+  if (!state) return null;
+  const l = ledger(state.data);
+  return { balance: l.balance, unlockTime: l.unlockTime, lockActive: l.lockActive };
 }
 
-export async function fetchLockerState(queryUrl: string, contractAddress: string) {
-  const hex = await pollForState(queryUrl, contractAddress);
-  return decodeLockerState(hex);
-}
+export { ZK_PATH };
 ```
 
 ---
@@ -427,45 +395,55 @@ Client component pattern (same as payment dapp). Core UI states:
 ```tsx
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   deployLocker,
   fetchLockerState,
   lockTokens,
   releaseTokens,
+  ZK_PATH,
 } from '@/lib/locker';
+import { createConnectedSession, detectWallet, type ConnectedSession } from '@/lib/midnight';
 
 const STARS_PER_NIGHT = 1_000_000n;
 
 export default function LockerClient() {
   const [session, setSession] = useState<ConnectedSession | null>(null);
   const [contractAddress, setContractAddress] = useState<string | null>(null);
-  const [ledger, setLedger] = useState<LockerLedgerView | null>(null);
+  const [ledger, setLedger] = useState<{
+    balance: bigint;
+    unlockTime: bigint;
+    lockActive: boolean;
+  } | null>(null);
   const [amountNight, setAmountNight] = useState('1');
-  const [unlockAt, setUnlockAt] = useState(''); // datetime-local input
+  const [unlockAt, setUnlockAt] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const nowUnix = BigInt(Math.floor(Date.now() / 1000));
-  const canRelease = ledger?.lockActive && ledger.unlockTime <= nowUnix;
+  const canRelease = Boolean(ledger?.lockActive && ledger.unlockTime <= nowUnix);
 
   const refresh = useCallback(async () => {
     if (!session || !contractAddress) return;
-    const state = await fetchLockerState(session.config.indexerUri, contractAddress);
-    setLedger(state);
+    setLedger(await fetchLockerState(session, contractAddress));
   }, [session, contractAddress]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   async function onConnect() {
+    setBusy(true);
     setError(null);
-    const wallet =
-      (window as any).midnight?.['1am'] ??
-      Object.values((window as any).midnight ?? {})[0];
-    if (!wallet) throw new Error('Install a Midnight wallet extension');
-    const api = await wallet.connect('preprod');
-    const { createConnectedSession } = await import('@/lib/midnight');
-    setSession(await createConnectedSession(api, '/zk/locker'));
+    try {
+      const wallet = await detectWallet();
+      const api = await wallet.connect('preprod');
+      setSession(await createConnectedSession(api, ZK_PATH));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function onDeploy() {
@@ -473,8 +451,7 @@ export default function LockerClient() {
     setBusy(true);
     setError(null);
     try {
-      const beneficiarySecretKey = session.coinPublicKeyBytes; // lock to self
-      const addr = await deployLocker(session, beneficiarySecretKey);
+      const addr = await deployLocker(session, session.coinPublicKeyBytes);
       setContractAddress(addr);
       await refresh();
     } catch (e) {
@@ -511,8 +488,8 @@ export default function LockerClient() {
     setBusy(true);
     setError(null);
     try {
-      const recipientBytes = unshieldedAddressToBytes(session.unshieldedAddress);
-      await releaseTokens(session, contractAddress, recipientBytes);
+      const recipient = session.coinPublicKeyBytes;
+      await releaseTokens(session, contractAddress, recipient);
       await refresh();
     } catch (e) {
       setError(String(e));
@@ -522,54 +499,59 @@ export default function LockerClient() {
   }
 
   return (
-    <div>
+    <main style={{ fontFamily: 'monospace', padding: '1.5rem', maxWidth: 640 }}>
       <h1>Token Locker</h1>
       {!session ? (
-        <button type="button" onClick={onConnect} disabled={busy}>Connect Wallet</button>
+        <button type="button" onClick={() => void onConnect()} disabled={busy}>
+          Connect 1AM Wallet
+        </button>
       ) : (
         <>
           <p>Connected: {session.unshieldedAddress}</p>
           {!contractAddress ? (
-            <button type="button" onClick={onDeploy} disabled={busy}>Deploy Locker</button>
+            <button type="button" onClick={() => void onDeploy()} disabled={busy}>
+              Deploy Locker
+            </button>
           ) : (
             <>
               <p>Contract: {contractAddress}</p>
               {ledger?.lockActive ? (
                 <>
-                  <p>Locked: {formatStars(ledger.balance)} Stars</p>
+                  <p>Locked: {ledger.balance.toString()} Stars</p>
                   <p>Unlocks: {new Date(Number(ledger.unlockTime) * 1000).toLocaleString()}</p>
-                  <button type="button" onClick={onRelease} disabled={busy || !canRelease}>
+                  <button type="button" onClick={() => void onRelease()} disabled={busy || !canRelease}>
                     Release Tokens
                   </button>
                 </>
               ) : (
                 <>
                   <label>
-                    Amount (NIGHT)
+                    Amount (NIGHT){' '}
                     <input value={amountNight} onChange={(e) => setAmountNight(e.target.value)} />
                   </label>
+                  <br />
                   <label>
-                    Unlock at
-                    <input type="datetime-local" value={unlockAt} onChange={(e) => setUnlockAt(e.target.value)} />
+                    Unlock at{' '}
+                    <input
+                      type="datetime-local"
+                      value={unlockAt}
+                      onChange={(e) => setUnlockAt(e.target.value)}
+                    />
                   </label>
-                  <button type="button" onClick={onLock} disabled={busy}>Lock Tokens</button>
+                  <br />
+                  <button type="button" onClick={() => void onLock()} disabled={busy}>
+                    Lock Tokens
+                  </button>
                 </>
               )}
             </>
           )}
         </>
       )}
-      {error ? <p role="alert">{error}</p> : null}
-    </div>
+      {error ? <p style={{ color: 'crimson' }}>{error}</p> : null}
+    </main>
   );
 }
-
-function formatStars(n: bigint) {
-  return n.toString();
-}
-
-// Implement: unshieldedAddressToBytes — decode mn_addr_* to 32-byte recipient for circuits
-// Never use encodeUserAddress with raw coin pk; use bytes helper from 1am-wallet skill
 ```
 
 Add styling (Tailwind/CSS) as needed — logic above is intentionally unstyled like `react-wallet-connector/`.
@@ -589,9 +571,11 @@ const dest = join(root, 'public/zk/locker');
 
 rmSync(dest, { recursive: true, force: true });
 mkdirSync(dest, { recursive: true });
-for (const dir of ['keys', 'zkir']) {
+// compiler/ carries contract-manifest.json + contract-info.json; without it the provider throws EraMismatchError.
+for (const dir of ['compiler', 'keys', 'zkir']) {
   cpSync(join(src, dir), join(dest, dir), { recursive: true });
 }
+console.log('Synced ZK assets to public/zk/locker/');
 ```
 
 Verify before debugging SDK errors:
@@ -604,7 +588,7 @@ Verify before debugging SDK errors:
 Same as `example-payment-dapp/SKILL.md` § Next.js:
 - `lib/isomorphic-ws-fix.mjs` WebSocket shim
 - `next.config.mjs` with `asyncWebAssembly`, `topLevelAwait`, `isomorphic-ws` alias
-- Scripts **must** use `next dev --webpack` and `next build --webpack`
+- Next 15 builds with webpack by default (`next dev`, `next build`); `--webpack` exists only in Next 16. `app/page.tsx` loads the client with `dynamic(..., { ssr: false })` so `next build` never prerenders wallet/SDK code
 
 ---
 
@@ -631,8 +615,9 @@ Same as `example-payment-dapp/SKILL.md` § Next.js:
 | `Only beneficiary can release` | Witness key ≠ ledger `beneficiary` | Private state `beneficiarySecretKey` must derive same pk stored at lock |
 | `Vault already has an active lock` | Single-lock contract | Release first, or deploy another contract instance |
 | `Uint<16>` compile error on timestamp | Wrong integer width | Use `Uint<64>` for all Unix times |
-| Deploy hangs 30–120s | Used `deployContract()` | Use `createUnprovenDeployTx` + `submitTxAsync` |
-| GraphQL `offset: null` | Default indexer provider | Use patched `queryContractState` |
+| `Version mismatch: compiled code expects 0.21.0, runtime is 0.16.0` | Old runtime | `compact-runtime@0.21.0` + `compact compile +0.36.1` |
+| `EraMismatchError: artifact-era-undeclared` | `public/zk/...` lacks `compiler/` | Re-run `npm run sync:assets` |
+| Indexer 410 `ENDPOINT_DECOMMISSIONED` | Hardcoded old preprod host | Endpoints come from the wallet (`dappConnectorNetwork`) |
 | ZK 404 | Assets not synced | `npm run sync:assets` |
 | `Invalid character 'm' at position 0` | Wrong address encoding for recipient | Pass `{ bytes: Uint8Array }` to circuits, not `encodeUserAddress(coinPk)` |
 | Release button works before time in UI | UI-only check | Contract still rejects — fix UX but trust on-chain `blockTimeGte` |
@@ -650,7 +635,7 @@ When generating this dApp for a user:
 - [ ] Store `beneficiarySecretKey` in private state; pass `coinPublicKeyBytes` at lock
 - [ ] Decode ledger with `ledger(contractState.data)` — not raw `ContractState`
 - [ ] Use `BigInt` for amounts and Unix timestamps
-- [ ] Next.js `--webpack` flag for WASM
+- [ ] `asyncWebAssembly` + `topLevelAwait` in `next.config.mjs`; client loaded with `ssr: false`
 - [ ] Document: 1 NIGHT = 1_000_000 Stars
 
 ---
@@ -720,7 +705,7 @@ See `references/gotchas.md` for the full table. Common locker-specific issues:
 | `unlockTime` overflow | Use `Uint<64>` for Unix seconds, not `Uint<16>` |
 | Release before deadline | `blockTimeGte(unlockTime)` must pass — check indexer block time |
 | Wrong beneficiary on release | Witness `beneficiaryKey` must match bytes stored at lock time |
-| Deploy hangs on preprod | Use `createUnprovenDeployTx` + `submitTxAsync`, not `deployContract()` |
+| Deploy feels slow | `deployContract` waits for indexing; see `1am-wallet/` §8 for the non-blocking variant |
 
 ---
 
