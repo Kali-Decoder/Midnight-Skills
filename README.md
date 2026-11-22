@@ -140,7 +140,7 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 
 <!-- SKILLS_REGISTRY:README_TABLE -->
 <details>
-<summary><strong>Foundation</strong> — 12 skills · Environment setup, privacy model, Compact language, and testing</summary>
+<summary><strong>Foundation</strong> — 13 skills · Environment setup, privacy model, Compact language, and testing</summary>
 
 | Skill | Description |
 |-------|-------------|
@@ -148,6 +148,7 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 | [Midnight Consensus](.agents/skills/midnight-consensus/SKILL.md) | AURA block production, GRANDPA finality, and Cardano Partnerchain validator selection with SPO stake delegation. |
 | [Midnight Cryptography](.agents/skills/midnight-cryptography/SKILL.md) | Node cryptographic primitives — Blake2-256, sr25519, ECDSA, Ed25519, and twoxhash storage keys. |
 | [Midnight Environment Setup](.agents/skills/midnight-environment-setup/SKILL.md) | Automatically prepare a Midnight dev environment — Compact, PATH, Docker, proof server, and VS Code extension. Run before building or deploying. |
+| [MIP Planning](.agents/skills/midnight-mip-planning/SKILL.md) | Plan, write, and shepherd a Midnight Improvement Proposal (MIP) or Problem Statement (MPS), and decide whether a skill can teach a MIP as final. |
 | [Onchain Logic and State](.agents/skills/midnight-onchain-logic/SKILL.md) | WASM runtime, FRAME pallets, pallet-midnight ledger state machine, and proof-based state transitions. |
 | [P2P Networking](.agents/skills/midnight-p2p-networking/SKILL.md) | libp2p peer discovery, TCP/WebSocket transport, Noise encryption, Yamux multiplexing, and gossip protocols. |
 | [RPC Interface](.agents/skills/midnight-rpc/SKILL.md) | JSON-RPC methods for contract state, ZSwap chain state, ledger version, Polkadot SDK defaults, and Partnerchain RPCs. |
