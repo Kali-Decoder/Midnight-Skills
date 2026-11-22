@@ -930,6 +930,27 @@
         "ZSwap",
         "Lifecycle"
       ]
+    },
+    {
+      "id": "midnight-mip-planning",
+      "name": "MIP Planning",
+      "path": ".agents/skills/midnight-mip-planning/SKILL.md",
+      "description": "Plan, write, and shepherd a Midnight Improvement Proposal (MIP) or Problem Statement (MPS), and decide whether a skill can teach a MIP as final.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Plan or write a MIP/MPS, or check a MIP's status",
+      "routerBullets": [
+        "MIP vs MPS vs CoIP, the real template, editor feedback patterns, and the Draft → Proposed → Accepted → Active path.",
+        "Skill verdicts (BUILDABLE NOW / DRAFT AGAINST PROPOSAL / WATCH / NO MIP) and the MidSkills-to-MIP watchlist."
+      ],
+      "tags": [
+        "MIP",
+        "MPS",
+        "Governance",
+        "Standards",
+        "Proposals"
+      ]
     }
   ]
 }

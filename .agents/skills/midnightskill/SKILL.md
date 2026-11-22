@@ -49,6 +49,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Query Midnight node RPC — contract state, ZSwap, and ledger methods | `midnight-rpc/` |
 | Explain Midnight on-chain storage — ParityDB, trie, and state roots | `midnight-storage/` |
 | Explain Midnight transaction lifecycle — proofs, pool, and execution | `midnight-transactions/` |
+| Plan or write a MIP/MPS, or check a MIP's status | `midnight-mip-planning/` |
 <!-- /SKILLS_REGISTRY:TASK_TABLE -->
 ## Skills
 
@@ -131,6 +132,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Midnight.js](/.agents/skills/midnight-js/SKILL.md)
 - TypeScript SDK: provider wiring, wallet SDK (HDWallet, WalletFacade, Shielded/Unshielded/Dust).
 - Contract deployment, circuit calls, DUST generation, private state, testkit.
+
+### [MIP Planning](/.agents/skills/midnight-mip-planning/SKILL.md)
+- MIP vs MPS vs CoIP, the real template, editor feedback patterns, and the Draft → Proposed → Accepted → Active path.
+- Skill verdicts (BUILDABLE NOW / DRAFT AGAINST PROPOSAL / WATCH / NO MIP) and the MidSkills-to-MIP watchlist.
 
 ### [Multinetwork](/.agents/skills/multinetwork/SKILL.md)
 - Unified provider builder, wallet abstraction, proof server routing.
