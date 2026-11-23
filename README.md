@@ -161,12 +161,13 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 </details>
 
 <details>
-<summary><strong>Wallet & Integration</strong> — 4 skills · 1AM wallet and React connector flows</summary>
+<summary><strong>Wallet & Integration</strong> — 5 skills · 1AM wallet and React connector flows</summary>
 
 | Skill | Description |
 |-------|-------------|
 | [1AM Wallet](.agents/skills/1am-wallet/SKILL.md) | Integrate 1AM wallet for dust-free contract deployment and transaction flow on Midnight Network. |
 | [Dynamic Midnight Wallet](.agents/skills/dynamic-midnight-wallet/SKILL.md) | Scaffold React + Vite with Dynamic.xyz Midnight wallets — external (1AM) and embedded MPC: unshielded, shielded, DUST, balances, send. |
+| [Gero Wallet](.agents/skills/gero-wallet/SKILL.md) | Connect a Midnight dApp to Gero Wallet via the standard DApp Connector API 4.1.0: balances, in-wallet DUST from NIGHT/cNIGHT, delegated proving, prove-fund-submit. |
 | [Midnight Passport](.agents/skills/midnight-passport/SKILL.md) | Integrate Midnight Passport — passkey device secrets, custody accounts, Night ID registry, PassportAccount client API. |
 | [React Wallet Connector](.agents/skills/react-wallet-connector/SKILL.md) | Scaffold a React + Vite app with DApp Connector API wallet connection, connect/disconnect UI, and unshielded address display. |
 

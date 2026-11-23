@@ -22,6 +22,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Integrate 1AM wallet for dust-free flow | `1am-wallet/` |
 | Build a React app with wallet connect/disconnect via DApp Connector API | `react-wallet-connector/` |
 | Integrate Dynamic.xyz Midnight wallets (external 1AM or embedded MPC) | `dynamic-midnight-wallet/` |
+| Connect a dApp to Gero Wallet (DApp Connector, DUST, proof servers) | `gero-wallet/` |
 | Build and run the Midnight Passport foundations dApp | `example-passport-dapp/` |
 | Integrate Midnight Passport (passkey Night ID + custody account) | `midnight-passport/` |
 | Write Compact smart contracts | `compact/` |
@@ -108,6 +109,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Example ZK Loan Application](/.agents/skills/example-zk-loan-application/SKILL.md)
 - Private credit scoring with Schnorr attestation — score, income, and tenure never touch the ledger.
 - Monorepo: Compact contract + attestation API + CLI; optional Next.js + 1AM frontend (leaderboard-dapp pattern).
+
+### [Gero Wallet](/.agents/skills/gero-wallet/SKILL.md)
+- Standard DApp Connector detection (UUID keys, apiVersion 4), session reuse, delegated proving.
+- In-wallet DUST from NIGHT/cNIGHT, proof-server choice, Stagenet; Ledger 9 support NEEDS CHECK.
 
 ### [Indexer](/.agents/skills/indexer/SKILL.md)
 - GraphQL queries and subscriptions, contract state reads, transaction lookups.

@@ -396,6 +396,27 @@
       ]
     },
     {
+      "id": "gero-wallet",
+      "name": "Gero Wallet",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/gero-wallet/SKILL.md",
+      "description": "Connect a Midnight dApp to Gero Wallet via the standard DApp Connector API 4.1.0: balances, in-wallet DUST from NIGHT/cNIGHT, delegated proving, prove-fund-submit.",
+      "enabled": true,
+      "featured": false,
+      "category": "wallet",
+      "taskHint": "Connect a dApp to Gero Wallet (DApp Connector, DUST, proof servers)",
+      "routerBullets": [
+        "Standard DApp Connector detection (UUID keys, apiVersion 4), session reuse, delegated proving.",
+        "In-wallet DUST from NIGHT/cNIGHT, proof-server choice, Stagenet; Ledger 9 support NEEDS CHECK."
+      ],
+      "tags": [
+        "Gero",
+        "Wallet",
+        "DUST",
+        "DApp Connector"
+      ]
+    },
+    {
       "id": "example-passport-dapp",
       "name": "Example Passport Dapp",
       "author": "Kali-Decoder",

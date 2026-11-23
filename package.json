@@ -37,6 +37,7 @@
     "./.agents/skills/1am-wallet",
     "./.agents/skills/react-wallet-connector",
     "./.agents/skills/dynamic-midnight-wallet",
+    "./.agents/skills/gero-wallet",
     "./.agents/skills/example-passport-dapp",
     "./.agents/skills/midnight-passport",
     "./.agents/skills/compact",
