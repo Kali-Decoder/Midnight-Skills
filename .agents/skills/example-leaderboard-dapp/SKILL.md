@@ -209,14 +209,31 @@ Pin versions from `references/versions.json`. Cross-check [docs.midnight.network
 - Deploy frontend to Vercel/Netlify; set `public/zk/leaderboard` assets in build step (`npm run sync:assets`)
 - Store default contract address in env or `localStorage` for returning players
 - `verifyOwnership` does not mutate ledger — safe for repeated "prove mine" UX
-- For mainnet, update network ID, indexer URLs, and proof server config via wallet `getConfiguration()`
+- Network and endpoints come from the wallet (`dappConnectorNetwork`). To target another network, change `wallet.connect('preprod')` in `app/leaderboard/LeaderboardClient.tsx` and set the wallet to match
+
+---
+
+## 9) Adapting This Template
+
+`templates/leaderboard-dapp/` is the source of truth; copy it rather than retyping files.
+
+1. **Copy, run, then change.** Get the unchanged template working first (Quick Commands below).
+2. **Contract.** Edit `contract/src/leaderboard.compact`. If you rename it, update the `compact` script in `contract/package.json`, the `managed/<name>` imports and `zkConfigPath` in `contract/src/index.ts`, `ZK_PATH` in `lib/leaderboard.ts`, and the folder in `scripts/sync-zk-assets.mjs`.
+3. **Witnesses and private state.** `contract/src/witnesses.ts` defines `localSecretKey` (reads `secretKey` from `LeaderboardPrivateState`) and `getCustomName` (returns the name last passed to `setCustomName`, kept in a module variable, not private state). Change them together with the contract's `witness` declarations.
+4. **Circuits and state.** Wrappers are in `lib/leaderboard.ts` (`deployLeaderboard`, `submitScore`, `verifyOwnership`, `fetchLeaderboardState`). Rename or add `callTx.<circuit>` calls there; `decodeDisplayName` in `lib/display-name.ts` turns stored name bytes back into text.
+5. **UI.** `app/leaderboard/LeaderboardClient.tsx` holds the game and all wallet calls, including the target network in `wallet.connect('preprod')`.
+6. **Secrets.** `getOrCreateSecretKey` and `demoStoragePassword` (in `lib/midnight.ts`) keep keys in `localStorage`. That is demo-grade; for production, derive them from wallet-held material or let the user back them up.
+7. **Recompile and resync** after every contract change (`npm run compact && npm run sync:assets`).
+8. **Versions.** Add dependencies only at the versions in `references/versions.json`.
 
 ---
 
 ## Quick Commands
 
 ```bash
-cd templates/leaderboard-dapp
+git clone --depth 1 --filter=blob:none --sparse https://github.com/Kali-Decoder/Midnight-Skills.git
+cd Midnight-Skills && git sparse-checkout set templates/leaderboard-dapp
+cp -R templates/leaderboard-dapp ../my-leaderboard && cd ../my-leaderboard
 npm install
 npm run compact
 npm run sync:assets

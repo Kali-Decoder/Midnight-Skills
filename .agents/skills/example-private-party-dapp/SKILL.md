@@ -5,7 +5,7 @@ description: >
   Build a private party RSVP dApp on Midnight Network — attendees stay private until
   unshielded NIGHT check-in crosses the privacy boundary. Covers private-party.compact
   (no witnesses, persistentCommit, DApp-specific public keys, receiveUnshielded/sendUnshielded),
-  Next.js frontend, 1AM wallet integration, low-level deploy/call, indexer polling, and
+  Next.js frontend, 1AM wallet integration, deployContract/callTx, indexer polling, and
   optional vitest local devnet tests. Use for teaching privacy boundaries, commitment-based
   guest lists, organizer access control, or unshielded entry fees. Triggers: private party,
   RSVP dApp, privacy boundary, persistentCommit, getDappPublicKey, unshielded check-in,
@@ -17,29 +17,44 @@ description: >
 
 A **private party contract** lets an organizer collect RSVPs while attendee identities stay private until guests **check in** and pay the entry fee in **unshielded NIGHT**. That payment is the **privacy boundary** — unshielded token flows are always public on Midnight.
 
-**Runnable template:** Copy `templates/private-party-dapp/` for a complete Next.js project (contract + UI). Run `npm install && npm run compact && npm run sync:assets && npm run dev` after installing the [1AM wallet](https://1am.dev).
+**Source of truth:** `templates/private-party-dapp/` is the complete, runnable project, and this skill is the walkthrough for it. Do not retype the files from this page: copy the template, then adapt it (§18). The contract is shown in full because it is the lesson; everything else is described here and read from the template.
+
+**Get the template:**
+
+```bash
+git clone --depth 1 --filter=blob:none --sparse https://github.com/Kali-Decoder/Midnight-Skills.git
+cd Midnight-Skills && git sparse-checkout set templates/private-party-dapp
+cp -R templates/private-party-dapp ../my-party && cd ../my-party
+
+npm install            # postinstall also installs contract/
+npm run compact        # compact compile +0.36.1 → contract/src/managed/private-party
+npm run sync:assets    # copies compiler/ keys/ zkir/ to public/zk/private-party
+npm run dev            # http://localhost:3000, needs the 1AM wallet (Ledger 9 build) on preprod
+```
+
+Without a checkout, read any file at `https://raw.githubusercontent.com/Kali-Decoder/Midnight-Skills/main/templates/private-party-dapp/<path>`.
 
 **Official reference:** `github.com/midnightntwrk/example-private-party` — Compact tutorial + vitest harness (`yarn test:local` on Docker devnet).
 
 **Two ways to use this skill:**
-- **Scaffold mode (default)** — the user wants a working dApp. Use every code block below verbatim; they are the tested reference implementation. Don't rederive them.
-- **Tutorial mode** — the user explicitly wants to learn Compact by writing it themselves. In that case walk through `private-party.compact` circuit-by-circuit (§5) and let them type it, but still scaffold the surrounding TS/UI from the code blocks — those aren't the teaching surface.
+- **Scaffold mode (default)**: the user wants a working dApp. Copy the template; it is the tested reference implementation. Don't rederive it.
+- **Tutorial mode**: the user explicitly wants to learn Compact by writing it themselves. Walk through `private-party.compact` circuit by circuit (§5) and let them type it, but still take the TypeScript and UI from the template.
 
-**What this skill produces:**
-- `contract/` — `private-party.compact` (no witnesses) + compile scripts
-- `app/party/` — Next.js client UI (organizer deploy/start/close/claim + attendee RSVP/check-in)
-- `lib/midnight.ts` — wallet session + patched indexer provider (full implementation in §9)
-- `lib/party.ts` — deploy, `rsvp`, `startParty`, `checkIn`, `closeEntry`, `claimFees`, ledger decode
-- `lib/address.ts` — Bech32 unshielded address → `{ bytes: Uint8Array }` for `UserAddress` circuit args
-- `lib/secret.ts` — generate/store 32-byte DApp secrets in `localStorage`
-- `public/zk/private-party/` — ZK proving assets synced from contract build
+**What the template contains** (paths relative to `templates/private-party-dapp/`):
+- `contract/`: `private-party.compact` (no witnesses), barrel, compile script
+- `app/party/PartyClient.tsx`: Next.js client UI (organizer deploy/start/close/claim, attendee RSVP/check-in)
+- `lib/midnight.ts`: wallet session and providers (canonical Ledger 9 session from `references/midnight-session.md`)
+- `lib/party.ts`: `deployParty`, `rsvp`, `startParty`, `checkIn`, `closeEntry`, `claimFees`, `fetchPartyState`
+- `lib/address.ts`: Bech32m unshielded address → `{ bytes: Uint8Array }` for `UserAddress` circuit args
+- `lib/secret.ts`: generate and store 32-byte DApp secrets in `localStorage`
+- `scripts/sync-zk-assets.mjs`: copies ZK proving assets into `public/zk/private-party/`
 
 **Shared references** (canonical provider + troubleshooting — do not duplicate in prompts):
 - `references/gotchas.md` — Ledger 9 errors (version mismatch, `EraMismatchError`, Blockfrost 410/403), ZK asset paths
 - `references/versions.json` — pinned `@midnight-ntwrk/*` versions
 
 **Primary references:**
-- `example-locker-dapp/` / `templates/locker-dapp/` — Next.js + 1AM, low-level deploy/call
+- `example-locker-dapp/` / `templates/locker-dapp/` — same Next.js + 1AM structure
 - `example-payment-dapp/` — unshielded `receiveUnshielded` / `sendUnshielded` patterns
 - `example-hello-world/` — vitest + Docker devnet test harness (test script provided in official repo)
 - `compact/` — `disclose()`, `persistentCommit`, `persistentHash`, `Set`, sealed ledger, enums
@@ -57,7 +72,7 @@ A **private party contract** lets an organizer collect RSVPs while attendee iden
 - Plain `indexerPublicDataProvider(network.indexer)`; the old `offset: null` patch is obsolete on indexer 4.4.101
 - Entry fee is `Uint<16>` on ledger but cast to `Uint<128>` for unshielded ops; 1 NIGHT = 1_000_000 Stars
 - Persist organizer/attendee `_secret` in `localStorage` — losing it means losing auth for that role
-- **Network: this template targets `preprod` everywhere** (wallet connect, indexer, proof server). If your deployment target is `preview`, change `DEFAULT_NETWORK` in `lib/midnight.ts` (§9) — that's the single source of truth; nothing else should hardcode a network string.
+- **Network:** the network comes from the wallet (`dappConnectorNetwork`). The UI connects with `wallet.connect('preprod')` in `app/party/PartyClient.tsx`; change that one call to target `preview`, and set the wallet to the same network.
 
 ---
 
@@ -65,46 +80,47 @@ A **private party contract** lets an organizer collect RSVPs while attendee iden
 
 When helping the user, follow this sequence:
 
-1. **Contract** — write/scaffold `private-party.compact` (§5); compile with `yarn compile`
-2. **Understand privacy boundary** — private RSVP → public check-in (unshielded) → public payout
-3. **Providers** — `createConnectedSession` (§9, `lib/midnight.ts`)
-4. **Deploy** — organizer passes `(partySize, entryFee, organizerSecret)` to constructor
-5. **RSVP** — attendees call `rsvp(userAddress, secret)` before party starts
-6. **Start** — organizer calls `startParty(secret)` when ready (or auto when list full → `READY`)
-7. **Check in** — RSVP'd guests call `checkIn(address, secret)` + pay entry fee (crosses boundary)
-8. **Close** — organizer `closeEntry(secret)` if not everyone checked in; or auto when full
-9. **Claim** — organizer `claimFees(organizerAddress, secret)` after doors closed
-10. **UI** — role picker, party status panel, indexer polling for public state
+1. **Copy the template** and run it unchanged once (wallet, network and ZK assets known good)
+2. **Contract**: read or adapt `private-party.compact` (§5); `npm run compact`, then `npm run sync:assets`
+3. **Understand the privacy boundary**: private RSVP → public check-in (unshielded) → public payout
+4. **Providers**: keep `lib/midnight.ts` as-is (§9)
+5. **Deploy**: organizer calls `deployParty(session, partySize, entryFeeStars, organizerSecret)`
+6. **RSVP**: attendees call `rsvp` before the party starts
+7. **Start**: organizer calls `startParty` (or the contract moves to `READY` when the list is full)
+8. **Check in**: RSVP'd guests call `checkIn` and pay the entry fee (crosses the boundary)
+9. **Close**: organizer calls `closeEntry` if not everyone checked in (automatic when full)
+10. **Claim**: organizer calls `claimFees` after doors close
+11. **UI**: role picker, party status panel, indexer polling for public state
 
 ---
 
 ## 1) Project Structure
 
 ```
-private-party-dapp/
-├── package.json
-├── next.config.mjs
-├── postcss.config.mjs
+templates/private-party-dapp/
+├── package.json                    # scripts: dev, build, compact, sync:assets
+├── next.config.mjs                 # Node fallbacks, isomorphic-ws alias, WASM (§13)
+├── tsconfig.json
 ├── lib/
 │   ├── isomorphic-ws-fix.mjs
-│   ├── midnight.ts                 # session, patched provider, hex helpers
+│   ├── midnight.ts                 # session, providers, hex helpers
 │   ├── party.ts                    # deploy, circuits, decode state
-│   ├── address.ts                  # Bech32 → UserAddress bytes
-│   └── secret.ts                   # crypto.getRandomValues + localStorage
+│   ├── address.ts                  # Bech32m → UserAddress bytes
+│   └── secret.ts                   # per-contract secrets in localStorage
 ├── app/
 │   ├── layout.tsx
-│   ├── globals.css
+│   ├── page.tsx                    # loads PartyClient with ssr: false
 │   └── party/
-│       └── PartyClient.tsx         # organizer + attendee UI
+│       └── PartyClient.tsx         # all wallet + contract UI (inline styles)
 ├── contract/
-│   ├── package.json
+│   ├── package.json                # compact script (toolchain pinned)
 │   └── src/
 │       ├── private-party.compact
-│       ├── index.ts                # CompiledContract.withVacantWitnesses
+│       ├── index.ts                # barrel → managed/private-party
 │       └── managed/private-party/  # compiler output (gitignored)
 ├── scripts/
-│   └── sync-zk-assets.mjs          # → public/zk/private-party/
-└── public/zk/private-party/        # compiler/ + keys/ + zkir/ (gitignored until sync)
+│   └── sync-zk-assets.mjs
+└── public/zk/private-party/        # synced compiler/ + keys/ + zkir/
 ```
 
 **Optional test harness** (official repo — not in browser template):
@@ -130,75 +146,31 @@ curl --proto '=https' --tlsv1.2 -sSf \
 source $HOME/.local/bin/env
 ```
 
-Browser: **1AM wallet**, network set to match `DEFAULT_NETWORK` in `lib/midnight.ts` (preprod by default), funded with tNIGHT for entry fees.
+Browser: **1AM wallet** on the network `PartyClient.tsx` connects to (preprod by default), funded with tNIGHT for entry fees.
 
 ---
 
-## 3) Root `package.json`
+## 3) Template Files
 
-```json
-{
-  "name": "private-party-dapp-template",
-  "version": "0.1.0",
-  "private": true,
-  "author": "Kali-Decoder",
-  "type": "module",
-  "scripts": {
-    "dev": "next dev",
-    "build": "npm run sync:assets && next build",
-    "compact": "npm run compact --prefix contract",
-    "sync:assets": "node scripts/sync-zk-assets.mjs",
-    "postinstall": "npm install --prefix contract"
-  },
-  "dependencies": {
-    "@midnight-ntwrk/compact-js": "3.0.2",
-    "@midnight-ntwrk/compact-runtime": "0.21.0",
-    "@midnightntwrk/dapp-connector-api": "4.1.0",
-    "@midnightntwrk/ledger-v9": "1.0.2",
-    "@midnightntwrk/midnight-js-contracts": "5.0.2",
-    "@midnightntwrk/midnight-js-dapp-connector-proof-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-fetch-zk-config-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-indexer-public-data-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-level-private-state-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-types": "5.0.2",
-    "@midnightntwrk/midnight-js-utils": "5.0.2",
-    "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
-    "next": "^15.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "typescript": "^5.7.0"
-  }
-}
-```
+Every file below lives in `templates/private-party-dapp/`.
+
+| File | Role | Change it when |
+|---|---|---|
+| `package.json` | Next.js app; `dev`, `build` (runs `sync:assets` first), `compact`, `sync:assets`; `postinstall` installs `contract/` | Adding dependencies (versions from `references/versions.json`) |
+| `contract/package.json` | `compact` script: `compact compile +0.36.1 src/private-party.compact src/managed/private-party` | Renaming the contract |
+| `contract/src/private-party.compact` | The contract (§5) | Party rules change |
+| `contract/src/index.ts` | `CompiledPrivatePartyContract` (§6) | Renaming the contract, adding witnesses |
+| `lib/midnight.ts` | `createConnectedSession`, `queryLatestState`, `detectWallet`, hex helpers (§9) | Almost never |
+| `lib/party.ts` | Contract API and state decode (§10) | Circuits or ledger fields change |
+| `lib/address.ts` | `bech32ToUserAddress` (§7) | Never |
+| `lib/secret.ts` | `generateSecret`, `saveSecret`, `loadSecret` (§8) | Changing where secrets live |
+| `app/party/PartyClient.tsx` | All UI (§11) | UI changes, target network |
+| `scripts/sync-zk-assets.mjs` | ZK asset copy (§12) | Renaming the contract |
+| `next.config.mjs` | Webpack config (§13) | Never |
 
 ---
 
-## 4) `contract/package.json`
-
-```json
-{
-  "name": "@private-party/contract",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "compact": "compact compile +0.36.1 src/private-party.compact src/managed/private-party"
-  },
-  "dependencies": {
-    "@midnight-ntwrk/compact-js": "3.0.2",
-    "@midnight-ntwrk/compact-runtime": "0.21.0"
-  }
-}
-```
-
-**Do not run `npm install` inside `contract/`** — a second copy of `@midnight-ntwrk/compact-runtime` there causes the dual-WASM-instance bug (`ContractMaintenanceAuthority` identity error). All deps live at root; `contract/package.json` exists only for the `compact` compile script.
-
-Compile:
+## 4) Compile and Sync
 
 ```bash
 npm run compact
@@ -213,7 +185,7 @@ Expected circuits: `rsvp`, `startParty`, `checkIn`, `closeEntry`, `claimFees`.
 
 ## 5) `contract/src/private-party.compact`
 
-In scaffold mode, use this exactly. In tutorial mode, build it up circuit by circuit in this order: ledger declarations → constructor → `rsvp` → `startParty` → `checkIn` → `closeEntry` → `claimFees` → helper circuits.
+Source: `templates/private-party-dapp/contract/src/private-party.compact`. In scaffold mode use it unchanged. In tutorial mode, build it up circuit by circuit in this order: ledger declarations → constructor → `rsvp` → `startParty` → `checkIn` → `closeEntry` → `claimFees` → helper circuits.
 
 ```compact
 pragma language_version >= 0.28.0;
@@ -342,22 +314,13 @@ circuit getDappPublicKey(_secret: Bytes<32>): Bytes<32> {
 
 ## 6) `contract/src/index.ts`
 
-No witnesses — use `withVacantWitnesses`. **Use lazy `await import()` pattern** to avoid SSR issues and ensure `CompiledContract` is resolved from the correct module.
+The contract has no witnesses, so the barrel builds the compiled contract with vacant witnesses and points its assets at the browser ZK path:
 
-```typescript
+```ts
 import { CompiledContract } from '@midnight-ntwrk/compact-js';
-
-export {
-  Contract,
-  ledger,
-  pureCircuits,
-  type Ledger,
-} from './managed/private-party/contract/index.js';
 import { Contract } from './managed/private-party/contract/index.js';
 
-// Browser bundle: no node:path / node:url. Keys + ZKIR load through the session's FetchZkConfigProvider.
 export const zkConfigPath = '/zk/private-party';
-
 export type PartyPrivateState = Record<string, never>;
 export type PrivatePartyContract = Contract<PartyPrivateState>;
 
@@ -367,10 +330,7 @@ export const CompiledPrivatePartyContract = CompiledContract.make<PrivatePartyCo
 );
 ```
 
-Key points:
-- `CompiledContract` imported from `@midnight-ntwrk/compact-js` (not `compact-runtime`) — the two packages both export something with this name and only one matches the runtime's `withVacantWitnesses`.
-- Lazy singleton (`getCompiledContract`, `getLedger`) — avoids the dual-instance WASM identity bug.
-- `ContractState` and `sampleSigningKey` re-exported from `compact-runtime` so callers never import that package directly (keeps the single-copy guarantee from §4).
+Import `CompiledContract` from `@midnight-ntwrk/compact-js`, not `compact-runtime`. The barrel also re-exports `Contract`, `ledger`, `pureCircuits` and `Ledger` from the compiler output.
 
 ---
 
@@ -391,637 +351,51 @@ export function bech32ToUserAddress(bech32: string, networkId: string): { bytes:
 
 ## 8) `lib/secret.ts`
 
-```typescript
-import { fromHex, toHex } from './midnight';
-
-export function generateSecret(): Uint8Array {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return bytes;
-}
-
-export function saveSecret(
-  role: 'organizer' | 'attendee',
-  contractAddress: string,
-  secret: Uint8Array,
-) {
-  localStorage.setItem(`private-party:${role}:${contractAddress}`, toHex(secret));
-}
-
-export function loadSecret(
-  role: 'organizer' | 'attendee',
-  contractAddress: string,
-): Uint8Array | null {
-  const hex = localStorage.getItem(`private-party:${role}:${contractAddress}`);
-  return hex ? fromHex(hex) : null;
-}
-```
+`generateSecret()` returns 32 random bytes from `crypto.getRandomValues`. `saveSecret(role, contractAddress, secret)` and `loadSecret(role, contractAddress)` keep it in `localStorage` under `private-party:<role>:<contractAddress>`. Losing it means losing that role's authority over the contract; there is no on-chain recovery.
 
 ---
 
-## 9) `lib/midnight.ts` — full implementation
+## 9) `lib/midnight.ts`
 
-This is the file that causes the most real-world breakage (see §15). It is given in full here rather than as bullets — do not improvise it.
-
-```typescript
-// Ledger 9 / Midnight.js 5 browser session for DApp Connector wallets (1AM, Lace).
-// Canonical copy: references/midnight-session.md. Keep the templates in sync with it.
-import type { ConnectedAPI, InitialAPI } from '@midnightntwrk/dapp-connector-api';
-import {
-  dappConnectorNetwork,
-  dappConnectorProofProvider,
-  dappConnectorWalletProviders,
-} from '@midnightntwrk/midnight-js-dapp-connector-proof-provider';
-import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
-import { FetchZkConfigProvider } from '@midnightntwrk/midnight-js-fetch-zk-config-provider';
-import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
-import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
-import type { MidnightNetwork } from '@midnightntwrk/midnight-js-utils';
-import { CostModel } from '@midnightntwrk/ledger-v9';
-import { ContractState } from '@midnight-ntwrk/compact-runtime';
-import { MidnightBech32m, ShieldedCoinPublicKey } from '@midnightntwrk/wallet-sdk-address-format';
-
-export type ConnectedSession = {
-  api: ConnectedAPI;
-  /** Network id + endpoints, read from the wallet. There is no global setNetworkId any more. */
-  network: MidnightNetwork;
-  providers: MidnightProviders;
-  unshieldedAddress: string;
-  coinPublicKeyBytes: Uint8Array;
-};
-
-export function fromHex(hex: string): Uint8Array {
-  const h = hex.startsWith('0x') ? hex.slice(2) : hex;
-  return Uint8Array.from(h.match(/.{1,2}/g) ?? [], (b) => parseInt(b, 16));
-}
-
-export function toHex(bytes: Uint8Array): string {
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-/**
- * Demo-grade password for the encrypted IndexedDB private-state store: random, kept in localStorage.
- * Production apps should ask the user or derive it from wallet-held material.
- */
-function demoStoragePassword(): Promise<string> {
-  const k = 'midnight-private-storage-password';
-  let pw = localStorage.getItem(k);
-  if (!pw) {
-    pw = `Mn-${crypto.randomUUID()}-${crypto.randomUUID()}`;
-    localStorage.setItem(k, pw);
-  }
-  return Promise.resolve(pw);
-}
-
-export async function detectWallet(): Promise<InitialAPI> {
-  const midnight = (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight ?? {};
-  const w = midnight['1am'] ?? Object.values(midnight)[0];
-  if (!w) throw new Error('No Midnight wallet extension found');
-  return w;
-}
-
-export async function createConnectedSession(api: ConnectedAPI, zkAssetPath: string): Promise<ConnectedSession> {
-  const network = await dappConnectorNetwork(api);
-  const [{ unshieldedAddress }, shielded] = await Promise.all([
-    api.getUnshieldedAddress(),
-    api.getShieldedAddresses(),
-  ]);
-
-  // zkAssetPath must serve compiler/ (contract-manifest.json, contract-info.json), keys/ and zkir/.
-  const zkConfigProvider = new FetchZkConfigProvider<string>(
-    new URL(zkAssetPath, window.location.origin).toString(),
-    { fetchFunc: window.fetch.bind(window) },
-  );
-  const proofProvider = await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel());
-  const { walletProvider, midnightProvider } = await dappConnectorWalletProviders(api);
-
-  return {
-    api,
-    network,
-    providers: {
-      privateStateProvider: levelPrivateStateProvider({
-        accountId: unshieldedAddress,
-        privateStoragePasswordProvider: demoStoragePassword,
-      }),
-      publicDataProvider: indexerPublicDataProvider(network.indexer),
-      zkConfigProvider,
-      proofProvider,
-      walletProvider,
-      midnightProvider,
-      config: { networkId: network.networkId, ttlSeconds: 3600 },
-    },
-    unshieldedAddress,
-    // The connector returns keys in Bech32m, not hex.
-    coinPublicKeyBytes: new Uint8Array(
-      ShieldedCoinPublicKey.codec.decode(network.networkId, MidnightBech32m.parse(shielded.shieldedCoinPublicKey)).data,
-    ),
-  };
-}
-
-/** Latest on-chain state of a contract, decoded with this app's own compact-runtime copy. */
-export async function queryLatestState(session: ConnectedSession, contractAddress: string) {
-  const read = await session.providers.publicDataProvider.queryContractState(contractAddress);
-  if (!read) return null;
-  return read.contractState.deserialize({ v9: ContractState });
-}
-```
+The canonical Ledger 9 browser session from `references/midnight-session.md`, identical across templates. Use it as-is:
+- `createConnectedSession(api, '/zk/private-party')` reads network and endpoints from the wallet (`dappConnectorNetwork`), builds the proof provider through the wallet, `levelPrivateStateProvider`, the plain `indexerPublicDataProvider`, and `providers.config`
+- `queryLatestState` decodes `queryContractState` with `deserialize({ v9: ContractState })`
+- `detectWallet()` prefers 1AM, then any other injected Midnight wallet
+- `demoStoragePassword` keeps the private-state password in `localStorage`; replace it for production (§18)
 
 ---
 
 ## 10) `lib/party.ts`
 
-Uses `deployContract` / `findDeployedContract` with typed providers. Argument shapes follow the generated `.d.ts`: `Bytes<32>` secrets are plain `Uint8Array`, `UserAddress` is `{ bytes }`.
+Uses `deployContract` / `findDeployedContract` with providers typed to the contract. Source: `templates/private-party-dapp/lib/party.ts`.
 
-```typescript
-import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
-import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
-import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
-import {
-  CompiledPrivatePartyContract,
-  ledger,
-  type PartyPrivateState,
-  type PrivatePartyContract,
-} from '../contract/src/index';
-import type { ConnectedSession } from './midnight';
-import { queryLatestState } from './midnight';
-import { bech32ToUserAddress } from './address';
-
-const PRIVATE_STATE_ID = 'PrivatePartyState';
-export const ZK_PATH = '/zk/private-party';
-
-const PARTY_STATE_NAMES = [
-  'NOT_STARTED',
-  'READY',
-  'STARTED',
-  'DOORS_CLOSED',
-  'FEES_CLAIMED',
-] as const;
-
-export type PartyStateName = (typeof PARTY_STATE_NAMES)[number];
-
-type PartyProviders = MidnightProviders<ProvableCircuitId<PrivatePartyContract>, typeof PRIVATE_STATE_ID, PartyPrivateState>;
-const providersFor = (session: ConnectedSession) => session.providers as unknown as PartyProviders;
-
-async function connect(session: ConnectedSession, contractAddress: string) {
-  return findDeployedContract(providersFor(session), {
-    compiledContract: CompiledPrivatePartyContract,
-    contractAddress,
-    privateStateId: PRIVATE_STATE_ID,
-    initialPrivateState: {},
-  });
-}
-
-function setSize(value: unknown): number {
-  if (typeof value === 'number') return value;
-  if (value && typeof value === 'object' && 'size' in value) {
-    const size = (value as { size: unknown }).size;
-    if (typeof size === 'function') return Number((size as () => number)());
-    if (typeof size === 'number') return size;
-  }
-  return 0;
-}
-
-export async function deployParty(
-  session: ConnectedSession,
-  partySize: number,
-  entryFeeStars: number,
-  organizerSecret: Uint8Array,
-): Promise<string> {
-  const deployed = await deployContract(providersFor(session), {
-    compiledContract: CompiledPrivatePartyContract,
-    args: [BigInt(partySize), BigInt(entryFeeStars), organizerSecret],
-    privateStateId: PRIVATE_STATE_ID,
-    initialPrivateState: {},
-  });
-  return deployed.deployTxData.public.contractAddress;
-}
-
-export async function rsvp(
-  session: ConnectedSession,
-  contractAddress: string,
-  userAddress: { bytes: Uint8Array },
-  attendeeSecret: Uint8Array,
-) {
-  const party = await connect(session, contractAddress);
-  await party.callTx.rsvp(userAddress, attendeeSecret);
-}
-
-export async function startParty(
-  session: ConnectedSession,
-  contractAddress: string,
-  organizerSecret: Uint8Array,
-) {
-  const party = await connect(session, contractAddress);
-  await party.callTx.startParty(organizerSecret);
-}
-
-export async function checkIn(
-  session: ConnectedSession,
-  contractAddress: string,
-  userAddress: { bytes: Uint8Array },
-  attendeeSecret: Uint8Array,
-) {
-  const party = await connect(session, contractAddress);
-  await party.callTx.checkIn(userAddress, attendeeSecret);
-}
-
-export async function closeEntry(
-  session: ConnectedSession,
-  contractAddress: string,
-  organizerSecret: Uint8Array,
-) {
-  const party = await connect(session, contractAddress);
-  await party.callTx.closeEntry(organizerSecret);
-}
-
-export async function claimFees(
-  session: ConnectedSession,
-  contractAddress: string,
-  organizerAddress: { bytes: Uint8Array },
-  organizerSecret: Uint8Array,
-) {
-  const party = await connect(session, contractAddress);
-  await party.callTx.claimFees(organizerAddress, organizerSecret);
-}
-
-export function decodePartyState(data: Parameters<typeof ledger>[0]) {
-  const l = ledger(data);
-  const stateIdx = Number(l.partyState);
-  return {
-    partyState: (PARTY_STATE_NAMES[stateIdx] ?? `UNKNOWN(${stateIdx})`) as PartyStateName | string,
-    partyStateIndex: stateIdx,
-    maxListSize: Number(l.maxListSize),
-    entryFee: Number(l.entryFee),
-    rsvpCount: setSize(l.hashedPartyGoers),
-    checkedInCount: setSize(l.checkedInParty),
-  };
-}
-
-export async function fetchPartyState(session: ConnectedSession, contractAddress: string) {
-  const state = await queryLatestState(session, contractAddress);
-  return state ? decodePartyState(state.data) : null;
-}
-
-export function userAddressFromSession(session: ConnectedSession) {
-  return bech32ToUserAddress(session.unshieldedAddress, session.network.networkId);
-}
-```
+| Function | Circuit / effect |
+|---|---|
+| `deployParty(session, partySize, entryFeeStars, organizerSecret)` | Constructor args `[BigInt(partySize), BigInt(entryFeeStars), organizerSecret]`; returns the contract address |
+| `rsvp(session, address, userAddress, attendeeSecret)` | `callTx.rsvp` |
+| `startParty(session, address, organizerSecret)` | `callTx.startParty` |
+| `checkIn(session, address, userAddress, attendeeSecret)` | `callTx.checkIn` (pays the entry fee, address becomes public) |
+| `closeEntry(session, address, organizerSecret)` | `callTx.closeEntry` |
+| `claimFees(session, address, organizerAddress, organizerSecret)` | `callTx.claimFees` |
+| `fetchPartyState` / `decodePartyState` | `partyState` name, `maxListSize`, `entryFee`, `rsvpCount`, `checkedInCount` |
+| `userAddressFromSession(session)` | The connected wallet's `UserAddress` |
 
 **Key details:**
-- `args` use `BigInt(...)` for `Uint<16>` fields, not plain numbers.
-- `Bytes<32>` args are passed as raw `Uint8Array`, **not** wrapped in `{ bytes: ... }`. `UserAddress` args require the `{ bytes }` wrapper.
-- `ledger()` is resolved via `getLedger()` from the contract's own compiled module — never a static top-level import (breaks the lazy-singleton guarantee from §6).
-- `setSize()` handles both `.size` (property) and `.size()` (method) since compiled `Set` ledger fields vary by SDK version.
+- `Uint<16>` args take `BigInt(...)`, not plain numbers.
+- `Bytes<32>` args (secrets) are raw `Uint8Array`, **not** wrapped in `{ bytes }`. `UserAddress` args require the `{ bytes }` wrapper.
+- `setSize()` reads compiled `Set` ledger fields whether `.size` is a property or a method.
 
 ---
 
 ## 11) Frontend — `app/party/PartyClient.tsx`
 
-Full component — no placeholder handlers.
-
-```tsx
-'use client';
-
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  checkIn,
-  claimFees,
-  closeEntry,
-  deployParty,
-  fetchPartyState,
-  rsvp,
-  startParty,
-  userAddressFromSession,
-  ZK_PATH,
-} from '@/lib/party';
-import { createConnectedSession, detectWallet, type ConnectedSession } from '@/lib/midnight';
-import { generateSecret, loadSecret, saveSecret } from '@/lib/secret';
-
-type Role = 'organizer' | 'attendee';
-
-export default function PartyClient() {
-  const [session, setSession] = useState<ConnectedSession | null>(null);
-  const [role, setRole] = useState<Role>('attendee');
-  const [contractAddress, setContractAddress] = useState('');
-  const [partySize, setPartySize] = useState('2');
-  const [entryFee, setEntryFee] = useState('5');
-  const [status, setStatus] = useState<Awaited<ReturnType<typeof fetchPartyState>> | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    if (!session || !contractAddress) return;
-    setStatus(await fetchPartyState(session, contractAddress));
-  }, [session, contractAddress]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const organizerSecret = useMemo(
-    () => (contractAddress ? loadSecret('organizer', contractAddress) : null),
-    [contractAddress, status],
-  );
-
-  const attendeeSecret = useMemo(
-    () => (contractAddress ? loadSecret('attendee', contractAddress) : null),
-    [contractAddress, status],
-  );
-
-  async function onConnect() {
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const wallet = await detectWallet();
-      const api = await wallet.connect('preprod');
-      setSession(await createConnectedSession(api, ZK_PATH));
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onDeploy() {
-    if (!session) return;
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const secret = generateSecret();
-      const addr = await deployParty(
-        session,
-        Number(partySize),
-        Number(entryFee),
-        secret,
-      );
-      setContractAddress(addr);
-      saveSecret('organizer', addr, secret);
-      setMessage(`Party deployed. Share this address with guests: ${addr}`);
-      await refresh();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onRsvp() {
-    if (!session || !contractAddress) return;
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-    try {
-      let secret = loadSecret('attendee', contractAddress);
-      if (!secret) {
-        secret = generateSecret();
-        saveSecret('attendee', contractAddress, secret);
-      }
-      await rsvp(session, contractAddress, userAddressFromSession(session), secret);
-      setMessage('RSVP submitted privately — your address is not on-chain yet.');
-      await refresh();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onStartParty() {
-    if (!session || !contractAddress || !organizerSecret) return;
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-    try {
-      await startParty(session, contractAddress, organizerSecret);
-      setMessage('Party started — guests can check in.');
-      await refresh();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onCheckIn() {
-    if (!session || !contractAddress || !attendeeSecret) return;
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-    try {
-      await checkIn(session, contractAddress, userAddressFromSession(session), attendeeSecret);
-      setMessage(
-        'Checked in — unshielded entry fee paid. Your address is now public on the ledger.',
-      );
-      await refresh();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onCloseEntry() {
-    if (!session || !contractAddress || !organizerSecret) return;
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-    try {
-      await closeEntry(session, contractAddress, organizerSecret);
-      setMessage('Doors closed.');
-      await refresh();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onClaimFees() {
-    if (!session || !contractAddress || !organizerSecret) return;
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-    try {
-      await claimFees(
-        session,
-        contractAddress,
-        userAddressFromSession(session),
-        organizerSecret,
-      );
-      setMessage('Fees claimed to your unshielded address.');
-      await refresh();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const canRsvp = status?.partyState === 'NOT_STARTED';
-  const canStart =
-    status?.partyState === 'NOT_STARTED' || status?.partyState === 'READY';
-  const canCheckIn = status?.partyState === 'STARTED' && Boolean(attendeeSecret);
-  const canClose = status?.partyState === 'STARTED' && Boolean(organizerSecret);
-  const canClaim = status?.partyState === 'DOORS_CLOSED' && Boolean(organizerSecret);
-
-  return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720, margin: '2rem auto', padding: '0 1rem' }}>
-      <h1>Private Party</h1>
-      <p>
-        Attendees RSVP privately. Checking in pays unshielded NIGHT and crosses the{' '}
-        <strong>privacy boundary</strong> — guest addresses become public.
-      </p>
-
-      {!session ? (
-        <button type="button" onClick={onConnect} disabled={busy}>
-          Connect 1AM Wallet
-        </button>
-      ) : (
-        <>
-          <p>Connected: {session.unshieldedAddress}</p>
-
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-            <label>
-              Role{' '}
-              <select value={role} onChange={(e) => setRole(e.target.value as Role)}>
-                <option value="organizer">Organizer</option>
-                <option value="attendee">Attendee</option>
-              </select>
-            </label>
-            <label style={{ flex: 1, minWidth: 280 }}>
-              Contract address{' '}
-              <input
-                style={{ width: '100%' }}
-                value={contractAddress}
-                onChange={(e) => setContractAddress(e.target.value.trim())}
-                placeholder="Paste deployed contract address"
-              />
-            </label>
-          </div>
-
-          {status ? (
-            <section style={{ background: '#f4f4f5', padding: '1rem', borderRadius: 8, marginBottom: '1rem' }}>
-              <p>
-                <strong>State:</strong> {status.partyState}
-              </p>
-              <p>
-                RSVPs: {status.rsvpCount} / {status.maxListSize} · Checked in: {status.checkedInCount} ·
-                Entry fee: {status.entryFee} Stars
-              </p>
-            </section>
-          ) : contractAddress ? (
-            <p>Loading party state from indexer…</p>
-          ) : null}
-
-          {role === 'organizer' ? (
-            <section style={{ display: 'grid', gap: '0.75rem' }}>
-              {!contractAddress ? (
-                <>
-                  <label>
-                    Max guests{' '}
-                    <input
-                      type="number"
-                      min={1}
-                      value={partySize}
-                      onChange={(e) => setPartySize(e.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Entry fee (Stars){' '}
-                    <input
-                      type="number"
-                      min={1}
-                      value={entryFee}
-                      onChange={(e) => setEntryFee(e.target.value)}
-                    />
-                  </label>
-                  <button type="button" onClick={onDeploy} disabled={busy}>
-                    Deploy Party Contract
-                  </button>
-                </>
-              ) : (
-                <>
-                  {organizerSecret ? (
-                    <p>Organizer secret stored in this browser.</p>
-                  ) : (
-                    <p role="alert">
-                      Organizer secret missing — deploy from this browser or you cannot manage the party.
-                    </p>
-                  )}
-                  <button type="button" onClick={onStartParty} disabled={busy || !canStart || !organizerSecret}>
-                    Start Party
-                  </button>
-                  <button type="button" onClick={onCloseEntry} disabled={busy || !canClose}>
-                    Close Doors
-                  </button>
-                  <button type="button" onClick={onClaimFees} disabled={busy || !canClaim}>
-                    Claim Fees
-                  </button>
-                </>
-              )}
-            </section>
-          ) : (
-            <section style={{ display: 'grid', gap: '0.75rem' }}>
-              <button type="button" onClick={onRsvp} disabled={busy || !contractAddress || !canRsvp}>
-                RSVP (private)
-              </button>
-              {attendeeSecret ? (
-                <p>Attendee secret stored — use the same browser to check in.</p>
-              ) : (
-                <p>RSVP generates a secret in this browser; keep it for check-in.</p>
-              )}
-              <button type="button" onClick={onCheckIn} disabled={busy || !contractAddress || !canCheckIn}>
-                Check In (pays entry fee — becomes public)
-              </button>
-            </section>
-          )}
-
-          <button
-            type="button"
-            onClick={() => void refresh()}
-            disabled={busy || !contractAddress}
-            style={{ marginTop: '1rem' }}
-          >
-            Refresh State
-          </button>
-        </>
-      )}
-
-      {message ? <p style={{ color: '#166534' }}>{message}</p> : null}
-      {error ? (
-        <p role="alert" style={{ color: '#b91c1c' }}>
-          {error}
-        </p>
-      ) : null}
-    </main>
-  );
-}
-```
+One client component with a role picker (organizer or attendee), a party status panel, and a handler per circuit (`onDeploy`, `onRsvp`, `onStartParty`, `onCheckIn`, `onCloseEntry`, `onClaimFees`). It connects with `wallet.connect('preprod')`, stores secrets per contract address through `lib/secret.ts`, polls `fetchPartyState`, and explains the privacy boundary next to the check-in button. Styling is inline, with no CSS framework.
 
 ---
 
 ## 12) ZK Asset Sync — `scripts/sync-zk-assets.mjs`
 
-```javascript
-import { cpSync, mkdirSync, rmSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const src = join(root, 'contract/src/managed/private-party');
-const dest = join(root, 'public/zk/private-party');
-
-rmSync(dest, { recursive: true, force: true });
-mkdirSync(dest, { recursive: true });
-// compiler/ carries contract-manifest.json + contract-info.json; without it the provider throws EraMismatchError.
-for (const dir of ['compiler', 'keys', 'zkir']) {
-  cpSync(join(src, dir), join(dest, dir), { recursive: true });
-}
-console.log('Synced ZK assets to public/zk/private-party/');
-```
+Copies `contract/src/managed/private-party/{compiler,keys,zkir}` into `public/zk/private-party/`. Without `compiler/`, proving fails with `EraMismatchError: artifact-era-undeclared`. `npm run build` runs it automatically.
 
 Verify: `http://localhost:3000/zk/private-party/keys/rsvp.prover` returns 200.
 
@@ -1029,85 +403,11 @@ Verify: `http://localhost:3000/zk/private-party/keys/rsvp.prover` returns 200.
 
 ## 13) `next.config.mjs`
 
-Required — without this, webpack fails to resolve the Midnight SDK's Node built-ins and WASM.
-
-```javascript
-import { createRequire } from 'node:module';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
-
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        child_process: false,
-      };
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'isomorphic-ws': require.resolve('./lib/isomorphic-ws-fix.mjs'),
-      };
-    }
-    config.experiments = { ...config.experiments, asyncWebAssembly: true, topLevelAwait: true };
-    return config;
-  },
-};
-
-export default nextConfig;
-```
+Required. On the client build it sets webpack fallbacks `fs`, `net`, `tls`, `child_process` to `false`, aliases `isomorphic-ws` to `lib/isomorphic-ws-fix.mjs`, and enables `asyncWebAssembly` and `topLevelAwait`.
 
 ---
 
-## 14) `postcss.config.mjs` and `app/globals.css`
-
-```javascript
-// postcss.config.mjs
-export default {
-  plugins: { '@tailwindcss/postcss': {} },
-};
-```
-
-```css
-/* app/globals.css */
-@import "tailwindcss";
-
-@theme {
-  --color-brand: #7c3aed;
-  --color-brand-hover: #6d28d9;
-  --color-surface: #1a1a2e;
-  --color-card: #16213e;
-  --color-border: #2a2a4a;
-  --color-muted: #9ca3af;
-  --color-success: #16a34a;
-  --color-danger: #dc2626;
-}
-```
-
-```tsx
-/* app/layout.tsx */
-import './globals.css';
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <body className="bg-[#0f0f23] text-zinc-100 antialiased">{children}</body>
-    </html>
-  );
-}
-```
-
-No light theme — everything is dark surface/card/border/muted. Inputs and selects must use `bg-surface text-zinc-100` explicitly (a raw `<input>` defaults to a white background that renders invisible text on this theme).
-
----
-
-## 15) Local Devnet Tests (Official Repo)
+## 14) Local Devnet Tests (Official Repo)
 
 ```bash
 git clone git@github.com:midnightntwrk/example-private-party.git
@@ -1135,7 +435,7 @@ Read `/src/test/party.test.ts` for MidnightJS provider patterns with `FluentWall
 
 ---
 
-## 16) End-to-End Browser Flow
+## 15) End-to-End Browser Flow
 
 ```
 1. npm install && npm run compact && npm run sync:assets
@@ -1150,7 +450,7 @@ Read `/src/test/party.test.ts` for MidnightJS provider patterns with `FluentWall
 
 ---
 
-## 17) Troubleshooting
+## 16) Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -1165,37 +465,42 @@ Read `/src/test/party.test.ts` for MidnightJS provider patterns with `FluentWall
 | Indexer 410 `ENDPOINT_DECOMMISSIONED` | Hardcoded old preprod host | Endpoints come from the wallet (`dappConnectorNetwork`) |
 | ZK 404 | Assets not synced | `npm run sync:assets` |
 | Lost organizer secret | No recovery on-chain | Redeploy contract; store secret in localStorage |
-| `CompiledContract.withVacantWitnesses` TypeScript error | `compact-runtime` vs `compact-js` mismatch | Import `CompiledContract` from `@midnight-ntwrk/compact-js` |
-| `ContractMaintenanceAuthority` WASM identity error | Dual `compact-runtime` instances (contract-local `node_modules` + root) | Never `npm install` inside `contract/` (§4) |
-| `makeCompiledContract` not a function | Static import fails in browser | Lazy `await import(...)` + singleton (§6) |
+| `CompiledContract.withVacantWitnesses` TypeScript error | `compact-runtime` vs `compact-js` mismatch | Import `CompiledContract` from `@midnight-ntwrk/compact-js` (§6) |
+| `ContractMaintenanceAuthority` WASM identity error | Two different `compact-runtime` copies loaded | Check `npm ls @midnight-ntwrk/compact-runtime`; root and `contract/` must resolve the same version |
 | `bigint` type mismatch on constructor args | Passed `number` where `bigint` expected | Wrap in `BigInt(value)` for `Uint<16>` fields |
 | `Bytes<32>` wrapped in `{ bytes: ... }` mismatch | Confusing it with `UserAddress` | Raw `Uint8Array` for `Bytes<32>`; `{ bytes }` only for `UserAddress` |
-| `ContractState.deserialize` argument type mismatch | Passed hex string directly | `ContractState.deserialize(fromHex(action.state))` — needs `Uint8Array` |
-| `ledger()` is not a function | Called a static import instead of the contract's own export | `getLedger()` from `contract/src/index.ts` (§6) |
-| `isomorphic-ws` not found in webpack | Missing Node polyfills | `next.config.mjs` fallback + alias (§13) |
-| `pipeline is not a function` | Missing `stream` polyfill | `stream: 'stream-browserify'` in `next.config.mjs` (§13) |
-| Tailwind v4 not applied | Missing PostCSS config | `postcss.config.mjs` with `@tailwindcss/postcss` (§14) |
-| Input/select text invisible on dark bg | Browser default white input bg | `bg-surface text-zinc-100` on all inputs (§14) |
+| `isomorphic-ws` not found in webpack | Missing alias | `next.config.mjs` alias (§13) |
 | `size()` not a function on Set ledger fields | `.size` is a property in some SDK versions, method in others | `setSize()` helper handles both (§10) |
-| `npm run build` hangs | Static generation tries to resolve SDK's Node deps | `images: { unoptimized: true }` in `next.config.mjs` (§13) |
-| Wallet rejects connection / wrong chain | App and wallet on different networks | Both must match `DEFAULT_NETWORK` in `lib/midnight.ts` (§9) — change one config, not scattered strings |
+| Wallet rejects connection / wrong chain | App and wallet on different networks | `wallet.connect(...)` in `PartyClient.tsx` and the wallet setting must match |
 
 ---
 
-## 18) Agent Checklist
+## 17) Agent Checklist
 
-- [ ] Write `private-party.compact` with all six exported circuits + helper circuits (§5)
-- [ ] Compile; sync ZK assets to `public/zk/private-party/`
+- [ ] Start from `templates/private-party-dapp/`; do not retype it
+- [ ] Keep `private-party.compact`'s five exported circuits unless the user's rules differ (§5)
+- [ ] `npm run compact`, then `npm run sync:assets` to `public/zk/private-party/`
 - [ ] `CompiledContract.withVacantWitnesses` from `@midnight-ntwrk/compact-js`, not `compact-runtime`
-- [ ] Lazy `getCompiledContract()` / `getLedger()` singleton (§6)
-- [ ] `lib/midnight.ts` copied in full from §9 — do not improvise the provider layer
-- [ ] `next.config.mjs` and `postcss.config.mjs` copied in full from §13–14
+- [ ] Keep `lib/midnight.ts` and `next.config.mjs` as shipped
 - [ ] Constructor args: `[BigInt(partySize), BigInt(entryFeeStars), rawUint8Array]`
-- [ ] Decode unshielded Bech32 via `wallet-sdk-address-format`
+- [ ] Decode unshielded Bech32m via `wallet-sdk-address-format`
 - [ ] Store organizer/attendee secrets in `localStorage` per contract address
-- [ ] UI explains the privacy boundary before the check-in button (see copy in §11)
-- [ ] Never run `npm install` inside `contract/`
-- [ ] Confirm `DEFAULT_NETWORK` in `lib/midnight.ts` matches the target network before demoing
+- [ ] UI explains the privacy boundary before the check-in button
+- [ ] Confirm the `wallet.connect(...)` network in `PartyClient.tsx` matches the target network before demoing
+
+---
+
+## 18) Adapting This Template
+
+1. **Copy, run, then change.** Copy `templates/private-party-dapp/` and get the unchanged template working first.
+2. **Contract.** Edit `contract/src/private-party.compact`. If you rename it, update the `compact` script in `contract/package.json`, the `managed/<name>` imports and `zkConfigPath` in `contract/src/index.ts`, `ZK_PATH` in `lib/party.ts`, and the folder in `scripts/sync-zk-assets.mjs`.
+3. **Witnesses.** The template has none (`withVacantWitnesses`). If you add some, replace that with `CompiledContract.withWitnesses(...)`, give `PartyPrivateState` real fields, and pass a real `initialPrivateState` in `lib/party.ts`.
+4. **Circuits and state.** Add or rename wrappers in `lib/party.ts` (`callTx.<circuit>(...)`). Keep `PARTY_STATE_NAMES` in the same order as the contract's enum, and extend `decodePartyState` for new ledger fields.
+5. **Argument shapes.** Follow the generated `.d.ts`: `Uint<n>` → `bigint`, `Bytes<32>` → raw `Uint8Array`, `UserAddress` → `{ bytes }` via `bech32ToUserAddress`.
+6. **UI.** Add a handler per new circuit in `PartyClient.tsx`, and change `wallet.connect('preprod')` if you target another network.
+7. **Secrets and private state.** `lib/secret.ts` keeps role secrets in `localStorage`, and `demoStoragePassword` in `lib/midnight.ts` does the same for the private-state password. Both are demo-grade; for production, back them up or derive them from wallet-held material.
+8. **Recompile and resync** after every contract change (`npm run compact && npm run sync:assets`).
+9. **Versions.** Add dependencies only at the versions in `references/versions.json`.
 
 ---
 

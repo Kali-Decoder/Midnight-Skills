@@ -15,22 +15,37 @@ description: >
 
 A **locker dApp** holds unshielded NIGHT in a Compact contract until `unlockTime` (Unix seconds, `Uint<64>`). No one — including the deployer — can withdraw early. After the deadline, only the **beneficiary** (proven via witness) can call `release` and send tokens to a recipient address.
 
-**Runnable template:** Copy `templates/locker-dapp/` for a complete Next.js project (contract + UI). Run `npm install && npm run compact && npm run dev` after installing the [1AM wallet](https://1am.dev).
+**Source of truth:** `templates/locker-dapp/` is the complete, runnable project, and this skill is the walkthrough for it. Do not retype the files from this page: copy the template, then adapt it (§19). Only the contract and witnesses are shown inline.
 
-**What this skill produces:**
-- `contract/` — Compact locker vault + TypeScript witnesses + compile scripts
-- `app/locker/` — Next.js client UI (connect, deploy, lock, release, status)
-- `lib/midnight.ts` — wallet session + patched indexer provider (**copy from** `references/midnight-session.md` or `templates/locker-dapp/lib/midnight.ts`)
-- `lib/locker.ts` — deploy, `lockTokens`, `release`, ledger decode
-- `public/zk/locker/` — ZK proving assets synced from contract build
+**Get the template:**
+
+```bash
+git clone --depth 1 --filter=blob:none --sparse https://github.com/Kali-Decoder/Midnight-Skills.git
+cd Midnight-Skills && git sparse-checkout set templates/locker-dapp
+cp -R templates/locker-dapp ../my-locker && cd ../my-locker
+
+npm install            # postinstall also installs contract/
+npm run compact        # compact compile +0.36.1 → contract/src/managed/locker
+npm run sync:assets    # copies compiler/ keys/ zkir/ to public/zk/locker
+npm run dev            # http://localhost:3000, needs the 1AM wallet (Ledger 9 build)
+```
+
+Without a checkout, read any file at `https://raw.githubusercontent.com/Kali-Decoder/Midnight-Skills/main/templates/locker-dapp/<path>`.
+
+**What the template contains** (paths relative to `templates/locker-dapp/`):
+- `contract/`: Compact locker vault, TypeScript witnesses, compile script
+- `app/locker/LockerClient.tsx`: Next.js client UI (connect, deploy, lock, release, status)
+- `lib/midnight.ts`: wallet session and providers (the canonical Ledger 9 session from `references/midnight-session.md`)
+- `lib/locker.ts`: `deployLocker`, `lockTokens`, `releaseTokens`, `fetchLockerState`
+- `scripts/sync-zk-assets.mjs`: copies ZK proving assets into `public/zk/locker/`
 
 **Shared references** (canonical provider + troubleshooting — do not duplicate in prompts):
-- `references/midnight-session.md` — `createConnectedSession`, indexer patch, deploy/call helpers
+- `references/midnight-session.md` — `createConnectedSession`, deploy/call helpers (no indexer patch on Ledger 9)
 - `references/gotchas.md` — Ledger 9 errors (version mismatch, `EraMismatchError`, Blockfrost 410/403), ZK asset paths
 - `references/versions.json` — pinned `@midnight-ntwrk/*` versions
 
 **Primary references:**
-- `example-payment-dapp/` — provider wiring, low-level deploy/call, indexer patch
+- `example-payment-dapp/` — provider wiring and deploy/call in the same 1AM pattern
 - `1am-wallet/` — 1AM browser extension, dust-free flow
 - `compact/` — `blockTimeGte` / `blockTimeLt`, `disclose()`, ledger ADTs
 - `token-transfers/` — unshielded NIGHT units (Stars), `UserAddress` recipient pattern
@@ -50,38 +65,42 @@ A **locker dApp** holds unshielded NIGHT in a Compact contract until `unlockTime
 
 When helping the user, follow this sequence:
 
-1. **Contract** — `locker.compact` compile + witnesses
-2. **Providers** — `createConnectedSession` (from `references/midnight-session.md`)
-3. **Deploy** — low-level deploy, persist private state + contract address
-4. **Lock** — `lockTokens(amount, releaseTime, beneficiaryPkBytes)`
-5. **Poll indexer** — read `balance`, `unlockTime`, `lockActive` from ledger
-6. **Release** — after `blockTimeGte(unlockTime)`, beneficiary calls `release(recipient)`
-7. **UI** — show countdown, disable release until unlock time (UX only — contract enforces)
+1. **Copy the template** (above) and run it unchanged once, so wallet, network and ZK assets are known to work
+2. **Contract**: change `locker.compact` only if the user's lock rules differ (§5), then `npm run compact` and `npm run sync:assets`
+3. **Providers**: keep `lib/midnight.ts` as-is (§8)
+4. **Deploy**: `deployLocker` uses `deployContract`, which proves through the wallet and stores private state
+5. **Lock**: `lockTokens(amount, releaseTime, beneficiaryPkBytes)` calls the `lockTokens` circuit
+6. **Poll indexer**: `fetchLockerState` reads `balance`, `unlockTime`, `lockActive` from the ledger
+7. **Release**: after `blockTimeGte(unlockTime)`, the beneficiary's `releaseTokens(recipient)` calls the `release` circuit
+8. **UI**: show the countdown and disable Release until unlock time (UX only; the contract enforces it)
 
 ---
 
 ## 1) Project Structure
 
 ```
-locker-dapp/
-├── package.json
+templates/locker-dapp/
+├── package.json                    # scripts: dev, build, compact, sync:assets
 ├── next.config.mjs
+├── tsconfig.json
 ├── lib/
 │   ├── isomorphic-ws-fix.mjs
-│   ├── midnight.ts                 # session, patched provider, hex helpers
+│   ├── midnight.ts                 # session, providers, hex helpers
 │   └── locker.ts                   # deploy, lock, release, decode state
 ├── app/
 │   ├── layout.tsx
+│   ├── page.tsx                    # loads LockerClient with ssr: false
 │   └── locker/
 │       └── LockerClient.tsx        # all wallet + contract UI (client component)
 ├── contract/
-│   ├── package.json
-│   ├── src/
-│   │   ├── locker.compact
-│   │   ├── witnesses.ts
-│   │   ├── index.ts                # barrel → managed/locker
-│   │   └── managed/locker/         # compiler output (gitignored)
-│   └── tsconfig.json
+│   ├── package.json                # compact script (toolchain pinned)
+│   └── src/
+│       ├── locker.compact
+│       ├── witnesses.ts
+│       ├── index.ts                # barrel → managed/locker
+│       └── managed/locker/         # compiler output (gitignored)
+├── scripts/
+│   └── sync-zk-assets.mjs
 └── public/zk/locker/               # synced compiler/ + keys/ + zkir/ (gitignored in dev, committed for deploy)
 ```
 
@@ -103,68 +122,27 @@ Browser: **1AM wallet** extension on `preprod` (or Lace fallback).
 
 ---
 
-## 3) Root `package.json`
+## 3) Template Files
 
-```json
-{
-  "name": "locker-dapp-template",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "next dev",
-    "build": "npm run sync:assets && next build",
-    "compact": "npm run compact --prefix contract",
-    "sync:assets": "node scripts/sync-zk-assets.mjs",
-    "postinstall": "npm install --prefix contract"
-  },
-  "dependencies": {
-    "@midnight-ntwrk/compact-js": "3.0.2",
-    "@midnight-ntwrk/compact-runtime": "0.21.0",
-    "@midnightntwrk/dapp-connector-api": "4.1.0",
-    "@midnightntwrk/ledger-v9": "1.0.2",
-    "@midnightntwrk/midnight-js-contracts": "5.0.2",
-    "@midnightntwrk/midnight-js-dapp-connector-proof-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-fetch-zk-config-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-indexer-public-data-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-level-private-state-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-types": "5.0.2",
-    "@midnightntwrk/midnight-js-utils": "5.0.2",
-    "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
-    "next": "^15.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "typescript": "^5.7.0"
-  }
-}
-```
+Every file below lives in `templates/locker-dapp/`. Read the file there rather than a copy in a prompt.
+
+| File | Role | Change it when |
+|---|---|---|
+| `package.json` | Next.js app; scripts `dev`, `build` (runs `sync:assets` first), `compact`, `sync:assets`; `postinstall` installs `contract/` | Adding dependencies (versions from `references/versions.json`) |
+| `contract/package.json` | `compact` script: `compact compile +0.36.1 src/locker.compact src/managed/locker` | Renaming the contract |
+| `contract/src/locker.compact` | The vault (§5) | Lock rules change |
+| `contract/src/witnesses.ts` | `beneficiaryKey` witness over `LockerPrivateState` (§6) | Private state changes |
+| `contract/src/index.ts` | Barrel: exports `zkConfigPath`, `LockerContract`, `CompiledLockerContract` from `managed/locker` | Renaming the contract |
+| `lib/midnight.ts` | `createConnectedSession`, `queryLatestState`, `detectWallet`, hex helpers (§8) | Almost never; only the ZK path |
+| `lib/locker.ts` | Contract API (§9) | Circuits change |
+| `app/locker/LockerClient.tsx` | All wallet and contract UI (§10) | UI changes |
+| `app/page.tsx` | Loads the client with `dynamic(..., { ssr: false })` | Never |
+| `scripts/sync-zk-assets.mjs` | Copies `contract/src/managed/locker/{compiler,keys,zkir}` to `public/zk/locker/` (§11) | Renaming the contract |
+| `next.config.mjs`, `lib/isomorphic-ws-fix.mjs` | WASM and WebSocket config (§12) | Never |
 
 ---
 
-## 4) `contract/package.json`
-
-```json
-{
-  "name": "@locker/contract",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "compact": "compact compile +0.36.1 src/locker.compact src/managed/locker"
-  },
-  "dependencies": {
-    "@midnight-ntwrk/compact-js": "3.0.2",
-    "@midnight-ntwrk/compact-runtime": "0.21.0"
-  }
-}
-```
-
-Compile:
+## 4) Compile and Sync
 
 ```bash
 npm run compact
@@ -178,6 +156,8 @@ npm run sync:assets
 ## 5) `contract/src/locker.compact`
 
 Single active lock per contract instance (simple vault). Deploy multiple contract addresses for parallel locks, or extend with `Map<Bytes<32>, LockRecord>` (see §18).
+
+Source: `templates/locker-dapp/contract/src/locker.compact` (shown in full; it is the core of the skill).
 
 ```compact
 pragma language_version >= 0.28.0;
@@ -266,30 +246,7 @@ The beneficiary's Zswap secret seed (32 bytes) must live in private state. When 
 
 ## 7) `contract/src/index.ts`
 
-```typescript
-import { CompiledContract } from '@midnight-ntwrk/compact-js';
-import { witnesses, type LockerPrivateState } from './witnesses';
-
-export {
-  Contract,
-  ledger,
-  pureCircuits,
-  type Ledger,
-} from './managed/locker/contract/index.js';
-import { Contract } from './managed/locker/contract/index.js';
-
-// Browser bundle: no node:path / node:url. Midnight.js loads keys + ZKIR through the session's
-// FetchZkConfigProvider (served from /zk/locker), so this path is only a label for compact-js.
-export const zkConfigPath = '/zk/locker';
-
-export type LockerContract = Contract<LockerPrivateState>;
-export type { LockerPrivateState };
-
-export const CompiledLockerContract = CompiledContract.make<LockerContract>('locker', Contract).pipe(
-  CompiledContract.withWitnesses(witnesses),
-  CompiledContract.withCompiledFileAssets(zkConfigPath),
-);
-```
+A barrel over the compiler output in `managed/locker`. It exports `zkConfigPath`, the `LockerContract` type and `CompiledLockerContract`, which `lib/locker.ts` passes to `deployContract` and `findDeployedContract`. See `templates/locker-dapp/contract/src/index.ts`.
 
 ---
 
@@ -317,65 +274,16 @@ Prefer enumerating `Object.values(window.midnight)` over hardcoded Lace keys —
 
 ## 9) `lib/locker.ts`
 
-```typescript
-import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
-import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
-import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
-import { CompiledLockerContract, ledger, type LockerContract, type LockerPrivateState } from '../contract/src/index';
-import type { ConnectedSession } from './midnight';
-import { queryLatestState } from './midnight';
+The contract API used by the UI. Source: `templates/locker-dapp/lib/locker.ts`.
 
-const PRIVATE_STATE_ID = 'LockerPrivateState';
-const ZK_PATH = '/zk/locker';
+| Function | What it does |
+|---|---|
+| `deployLocker(session, beneficiarySecretKey)` | `deployContract` with `CompiledLockerContract` and the beneficiary secret as initial private state. Returns the contract address |
+| `lockTokens(session, address, amount, releaseTimeUnix, beneficiaryPkBytes)` | `findDeployedContract`, then `callTx.lockTokens(...)` |
+| `releaseTokens(session, address, recipientBytes)` | `callTx.release({ bytes: recipientBytes })`. Pass the recipient as `{ bytes: Uint8Array }`, not an encoded address string |
+| `fetchLockerState(session, address)` | `queryLatestState` plus `ledger(...)` decode: `balance`, `unlockTime`, `lockActive`, `beneficiary` |
 
-// The session's providers are contract-agnostic; narrow them to this contract's circuits + private state.
-type LockerProviders = MidnightProviders<ProvableCircuitId<LockerContract>, typeof PRIVATE_STATE_ID, LockerPrivateState>;
-const providersFor = (session: ConnectedSession) => session.providers as unknown as LockerProviders;
-
-export async function deployLocker(session: ConnectedSession, beneficiarySecretKey: Uint8Array): Promise<string> {
-  // deployContract builds, proves (via the wallet), balances, submits, and stores the private state + signing key.
-  const deployed = await deployContract(providersFor(session), {
-    compiledContract: CompiledLockerContract,
-    privateStateId: PRIVATE_STATE_ID,
-    initialPrivateState: { beneficiarySecretKey },
-  });
-  return deployed.deployTxData.public.contractAddress;
-}
-
-async function connect(session: ConnectedSession, contractAddress: string) {
-  return findDeployedContract(providersFor(session), {
-    compiledContract: CompiledLockerContract,
-    contractAddress,
-    privateStateId: PRIVATE_STATE_ID,
-  });
-}
-
-export async function lockTokens(
-  session: ConnectedSession,
-  contractAddress: string,
-  amount: bigint,
-  releaseTimeUnix: bigint,
-  beneficiaryPkBytes: Uint8Array,
-) {
-  const locker = await connect(session, contractAddress);
-  // beneficiaryPk is Bytes<32> (a plain Uint8Array); release() takes a UserAddress ({ bytes }).
-  await locker.callTx.lockTokens(amount, releaseTimeUnix, beneficiaryPkBytes);
-}
-
-export async function releaseTokens(session: ConnectedSession, contractAddress: string, recipientBytes: Uint8Array) {
-  const locker = await connect(session, contractAddress);
-  await locker.callTx.release({ bytes: recipientBytes });
-}
-
-export async function fetchLockerState(session: ConnectedSession, contractAddress: string) {
-  const state = await queryLatestState(session, contractAddress);
-  if (!state) return null;
-  const l = ledger(state.data);
-  return { balance: l.balance, unlockTime: l.unlockTime, lockActive: l.lockActive };
-}
-
-export { ZK_PATH };
-```
+`deployContract` waits for indexing. For a non-blocking deploy see `1am-wallet/` §8.
 
 ---
 
@@ -392,191 +300,13 @@ Client component pattern (same as payment dapp). Core UI states:
 | Active lock, after unlock | Enabled Release → recipient = own unshielded address bytes |
 | Released | Show totals, offer new lock (deploy new contract or extend contract) |
 
-```tsx
-'use client';
-
-import { useCallback, useEffect, useState } from 'react';
-import {
-  deployLocker,
-  fetchLockerState,
-  lockTokens,
-  releaseTokens,
-  ZK_PATH,
-} from '@/lib/locker';
-import { createConnectedSession, detectWallet, type ConnectedSession } from '@/lib/midnight';
-
-const STARS_PER_NIGHT = 1_000_000n;
-
-export default function LockerClient() {
-  const [session, setSession] = useState<ConnectedSession | null>(null);
-  const [contractAddress, setContractAddress] = useState<string | null>(null);
-  const [ledger, setLedger] = useState<{
-    balance: bigint;
-    unlockTime: bigint;
-    lockActive: boolean;
-  } | null>(null);
-  const [amountNight, setAmountNight] = useState('1');
-  const [unlockAt, setUnlockAt] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const nowUnix = BigInt(Math.floor(Date.now() / 1000));
-  const canRelease = Boolean(ledger?.lockActive && ledger.unlockTime <= nowUnix);
-
-  const refresh = useCallback(async () => {
-    if (!session || !contractAddress) return;
-    setLedger(await fetchLockerState(session, contractAddress));
-  }, [session, contractAddress]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  async function onConnect() {
-    setBusy(true);
-    setError(null);
-    try {
-      const wallet = await detectWallet();
-      const api = await wallet.connect('preprod');
-      setSession(await createConnectedSession(api, ZK_PATH));
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onDeploy() {
-    if (!session) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const addr = await deployLocker(session, session.coinPublicKeyBytes);
-      setContractAddress(addr);
-      await refresh();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onLock() {
-    if (!session || !contractAddress) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const amount = BigInt(amountNight) * STARS_PER_NIGHT;
-      const releaseTime = BigInt(Math.floor(new Date(unlockAt).getTime() / 1000));
-      await lockTokens(
-        session,
-        contractAddress,
-        amount,
-        releaseTime,
-        session.coinPublicKeyBytes,
-      );
-      await refresh();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onRelease() {
-    if (!session || !contractAddress) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const recipient = session.coinPublicKeyBytes;
-      await releaseTokens(session, contractAddress, recipient);
-      await refresh();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <main style={{ fontFamily: 'monospace', padding: '1.5rem', maxWidth: 640 }}>
-      <h1>Token Locker</h1>
-      {!session ? (
-        <button type="button" onClick={() => void onConnect()} disabled={busy}>
-          Connect 1AM Wallet
-        </button>
-      ) : (
-        <>
-          <p>Connected: {session.unshieldedAddress}</p>
-          {!contractAddress ? (
-            <button type="button" onClick={() => void onDeploy()} disabled={busy}>
-              Deploy Locker
-            </button>
-          ) : (
-            <>
-              <p>Contract: {contractAddress}</p>
-              {ledger?.lockActive ? (
-                <>
-                  <p>Locked: {ledger.balance.toString()} Stars</p>
-                  <p>Unlocks: {new Date(Number(ledger.unlockTime) * 1000).toLocaleString()}</p>
-                  <button type="button" onClick={() => void onRelease()} disabled={busy || !canRelease}>
-                    Release Tokens
-                  </button>
-                </>
-              ) : (
-                <>
-                  <label>
-                    Amount (NIGHT){' '}
-                    <input value={amountNight} onChange={(e) => setAmountNight(e.target.value)} />
-                  </label>
-                  <br />
-                  <label>
-                    Unlock at{' '}
-                    <input
-                      type="datetime-local"
-                      value={unlockAt}
-                      onChange={(e) => setUnlockAt(e.target.value)}
-                    />
-                  </label>
-                  <br />
-                  <button type="button" onClick={() => void onLock()} disabled={busy}>
-                    Lock Tokens
-                  </button>
-                </>
-              )}
-            </>
-          )}
-        </>
-      )}
-      {error ? <p style={{ color: 'crimson' }}>{error}</p> : null}
-    </main>
-  );
-}
-```
-
-Add styling (Tailwind/CSS) as needed — logic above is intentionally unstyled like `react-wallet-connector/`.
+The component (`templates/locker-dapp/app/locker/LockerClient.tsx`) implements these states with intentionally plain markup, like `react-wallet-connector/`. Add styling as needed.
 
 ---
 
 ## 11) ZK Asset Sync — `scripts/sync-zk-assets.mjs`
 
-```javascript
-import { cpSync, mkdirSync, rmSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const src = join(root, 'contract/src/managed/locker');
-const dest = join(root, 'public/zk/locker');
-
-rmSync(dest, { recursive: true, force: true });
-mkdirSync(dest, { recursive: true });
-// compiler/ carries contract-manifest.json + contract-info.json; without it the provider throws EraMismatchError.
-for (const dir of ['compiler', 'keys', 'zkir']) {
-  cpSync(join(src, dir), join(dest, dir), { recursive: true });
-}
-console.log('Synced ZK assets to public/zk/locker/');
-```
+Copies `contract/src/managed/locker/{compiler,keys,zkir}` into `public/zk/locker/`, which `createConnectedSession(api, '/zk/locker')` fetches at proving time. The `compiler/` folder is required: without it proving fails with `EraMismatchError: artifact-era-undeclared`. Run it after every compile (`npm run build` runs it automatically).
 
 Verify before debugging SDK errors:
 `http://localhost:3000/zk/locker/keys/lockTokens.prover` must return 200.
@@ -628,12 +358,13 @@ Same as `example-payment-dapp/SKILL.md` § Next.js:
 
 When generating this dApp for a user:
 
-- [ ] Create `locker.compact` with `lockTokens` + `release` + `blockTimeGte`
-- [ ] Compile contract; sync ZK assets to `public/zk/locker/`
-- [ ] Wire `createConnectedSession` with patched indexer (from payment dapp)
-- [ ] Use low-level deploy + `submitCallTxAsync` for lock/release
+- [ ] Start from `templates/locker-dapp/`; do not retype it
+- [ ] Change `locker.compact` only as needed; keep `lockTokens` + `release` + `blockTimeGte`
+- [ ] `npm run compact`, then `npm run sync:assets` to `public/zk/locker/`
+- [ ] Keep `createConnectedSession` with the plain `indexerPublicDataProvider` (no indexer patch on Ledger 9)
+- [ ] Use `deployContract` / `findDeployedContract` and `callTx.*` for lock and release
 - [ ] Store `beneficiarySecretKey` in private state; pass `coinPublicKeyBytes` at lock
-- [ ] Decode ledger with `ledger(contractState.data)` — not raw `ContractState`
+- [ ] Decode ledger with `ledger(contractState.data)`, not raw `ContractState`
 - [ ] Use `BigInt` for amounts and Unix timestamps
 - [ ] `asyncWebAssembly` + `topLevelAwait` in `next.config.mjs`; client loaded with `ssr: false`
 - [ ] Document: 1 NIGHT = 1_000_000 Stars
@@ -693,6 +424,21 @@ Deploy multiple locker contracts with staggered `unlockTime` values, or add a `v
 ### React-only wallet shell
 
 If the user only needs connect UI first, scaffold with `react-wallet-connector/` then add provider wiring from `references/midnight-session.md`.
+
+---
+
+## 19) Adapting This Template
+
+1. **Copy, run, then change.** Copy `templates/locker-dapp/` and get the unchanged template working first.
+2. **Contract.** Edit `contract/src/locker.compact`. If you rename it, update the `compact` script in `contract/package.json`, the `managed/<name>` paths in `contract/src/index.ts`, the folder in `scripts/sync-zk-assets.mjs`, and the ZK path passed to `createConnectedSession` (`'/zk/<name>'`).
+3. **Private state.** If witnesses change, update `LockerPrivateState` and `witnesses` in `contract/src/witnesses.ts`, and the initial private state in `deployLocker`.
+4. **Circuits.** For each new or renamed circuit, add or rename the wrapper in `lib/locker.ts` (`callTx.<circuit>(...)`), and extend `fetchLockerState` for new ledger fields.
+5. **UI.** Map the new states into `app/locker/LockerClient.tsx` (§10 table).
+6. **Private-state password.** `demoStoragePassword` in `lib/midnight.ts` generates the private-state encryption password and keeps it in `localStorage` under a fixed key. That is fine for a demo. For production, get the password from the user or derive it from a wallet signature.
+7. **Recompile and resync** (`npm run compact && npm run sync:assets`) after every contract change, then check `http://localhost:3000/zk/<name>/keys/<circuit>.prover` returns 200.
+8. **Versions.** Add dependencies only at the versions in `references/versions.json`.
+
+For multiple locks or vesting, see §18 before changing the contract.
 
 ---
 
