@@ -17,7 +17,7 @@ This skill generates a complete, runnable Midnight DApp. It covers every file in
 **Key architecture notes:**
 - Uses `@midnightntwrk/testkit-js` 5.0.2 `MidnightWalletProvider` (built on `FluentWalletBuilder`) for an era-aware, Wallet SDK 2.x wallet
 - Uses `@midnightntwrk/midnight-js-contracts` `deployContract` and `submitCallTx`
-- Compact pragma is `>= 0.28.0` (toolchain 0.36.1, runtime 0.21.0, Ledger 9)
+- Compact pragma is `>= 0.28.0`; toolchain, runtime and Ledger 9 packages are the set in `references/versions.json`
 - Indexer API paths use `/api/v4/graphql` for local devnet
 - `MidnightWalletProvider` class wraps `WalletFacade` to implement `MidnightProvider` and `WalletProvider` interfaces
 - `syncWallet` function provides detailed progress logging during wallet sync

@@ -14,6 +14,8 @@ description: >
 
 # Midnight Network Payment DApp
 
+> **Versions:** every pin in this skill comes from `references/versions.json`, the repo's single source of truth (checked in CI). Resolve the current set at use time with `references/volatile.md`. Never install `@latest`.
+
 A privacy-preserving payment vault: users deposit/withdraw tNIGHT through a Compact
 smart contract through the 1AM wallet (Ledger 9: Midnight.js 5.0.2, DApp Connector 4.1.0, Compact 0.36.1). The contract below compiles with 0.36.1, and the payment module type-checks against its generated types.
 

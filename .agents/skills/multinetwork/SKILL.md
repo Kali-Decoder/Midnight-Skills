@@ -71,11 +71,13 @@ docker compose -f standalone.yml down
 
 ### Docker Image Versions (Ledger 9.1 support matrix)
 
-| Service | Image | Version |
-|---|---|---|
-| Node | `midnightntwrk/midnight-node` | `2.1.101` |
-| Indexer | `midnightntwrk/indexer-standalone` | `4.4.101` |
-| Proof Server | `midnightntwrk/proof-server` | `9.0.2` |
+Image tags come from `references/versions.json` (`toolchain`):
+
+| Service | Image |
+|---|---|
+| Node | `midnightntwrk/midnight-node:2.1.101` |
+| Indexer | `midnightntwrk/indexer-standalone:4.4.101` |
+| Proof Server | `midnightntwrk/proof-server:9.0.2` |
 
 Indexer versions before 4.4.101 are incompatible with Ledger 9. If your local chain volume predates the upgrade, wipe it (`docker compose down -v`).
 

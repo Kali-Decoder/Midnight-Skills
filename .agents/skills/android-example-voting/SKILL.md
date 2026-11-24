@@ -68,9 +68,9 @@ dependency resolution failures (see §9).
 | `fragment-ktx` | `1.8.5` |
 | `hilt-navigation-compose` | `1.1.0` |
 | `security-crypto` | `1.1.0-alpha07` |
-| `@midnight-ntwrk/compact-runtime` | `0.21.0` |
-| Compact compiler | `0.36.1` (pinned on compile command) |
-| Compact language pragma | `>= 0.28.0` |
+| `@midnight-ntwrk/compact-runtime` | `@midnight-ntwrk/compact-runtime@0.21.0` (from `references/versions.json`) |
+| Compact compiler | `compact compile +0.36.1` (from `references/versions.json`) |
+| Compact language pragma | `pragma language_version >= 0.28.0` |
 
 ---
 

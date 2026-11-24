@@ -486,4 +486,4 @@ Snapshot checked against npm and the [support matrix](https://docs.midnight.netw
 }
 ```
 
-Toolchain: Compact **0.36.1** (language 0.28.0), proof server **9.0.2**, indexer **4.4.101**, node **2.1.101**. Node.js **22+**.
+Toolchain: Compact toolchain, proof server, indexer and node versions are the `toolchain` block of `references/versions.json`. Node.js **22+**.

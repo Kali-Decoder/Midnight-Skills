@@ -15,6 +15,8 @@ Place files exactly as shown:
 
 ### Prerequisites
 
+> **Versions:** every pin in this skill comes from `references/versions.json`, the repo's single source of truth (checked in CI). Resolve the current set at use time with `references/volatile.md`. Never install `@latest`.
+
 - [Node.js v22.15+](https://nodejs.org/)
 - Compact devtools (pinned release): `curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/download/compact-v0.5.1/compact-installer.sh | sh`
 - Compact toolchain for Ledger 9: `compact update 0.36.1` (language `0.28.0`)

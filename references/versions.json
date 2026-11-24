@@ -24,7 +24,9 @@
     "@midnightntwrk/dapp-connector-api": "4.1.0",
     "next": "^15.0.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@midnightntwrk/wallet-sdk-prover-client": "2.0.1",
+    "@midnightntwrk/zkir-v2": "2.2.0"
   },
   "nodePackages": {
     "@midnightntwrk/midnight-js-http-client-proof-provider": "5.0.2",
@@ -37,12 +39,14 @@
     "@midnightntwrk/wallet-sdk-hd": "4.0.0",
     "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
     "@midnightntwrk/wallet-sdk-abstractions": "3.0.0",
-    "@midnightntwrk/testkit-js": "5.0.2"
+    "@midnightntwrk/testkit-js": "5.0.2",
+    "@midnightntwrk/midnight-js-compact": "5.0.2"
   },
   "removed": {
     "@midnight-ntwrk/midnight-js-network-id": "setNetworkId removed in Midnight.js 5; networkId lives in providers.config / wallet configuration",
     "@midnight-ntwrk/ledger-v8": "replaced by @midnightntwrk/ledger-v9; mainnet no longer decodes Ledger 8 transactions",
     "@midnight-ntwrk/wallet-api": "superseded by the Wallet SDK 2.x facade",
-    "@midnight-ntwrk/zswap": "superseded by ledger-v9 / Wallet SDK 2.x"
+    "@midnight-ntwrk/zswap": "superseded by ledger-v9 / Wallet SDK 2.x",
+    "@midnightntwrk/midnight-js-ledger": "never published; ledger types come from @midnightntwrk/ledger-v9"
   }
 }

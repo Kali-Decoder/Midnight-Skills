@@ -187,14 +187,7 @@ Indexer-only reads mean spectators can watch the leaderboard without connecting 
 
 ## 6) Prerequisites
 
-| Component | Version |
-|-----------|---------|
-| Compact toolchain | 0.36.1 (language 0.28.0) |
-| Compact runtime | 0.21.0 |
-| Ledger | `@midnightntwrk/ledger-v9` 1.0.2 |
-| Midnight.js | 5.0.2 |
-| DApp Connector API | 4.1.0 |
-| proof server (only if your wallet proves locally) | 9.0.2 |
+Versions: the Ledger 9.1 set in `references/versions.json`: Compact toolchain and language, `compact-runtime`, `ledger-v9`, Midnight.js, DApp Connector API, and the proof server image (only needed if your wallet proves locally). Resolve the current set with `references/volatile.md` before pinning.
 
 ```bash
 compact update 0.36.1

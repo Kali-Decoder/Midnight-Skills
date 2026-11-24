@@ -67,7 +67,6 @@ Pin the Ledger 9.1 set. Checked against the Midnight support matrix on 22 Nov 20
 npm install \
   @midnightntwrk/dapp-connector-api@4.1.0 \
   @midnightntwrk/midnight-js-contracts@5.0.2 \
-  @midnightntwrk/midnight-js-ledger@5.0.2 \
   @midnightntwrk/midnight-js-types@5.0.2 \
   @midnightntwrk/midnight-js-utils@5.0.2 \
   @midnightntwrk/midnight-js-dapp-connector-proof-provider@5.0.2 \
@@ -317,7 +316,7 @@ The connector is the standard Midnight DApp Connector API 4.1.0. The tables belo
 
 - [ ] Gero Dashboard installed from the main Chrome Web Store listing (2.7.2 or newer), not the stale Beta listing.
 - [ ] Ledger 9 support confirmed with Gero (release notes or announcement) before relying on Gero for mainnet or Preprod.
-- [ ] Dependencies pinned to the §2 Ledger 9.1 set (connector 4.1.0, Midnight.js 5.0.2, ledger-v9 1.0.2, compact-runtime 0.21.0).
+- [ ] Dependencies pinned to the §2 Ledger 9.1 set, which must equal `references/versions.json` (`npm run check:versions` in this repo).
 - [ ] Side-effect import of `@midnightntwrk/dapp-connector-api` present in `App.tsx`.
 - [ ] Wallet detection polls for injection, enumerates with `Object.values(window.midnight)`, filters `apiVersion` major 4, and never hardcodes a key or a name match.
 - [ ] Session built from `references/midnight-session.md`, not duplicated.

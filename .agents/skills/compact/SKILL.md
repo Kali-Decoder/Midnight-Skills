@@ -5,6 +5,8 @@ description: Write, reason about, and debug Compact smart contracts for the Midn
 
 # Compact Language Skill
 
+> **Versions:** every pin in this skill comes from `references/versions.json`, the repo's single source of truth (checked in CI). Resolve the current set at use time with `references/volatile.md`. Never install `@latest`.
+
 Compact is Midnight's smart contract language. It looks like TypeScript but compiles to zero-knowledge circuits. The compiler handles all cryptographic machinery — you write business logic.
 
 > **Toolchain (Ledger 9.1, Nov 2026):** Compact toolchain **0.36.1**, language version **0.28.0**, `@midnight-ntwrk/compact-runtime` **0.21.0**. Install with `compact update 0.36.1` and compile with `compact compile +0.36.1 ...` so the compiler always matches the runtime you pinned. Every full example in this skill compiles with 0.36.1. Output built with 0.31.x / ZKIR v2 must be recompiled, and recompiling changes the verifier keys (redeploy, or replace keys through the maintenance authority).

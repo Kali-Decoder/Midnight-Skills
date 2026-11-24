@@ -34,3 +34,6 @@ jobs:
 
       - name: Sync check (dry run)
         run: npm run sync:registry
+
+      - name: Version literals match references/versions.json
+        run: npm run check:versions

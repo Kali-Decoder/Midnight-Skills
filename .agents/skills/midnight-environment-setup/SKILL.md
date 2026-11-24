@@ -184,8 +184,8 @@ Provide concise instructions:
 
 Confirm:
 
-- Compact devtools installed (`compact --version` → 0.5.1+)
-- Compact toolchain **0.36.1** installed (`compact compile --version`), language **0.28.0**
+- Compact devtools installed (`compact --version` matches `toolchain.compactDevtools` in `references/versions.json`)
+- Compact toolchain installed (`compact compile --version` matches `toolchain.compact`, `--language-version` matches `toolchain.languageVersion`)
 - PATH configured
 - Docker running
 - Proof Server **9.0.2** running (`midnightntwrk/proof-server:9.0.2`, listening on 6300)

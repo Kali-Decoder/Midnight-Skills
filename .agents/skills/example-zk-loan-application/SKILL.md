@@ -363,12 +363,8 @@ Wallet: a Ledger 9 build of 1AM on **Preprod** (or Preview), proof server `http:
 | Component | Version |
 |-----------|---------|
 | Node.js | **≥ 22** (required for shielded wallet SDK) |
-| Compact toolchain | 0.36.1 (`pragma language_version >= 0.28.0`; the old `<= 0.23` upper bound would block it) |
-| Compact runtime | 0.21.0 |
-| Ledger | `@midnightntwrk/ledger-v9` 1.0.2 |
-| Midnight.js | 5.0.2 |
-| Wallet SDK (CLI) | 2.0.1 |
-| proof server | 9.0.2 |
+| Compact toolchain, runtime, `ledger-v9`, Midnight.js, Wallet SDK, proof server | The Ledger 9.1 set in `references/versions.json` (resolve with `references/volatile.md`) |
+| Contract pragma | `pragma language_version >= 0.28.0;` (the old `<= 0.23` upper bound would block the current toolchain) |
 | Docker | For local proof server |
 
 ```bash

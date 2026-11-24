@@ -32,7 +32,7 @@ We generally **do not** accept:
 
 ### 2. Accuracy over volume
 
-- Pin **real package versions** that work together (see `references/versions.json` and `testing/` skill)
+- Pin **real package versions** that work together. Versions live **only** in `references/versions.json`: change them there and run `npm run sync:versions`. CI runs `npm run check:versions` and fails on any version literal in a skill that differs from the pin file, or on a package the pin file does not list (rules in `references/volatile.md`)
 - Prefer patterns verified on **preprod** (or state which network you tested)
 - Document known bugs and workarounds (e.g. `deployContract()` hangs — use low-level tx APIs)
 - Link to official sources (`docs.midnight.network`, Compact book) where appropriate

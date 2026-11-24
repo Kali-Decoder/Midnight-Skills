@@ -13,6 +13,8 @@ author: Kali-Decoder
 
 # Midnight Passport (integration)
 
+> **Versions:** every pin in this skill comes from `references/versions.json`, the repo's single source of truth (checked in CI). Resolve the current set at use time with `references/volatile.md`. Never install `@latest`.
+
 Midnight Passport is the **identity + custody** layer: a user creates a passkey, gets a Night ID (`alice.night`), and lands on a **contract-custodied** account without seeing a seed phrase.
 
 This skill teaches agents how to **implement** Passport pieces in an app. For a clone-and-run localnet demo, use `example-passport-dapp/` + `templates/passport-dapp/`.

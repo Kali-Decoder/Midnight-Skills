@@ -34,6 +34,60 @@ Prefer `compact update 0.36.1` (or `--no-set-default` plus
 
 `references/versions.json` holds the Ledger 9.1 set this repo's templates use
 (names **and** versions, checked against npm and the matrix on 21 Nov 2026).
+It is the **single source of truth**: every version literal in a skill or
+reference must equal it, and CI enforces that (see "Keeping skills in sync" below).
+
+## Resolve pins at use time
+
+Skills show the pinned versions inline so their code blocks stay copy-pasteable.
+To be sure you have the **current** pins, resolve them from the live pin file
+instead of trusting a copy you fetched earlier. Node 18+:
+
+```bash
+PINS=https://raw.githubusercontent.com/Kali-Decoder/Midnight-Skills/main/references/versions.json
+
+# Print pkg@version for the packages you need; exits 1 if any is not pinned
+midnight_pins() {
+  node -e '
+  const [url, ...want] = process.argv.slice(1);
+  fetch(url).then(r => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.json(); }).then(v => {
+    const all = { ...v.packages, ...v.nodePackages };
+    const missing = want.filter(n => !(n in all));
+    if (missing.length) { console.error("not in versions.json:", missing.join(" ")); process.exit(1); }
+    console.log(want.map(n => `${n}@${all[n]}`).join(" "));
+  }).catch(e => { console.error(e.message); process.exit(1); });' "$PINS" "$@"
+}
+
+npm install --save-exact $(midnight_pins \
+  @midnightntwrk/midnight-js-contracts \
+  @midnightntwrk/midnight-js-types \
+  @midnight-ntwrk/compact-runtime) || echo "resolve failed: do not fall back to @latest"
+
+# Toolchain and images come from the same file
+compact update "$(node -e 'fetch(process.argv[1]).then(r=>r.json()).then(v=>console.log(v.toolchain.compact))' "$PINS")"
+```
+
+If the pin file and the support matrix disagree, the matrix wins: report it
+(open an issue) and use the matrix set as a unit. A package the snippet says
+is "not in versions.json" has no tested pin. Do not guess one.
+
+## Keeping skills in sync (contributors)
+
+- Change versions **only** in `references/versions.json`, then run
+  `npm run sync:versions`. It rewrites every literal in `.agents/skills/**` and
+  `references/*.md` from the pin file.
+- `npm run check:versions` (also run in CI) fails on any literal that differs
+  from the pin file, on a package that is not in it, and on a package listed
+  under `removed`. It checks `pkg@1.2.3`, `"pkg": "1.2.3"`, the three Docker
+  image tags, `compact update X`, `compact compile +X`, the devtools release
+  URL and `pragma language_version >= X`.
+- Instructions ("pin X", "install Y") cite `references/versions.json`, or use one of
+  the checked forms above, so they can never drift. Do not restate the set in
+  prose tables.
+- Verification records ("ported on 21 Nov 2026 with Compact 0.36.1, tests
+  pass") keep their numbers, since they say what was actually tested.
+- A deliberate off-pin literal (an error-message example, a third-party
+  package's own dependency) gets `<!-- pin-ok -->` at the end of its line.
 
 ## Component → package map (Ledger 9.1)
 

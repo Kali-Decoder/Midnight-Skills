@@ -13,6 +13,8 @@ author: Kali-Decoder
 
 # Example: Midnight Passport DApp
 
+> **Versions:** every pin in this skill comes from `references/versions.json`, the repo's single source of truth (checked in CI). Resolve the current set at use time with `references/volatile.md`. Never install `@latest`.
+
 End-to-end **MN Passport foundations** demo: onboard with a passkey → deploy a custody contract → bind `alice.night` → deposit Night → explore custody workspace → logout/login restore.
 
 **Runnable template:** `templates/passport-dapp/`. It was ported to Ledger 9 on 21 Nov 2026: Compact 0.36.1, runtime 0.21.0, Midnight.js 5.0.2, Wallet SDK 2.0.1, and `infra/` images node 2.1.101 / indexer 4.4.101 / proof server 9.0.2. `npm test` passes (23 tests), and the Node code plus `app/` type-check and build. The localnet lifecycle suites and browser E2E have not been re-run on the Ledger 9 stack yet.  

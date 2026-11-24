@@ -97,7 +97,7 @@ Use the Vite `react-ts` template output and ensure `@midnightntwrk/dapp-connecto
 }
 ```
 
-> Pin `@midnightntwrk/dapp-connector-api` to `4.1.0` unless the user specifies otherwise. Check `npm view @midnightntwrk/dapp-connector-api version` if install fails with `ETARGET`.
+> Pin `@midnightntwrk/dapp-connector-api` to the version in `references/versions.json` (`@midnightntwrk/dapp-connector-api@4.1.0` as of the Ledger 9.1 set) unless the user specifies otherwise. If install fails with `ETARGET`, re-resolve the whole set with `references/volatile.md`; do not pick the npm latest.
 
 ---
 
@@ -457,7 +457,7 @@ Render wallet `name` and `icon` as text only unless you sanitize HTML. Never use
 | Error with `code: 'InsufficientFunds'` | Wallet can't cover the transaction (new in 4.1.0) | Show a funding prompt instead of a generic failure; on Preview, re-request tNIGHT after the 7 Nov 2026 relaunch and register it for DUST |
 | Old wallet build on Ledger 9 networks | Wallet predates the 6–9 Nov 2026 upgrades | Ask the user to update the extension |
 | Connection hangs | Wallet locked or not synced | Unlock wallet; wait for sync |
-| `ETARGET` on install | Stale package version | Run `npm view @midnightntwrk/dapp-connector-api version` and pin the latest |
+| `ETARGET` on install | Stale package version | Re-resolve the set from the support matrix (`references/volatile.md`); use `npm view` only to confirm the package scope, never to choose the version |
 | Type errors on `window.midnight` | Missing side-effect import | Add `import '@midnightntwrk/dapp-connector-api'` in `App.tsx` |
 
 ---

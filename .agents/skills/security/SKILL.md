@@ -5,6 +5,8 @@ description: Privacy audit checklist, data leak patterns, and defensive Compact 
 
 # Midnight Security Skill
 
+> **Versions:** every pin in this skill comes from `references/versions.json`, the repo's single source of truth (checked in CI). Resolve the current set at use time with `references/volatile.md`. Never install `@latest`.
+
 Midnight's privacy model is opt-in privacy on top of a public chain. The ZK proof proves correctness of execution — it does not hide the *existence* of a transaction, its *structure*, or anything in `export ledger`. Security on Midnight means being precise about what leaks and designing contracts so that leaks are intentional.
 
 **Primary references:**

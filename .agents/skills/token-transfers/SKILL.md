@@ -5,6 +5,8 @@ description: Shielded and unshielded NIGHT token transfers, contract token (Fung
 
 # Token Transfers Skill
 
+> **Versions:** every pin in this skill comes from `references/versions.json`, the repo's single source of truth (checked in CI). Resolve the current set at use time with `references/volatile.md`. Never install `@latest`.
+
 Midnight has two distinct token systems that operate independently: **ledger tokens** (NIGHT, UTXO-based, native to the chain) and **contract tokens** (account-based, ERC-20-style, implemented in Compact). They work differently, transfer differently, and serve different purposes.
 
 **Primary references:**

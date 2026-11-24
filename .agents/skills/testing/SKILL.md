@@ -94,7 +94,7 @@ Even a `Boolean` comparison result counts as disclosure. Wrap the witness call o
 Error: Version mismatch: compiled code expects 0.21.0, runtime is 0.16.0
 ```
 
-The contract was compiled by toolchain 0.36.x (which targets runtime 0.21.0), but the project still installs `@midnight-ntwrk/compact-runtime@0.16.0`. This message was reproduced on 21 Nov 2026. Pin the runtime the toolchain expects, or compile with the matching toolchain (`compact compile +0.36.1`). See version management below.
+The contract was compiled by toolchain 0.36.x (which targets runtime 0.21.0), but the project still installs `@midnight-ntwrk/compact-runtime@0.16.0`. This message was reproduced on 21 Nov 2026. Pin the runtime the toolchain expects, or compile with the matching toolchain (`compact compile +0.36.1`). See version management below. <!-- pin-ok -->
 
 ## 3) The `--skip-zk` Development Loop
 
@@ -110,16 +110,18 @@ This produces `contract/index.js` and `compiler/contract-info.json`, enough to t
 
 Midnight has **6 components** that must stay in sync. When they're not, you get opaque runtime errors about version mismatches.
 
-| Component | What it is | Ledger 9.1 version | How to check |
-|---|---|---|---|
-| CLI tool | `compact` binary (devtools) | `0.5.1` | `compact --version` |
-| Compiler | toolchain / language | `0.36.1` / `0.28.0` | `compact compile --version`, `compact compile --language-version` |
-| Runtime | `@midnight-ntwrk/compact-runtime` | `0.21.0` | `npm list` |
-| Ledger | `@midnightntwrk/ledger-v9` | `1.0.2` | `npm list` |
-| JS libraries | `@midnightntwrk/midnight-js-*` | `5.0.2` (matrix: 5.0.1) | `npm list` |
-| Proof server | `midnightntwrk/proof-server` Docker image | `9.0.2` | image tag |
+The expected version of each one is in `references/versions.json`, the repo's single source of truth (`toolchain` for the CLI, compiler, language and Docker images; `packages` / `nodePackages` for npm).
 
-Wallet SDK (`2.0.1`), indexer (`4.4.101`) and node (`2.1.101`) must also come from the same matrix row. `ledger-v8`, Midnight.js 4.x and Wallet SDK 1.x cannot transact on Ledger 9 networks.
+| Component | What it is | How to check |
+|---|---|---|
+| CLI tool | `compact` binary (devtools) | `compact --version` |
+| Compiler | toolchain / language | `compact compile --version`, `compact compile --language-version` |
+| Runtime | `@midnight-ntwrk/compact-runtime` | `npm list` |
+| Ledger | `@midnightntwrk/ledger-v9` | `npm list` |
+| JS libraries | `@midnightntwrk/midnight-js-*` | `npm list` |
+| Proof server | `midnightntwrk/proof-server` Docker image | image tag |
+
+Wallet SDK, indexer and node must also come from the same matrix row. `ledger-v8`, Midnight.js 4.x and Wallet SDK 1.x cannot transact on Ledger 9 networks.
 
 ### Check Current Versions
 
