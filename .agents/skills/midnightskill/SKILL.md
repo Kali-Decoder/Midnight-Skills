@@ -27,6 +27,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Integrate Midnight Passport (passkey Night ID + custody account) | `midnight-passport/` |
 | Write Compact smart contracts | `compact/` |
 | Debug Compact contracts, read errors, manage versions | `testing/` |
+| Build or fix Compact parsers, grammars, highlighters, or language servers | `compact-language-engineering/` |
 | Build a single dApp targeting all networks from one codebase | `multinetwork/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
 | Sponsor DUST fees so users with zero DUST can transact (gasless UX) | `dust-gas-sponsorship/` |
@@ -71,6 +72,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Compact](/.agents/skills/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.
 - Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns.
+
+### [Compact Language Engineering](/.agents/skills/compact-language-engineering/SKILL.md)
+- Grammar source of truth (parser.ss/lexer.ss at the toolchain tag), full token spec, precedence table, verified ambiguity hazards.
+- tree-sitter-compact gaps, Grammar-Kit/JFlex port, Nite LSP design, differential test harness with the compiler as oracle.
 
 ### [DUST Gas Sponsorship](/.agents/skills/dust-gas-sponsorship/SKILL.md)
 - Two-sided flow: user balances ['shielded','unshielded'] and finalizes, sponsor balances ['dust'] and submits.
