@@ -29,6 +29,7 @@ This file will guide to the right skill with the latest knowledge about Midnight
 | Debug Compact contracts, read errors, manage versions | `testing/` |
 | Build a single dApp targeting all networks from one codebase | `multinetwork/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
+| Sponsor DUST fees so users with zero DUST can transact (gasless UX) | `dust-gas-sponsorship/` |
 | Query blockchain data, watch contract state, subscribe to events | `midnight-indexer/` |
 | Integrate Ankr RPC for Midnight testnet and mainnet | `ankr-midnight/` |
 | Privacy audit checklist, prevent data leaks, defensive Compact patterns | `midnight-security/` |
@@ -70,6 +71,10 @@ This file will guide to the right skill with the latest knowledge about Midnight
 ### [Compact](/.agents/skills/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.
 - Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns.
+
+### [DUST Gas Sponsorship](/.agents/skills/dust-gas-sponsorship/SKILL.md)
+- Two-sided flow: user balances ['shielded','unshielded'] and finalizes, sponsor balances ['dust'] and submits.
+- Sponsor service policy (auth, rate limit, cap, contract check), DUST sizing and monitoring, NIGHTGATE and Capacity Exchange.
 
 ### [Dynamic Midnight Wallet](/.agents/skills/dynamic-midnight-wallet/SKILL.md)
 - DynamicContextProvider + MidnightWalletConnectors or DynamicWaasMidnightConnectors.
