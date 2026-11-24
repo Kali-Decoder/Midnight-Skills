@@ -1,0 +1,12 @@
+{
+  "name": "@private-reserve-auction/contract",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compact": "compact compile +0.36.1 src/private-reserve-auction.compact src/managed/private-reserve-auction"
+  },
+  "devDependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.21.0"
+  }
+}

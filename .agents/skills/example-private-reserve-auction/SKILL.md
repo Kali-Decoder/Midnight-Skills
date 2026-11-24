@@ -5,7 +5,7 @@ description: >
   Build a private reserve auction dApp on Midnight Network — hidden reserve price, public
   bids, private bidder identities. Covers private-reserve-auction.compact (no witnesses,
   persistentCommit, Map, Counter, disclose, receiveUnshielded/sendUnshielded), Next.js
-  frontend, 1AM wallet integration, low-level deploy/call, indexer polling. Use for
+  frontend, 1AM wallet integration, deployContract/callTx, indexer polling. Use for
   teaching privacy boundaries, commitment-based auctions, seller access control, or
   unshielded settlement. Triggers: private auction, reserve auction, silent auction,
   privacy boundary, persistentCommit, getDappPublicKey, unshielded claim, hidden price,
@@ -19,16 +19,32 @@ description: >
 
 A **private reserve auction contract** lets a seller hide the reserve price on-chain while bidders place public bids with private identities. The winner crosses the **privacy boundary** when claiming the item via unshielded NIGHT payment.
 
-**Runnable template:** Run `npm install && npm run compact && npm run sync:assets && npm run dev` after installing the [1AM wallet](https://1am.dev).
+**Source of truth:** `templates/private-reserve-auction-dapp/` is the complete, runnable project, and this skill is the walkthrough for it. Copy the template rather than retyping files from this page, then adapt it (§15). The contract is shown in full because it is the lesson.
 
-**What this skill produces:**
-- `contract/` — `private-reserve-auction.compact` (no witnesses, Map, Counter) + compile scripts
-- `app/auction/` — Next.js client UI (seller deploy/close/reveal/claim + bidder place bid/claim item)
-- `lib/midnight.ts` — wallet session + patched indexer provider
-- `lib/auction.ts` — deploy, `bid`, `closeAuction`, `revealPrice`, `claimItem`, `claimProceeds`, ledger decode
-- `lib/address.ts` — Bech32 unshielded address → `{ bytes: Uint8Array }` for `UserAddress` circuit args
-- `lib/secret.ts` — generate/store 32-byte DApp secrets in `localStorage`
-- `public/zk/private-reserve-auction/` — ZK proving assets synced from contract build
+**Get the template:**
+
+```bash
+git clone --depth 1 --filter=blob:none --sparse https://github.com/Kali-Decoder/Midnight-Skills.git
+cd Midnight-Skills && git sparse-checkout set templates/private-reserve-auction-dapp
+cp -R templates/private-reserve-auction-dapp ../my-auction && cd ../my-auction
+
+npm install
+npm run compact        # compact compile +0.36.1 → contract/src/managed/private-reserve-auction
+npm run sync:assets    # copies compiler/ keys/ zkir/ to public/zk/private-reserve-auction
+npm run dev            # http://localhost:3000/auction, 1AM wallet (Ledger 9 build) on preview
+```
+
+Without a checkout, read any file at `https://raw.githubusercontent.com/Kali-Decoder/Midnight-Skills/main/templates/private-reserve-auction-dapp/<path>`.
+
+**Verified:** the contract compiles with 0.36.1 (5 circuits), the app type-checks, and `npm run build` produces `/` and `/auction`. Not yet run against a live network.
+
+**What the template contains** (paths relative to `templates/private-reserve-auction-dapp/`):
+- `contract/`: `private-reserve-auction.compact` (no witnesses, Map, Counter), barrel, compile script
+- `app/auction/AuctionClient.tsx`: seller (deploy/close/reveal/claim proceeds) and bidder (bid/claim item) UI, Tailwind classes
+- `lib/midnight.ts`: the canonical Ledger 9 session from `references/midnight-session.md`
+- `lib/auction.ts`: `deployAuction`, `placeBid`, `closeAuction`, `revealPrice`, `claimItem`, `claimProceeds`, `fetchAuctionState`
+- `lib/address.ts`, `lib/secret.ts`: Bech32m → `UserAddress`, and per-contract secrets in `localStorage`
+- `scripts/sync-zk-assets.mjs`: ZK assets into `public/zk/private-reserve-auction/`
 
 **Key architecture notes:**
 - **No witnesses** — caller auth uses circuit-private `_secret` → `getDappPublicKey(_secret)` compared to on-chain `organizer`
@@ -53,7 +69,7 @@ A **private reserve auction contract** lets a seller hide the reserve price on-c
 
 When helping the user, follow this sequence:
 
-1. **Contract** — write `private-reserve-auction.compact`; compile with `npm run compact`
+1. **Copy the template** and run it unchanged once; then adapt `private-reserve-auction.compact` if needed (`npm run compact`, `npm run sync:assets`)
 2. **Understand privacy boundary** — hidden price → public bids → reveal → claim (unshielded) → public settlement
 3. **Providers** — `createConnectedSession` (from `references/midnight-session.md`)
 4. **Deploy** — seller passes `(reservePriceStars, maxBidders, sellerSecret)` to constructor
@@ -69,32 +85,33 @@ When helping the user, follow this sequence:
 ## 1) Project Structure
 
 ```
-private-reserve-auction-dapp/
-├── package.json
-├── next.config.mjs
-├── postcss.config.mjs
+templates/private-reserve-auction-dapp/
+├── package.json                    # scripts: dev, build (syncs assets first), compact, sync:assets
+├── next.config.mjs                 # Node fallbacks, isomorphic-ws alias, WASM
+├── postcss.config.mjs              # Tailwind v4 (@tailwindcss/postcss)
+├── tsconfig.json                   # "@/*" path alias
 ├── lib/
 │   ├── isomorphic-ws-fix.mjs
-│   ├── midnight.ts                 # session, patched provider, hex helpers
+│   ├── midnight.ts                 # session, providers, hex helpers
 │   ├── auction.ts                  # deploy, circuits, decode state
-│   ├── address.ts                  # Bech32 → UserAddress bytes
+│   ├── address.ts                  # Bech32m → UserAddress bytes
 │   └── secret.ts                   # crypto.getRandomValues + localStorage
 ├── app/
-│   ├── globals.css
+│   ├── globals.css                 # @import 'tailwindcss'
 │   ├── layout.tsx
 │   ├── page.tsx                    # landing page
 │   └── auction/
-│       ├── page.tsx                # server shell
+│       ├── page.tsx                # loads AuctionClient with ssr: false
 │       └── AuctionClient.tsx       # seller + bidder UI
 ├── contract/
-│   ├── package.json
+│   ├── package.json                # compact script (toolchain pinned)
 │   └── src/
 │       ├── private-reserve-auction.compact
 │       ├── index.ts                # CompiledContract.withVacantWitnesses
 │       └── managed/private-reserve-auction/  # compiler output (gitignored)
 ├── scripts/
-│   └── sync-zk-assets.mjs          # → public/zk/private-reserve-auction/{compiler,keys,zkir}/  (compiler/ is required by Midnight.js 5)
-└── public/zk/private-reserve-auction/        # keys + zkir (gitignored until sync)
+│   └── sync-zk-assets.mjs          # → public/zk/private-reserve-auction/{compiler,keys,zkir}/
+└── public/zk/private-reserve-auction/        # gitignored until sync
 ```
 
 ---
@@ -114,76 +131,27 @@ Browser: a **Ledger 9 build of the 1AM wallet** on `preview`, with tNIGHT (from 
 
 ---
 
-## 3) Root `package.json`
+## 3) Template Files
 
-```json
-{
-  "name": "private-reserve-auction-dapp",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "next dev",
-    "build": "npm run sync:assets && next build",
-    "compact": "npm run compact --prefix contract",
-    "sync:assets": "node scripts/sync-zk-assets.mjs",
-    "postinstall": "echo 'All deps at root level'"
-  },
-  "dependencies": {
-    "@midnight-ntwrk/compact-js": "3.0.2",
-    "@midnight-ntwrk/compact-runtime": "0.21.0",
-    "@midnightntwrk/ledger-v9": "1.0.2",
-    "@midnightntwrk/midnight-js-contracts": "5.0.2",
-    "@midnightntwrk/midnight-js-fetch-zk-config-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-indexer-public-data-provider": "5.0.2",
-    "@midnightntwrk/dapp-connector-api": "4.1.0",
-    "@midnightntwrk/midnight-js-dapp-connector-proof-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-level-private-state-provider": "5.0.2",
-    "@midnightntwrk/midnight-js-types": "5.0.2",
-    "@midnightntwrk/midnight-js-utils": "5.0.2",
-    "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
-    "@tailwindcss/postcss": "^4.3.2",
-    "next": "^15.0.0",
-    "postcss": "^8.5.16",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "tailwindcss": "^4.3.2"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "typescript": "^5.7.0"
-  }
-}
-```
+| File | Role | Change it when |
+|---|---|---|
+| `package.json` | Next.js 15 + Tailwind v4 app; all deps at root | Adding dependencies (versions from `references/versions.json`) |
+| `contract/package.json` | `compact compile +0.36.1 src/private-reserve-auction.compact src/managed/private-reserve-auction` | Renaming the contract |
+| `contract/src/private-reserve-auction.compact` | The contract (§5) | Auction rules change |
+| `contract/src/index.ts` | `CompiledAuctionContract` (§6) | Renaming, adding witnesses |
+| `lib/midnight.ts` | Session and providers (§9) | Almost never |
+| `lib/auction.ts` | Contract API (§10) | Circuits or ledger fields change |
+| `app/auction/AuctionClient.tsx` | UI (§11) | UI changes, target network |
+| `scripts/sync-zk-assets.mjs` | ZK asset copy (§12) | Renaming the contract |
+| `next.config.mjs`, `postcss.config.mjs`, `app/layout.tsx`, `app/globals.css` | Build and styling config | Restyling |
 
 ---
 
-## 4) `contract/package.json`
-
-```json
-{
-  "name": "@private-reserve-auction/contract",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "compact": "compact compile +0.36.1 src/private-reserve-auction.compact src/managed/private-reserve-auction"
-  },
-  "devDependencies": {
-    "@midnight-ntwrk/compact-runtime": "0.21.0"
-  }
-}
-```
-
-Compile:
+## 4) Compile and Sync
 
 ```bash
 npm run compact
-# → contract/src/managed/private-reserve-auction/{compiler,contract,keys,zkir}/
 npm run sync:assets
-# → public/zk/private-reserve-auction/{compiler,keys,zkir}/  (compiler/ is required by Midnight.js 5)
 ```
 
 Expected circuits: `bid`, `closeAuction`, `revealPrice`, `claimItem`, `claimProceeds`.
@@ -191,6 +159,8 @@ Expected circuits: `bid`, `closeAuction`, `revealPrice`, `claimItem`, `claimProc
 ---
 
 ## 5) `contract/src/private-reserve-auction.compact`
+
+Source: `templates/private-reserve-auction-dapp/contract/src/private-reserve-auction.compact`.
 
 ```compact
 pragma language_version >= 0.28.0;
@@ -369,138 +339,13 @@ Never pass raw Bech32 strings or shielded coin public keys where `UserAddress` i
 
 ## 8) `lib/secret.ts`
 
-```typescript
-import { fromHex, toHex } from './midnight';
-
-export function generateSecret(): Uint8Array {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return bytes;
-}
-
-export function saveSecret(
-  role: 'seller' | 'bidder',
-  contractAddress: string,
-  secret: Uint8Array,
-) {
-  localStorage.setItem(`private-auction:${role}:${contractAddress}`, toHex(secret));
-}
-
-export function loadSecret(
-  role: 'seller' | 'bidder',
-  contractAddress: string,
-): Uint8Array | null {
-  const hex = localStorage.getItem(`private-auction:${role}:${contractAddress}`);
-  return hex ? fromHex(hex) : null;
-}
-```
+`generateSecret()` returns 32 random bytes; `saveSecret` / `loadSecret` keep seller and bidder secrets in `localStorage` per role and contract address. Losing one loses that role's authority; there is no on-chain recovery.
 
 ---
 
 ## 9) Provider Setup — `lib/midnight.ts`
 
-Use the canonical Ledger 9 session (`references/midnight-session.md`) unchanged:
-
-```typescript
-import type { ConnectedAPI, InitialAPI } from '@midnightntwrk/dapp-connector-api';
-import {
-  dappConnectorNetwork,
-  dappConnectorProofProvider,
-  dappConnectorWalletProviders,
-} from '@midnightntwrk/midnight-js-dapp-connector-proof-provider';
-import { indexerPublicDataProvider } from '@midnightntwrk/midnight-js-indexer-public-data-provider';
-import { FetchZkConfigProvider } from '@midnightntwrk/midnight-js-fetch-zk-config-provider';
-import { levelPrivateStateProvider } from '@midnightntwrk/midnight-js-level-private-state-provider';
-import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
-import type { MidnightNetwork } from '@midnightntwrk/midnight-js-utils';
-import { CostModel } from '@midnightntwrk/ledger-v9';
-import { ContractState } from '@midnight-ntwrk/compact-runtime';
-import { MidnightBech32m, ShieldedCoinPublicKey } from '@midnightntwrk/wallet-sdk-address-format';
-
-export type ConnectedSession = {
-  api: ConnectedAPI;
-  /** Network id + endpoints, read from the wallet. There is no global setNetworkId any more. */
-  network: MidnightNetwork;
-  providers: MidnightProviders;
-  unshieldedAddress: string;
-  coinPublicKeyBytes: Uint8Array;
-};
-
-export function fromHex(hex: string): Uint8Array {
-  const h = hex.startsWith('0x') ? hex.slice(2) : hex;
-  return Uint8Array.from(h.match(/.{1,2}/g) ?? [], (b) => parseInt(b, 16));
-}
-
-export function toHex(bytes: Uint8Array): string {
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-/**
- * Demo-grade password for the encrypted IndexedDB private-state store: random, kept in localStorage.
- * Production apps should ask the user or derive it from wallet-held material.
- */
-function demoStoragePassword(): Promise<string> {
-  const k = 'midnight-private-storage-password';
-  let pw = localStorage.getItem(k);
-  if (!pw) {
-    pw = `Mn-${crypto.randomUUID()}-${crypto.randomUUID()}`;
-    localStorage.setItem(k, pw);
-  }
-  return Promise.resolve(pw);
-}
-
-export async function detectWallet(): Promise<InitialAPI> {
-  const midnight = (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight ?? {};
-  const w = midnight['1am'] ?? Object.values(midnight)[0];
-  if (!w) throw new Error('No Midnight wallet extension found');
-  return w;
-}
-
-export async function createConnectedSession(api: ConnectedAPI, zkAssetPath: string): Promise<ConnectedSession> {
-  const network = await dappConnectorNetwork(api);
-  const [{ unshieldedAddress }, shielded] = await Promise.all([
-    api.getUnshieldedAddress(),
-    api.getShieldedAddresses(),
-  ]);
-
-  // zkAssetPath must serve compiler/ (contract-manifest.json, contract-info.json), keys/ and zkir/.
-  const zkConfigProvider = new FetchZkConfigProvider<string>(
-    new URL(zkAssetPath, window.location.origin).toString(),
-    { fetchFunc: window.fetch.bind(window) },
-  );
-  const proofProvider = await dappConnectorProofProvider(api, zkConfigProvider, CostModel.initialCostModel());
-  const { walletProvider, midnightProvider } = await dappConnectorWalletProviders(api);
-
-  return {
-    api,
-    network,
-    providers: {
-      privateStateProvider: levelPrivateStateProvider({
-        accountId: unshieldedAddress,
-        privateStoragePasswordProvider: demoStoragePassword,
-      }),
-      publicDataProvider: indexerPublicDataProvider(network.indexer),
-      zkConfigProvider,
-      proofProvider,
-      walletProvider,
-      midnightProvider,
-      config: { networkId: network.networkId, ttlSeconds: 3600 },
-    },
-    unshieldedAddress,
-    // The connector returns keys in Bech32m, not hex.
-    coinPublicKeyBytes: new Uint8Array(
-      ShieldedCoinPublicKey.codec.decode(network.networkId, MidnightBech32m.parse(shielded.shieldedCoinPublicKey)).data,
-    ),
-  };
-}
-
-/** Latest on-chain state of a contract, decoded with this app's own compact-runtime copy. */
-export async function queryLatestState(session: ConnectedSession, contractAddress: string) {
-  const read = await session.providers.publicDataProvider.queryContractState(contractAddress);
-  if (!read) return null;
-  return read.contractState.deserialize({ v9: ContractState });
-}
-```
+The canonical Ledger 9 session (`references/midnight-session.md`), unchanged.
 
 **Why this shape (Midnight.js 5):**
 - No `setNetworkId`: `dappConnectorNetwork(api)` gives the network id + endpoints, and the id goes in `providers.config`.
@@ -510,573 +355,28 @@ export async function queryLatestState(session: ConnectedSession, contractAddres
 
 ---
 
+---
+
 ## 10) `lib/auction.ts`
 
-```typescript
-import type { ProvableCircuitId } from '@midnight-ntwrk/compact-js';
-import { deployContract, findDeployedContract } from '@midnightntwrk/midnight-js-contracts';
-import type { MidnightProviders } from '@midnightntwrk/midnight-js-types';
-import { CompiledAuctionContract, ledger, type AuctionContract, type AuctionPrivateState } from '../contract/src/index';
-import { queryLatestState, type ConnectedSession } from './midnight';
-import { bech32ToUserAddress } from './address';
+Source: `templates/private-reserve-auction-dapp/lib/auction.ts`. Each circuit wrapper connects with `findDeployedContract` and calls `callTx.<circuit>`.
 
-const PRIVATE_STATE_ID = 'PrivateAuctionState';
-export const ZK_PATH = '/zk/private-reserve-auction';
-const AUCTION_STATE_NAMES = ['OPEN', 'CLOSED', 'SETTLED'] as const;
-export type AuctionStateName = (typeof AUCTION_STATE_NAMES)[number];
-
-type AuctionProviders = MidnightProviders<ProvableCircuitId<AuctionContract>, typeof PRIVATE_STATE_ID, AuctionPrivateState>;
-const providersFor = (s: ConnectedSession) => s.providers as unknown as AuctionProviders;
-const stars = (night: number) => BigInt(Math.round(night * 1_000_000));
-
-export async function deployAuction(session: ConnectedSession, reservePriceNight: number, maxBidders: number, sellerSecret: Uint8Array) {
-  const deployed = await deployContract(providersFor(session), {
-    compiledContract: CompiledAuctionContract,
-    args: [stars(reservePriceNight), BigInt(maxBidders), sellerSecret],
-    privateStateId: PRIVATE_STATE_ID,
-    initialPrivateState: {},
-  });
-  return deployed.deployTxData.public.contractAddress;
-}
-
-const connect = (session: ConnectedSession, contractAddress: string) =>
-  findDeployedContract(providersFor(session), {
-    compiledContract: CompiledAuctionContract,
-    contractAddress,
-    privateStateId: PRIVATE_STATE_ID,
-    initialPrivateState: {},
-  });
-
-export const placeBid = async (session: ConnectedSession, contractAddress: string, bidNight: number, user: { bytes: Uint8Array }, bidderSecret: Uint8Array) =>
-  (await connect(session, contractAddress)).callTx.bid(stars(bidNight), user, bidderSecret);
-
-export const closeAuction = async (session: ConnectedSession, contractAddress: string, sellerSecret: Uint8Array) =>
-  (await connect(session, contractAddress)).callTx.closeAuction(sellerSecret);
-
-export const revealPrice = async (session: ConnectedSession, contractAddress: string, reservePriceNight: number, sellerSecret: Uint8Array) =>
-  (await connect(session, contractAddress)).callTx.revealPrice(stars(reservePriceNight), sellerSecret);
-
-export const claimItem = async (session: ConnectedSession, contractAddress: string, user: { bytes: Uint8Array }, bidderSecret: Uint8Array) =>
-  (await connect(session, contractAddress)).callTx.claimItem(user, bidderSecret);
-
-export const claimProceeds = async (session: ConnectedSession, contractAddress: string, seller: { bytes: Uint8Array }, sellerSecret: Uint8Array) =>
-  (await connect(session, contractAddress)).callTx.claimProceeds(seller, sellerSecret);
-
-export async function fetchAuctionState(session: ConnectedSession, contractAddress: string) {
-  const state = await queryLatestState(session, contractAddress);
-  if (!state) return null;
-  const l = ledger(state.data);
-  const stateIdx = Number(l.auctionState);
-  return {
-    auctionState: (AUCTION_STATE_NAMES[stateIdx] ?? `UNKNOWN(${stateIdx})`) as AuctionStateName | string,
-    auctionStateIndex: stateIdx,
-    maxBidders: Number(l.maxBids),
-    publicPriceNight: Number(l.publicPrice) / 1_000_000,
-    highestBidNight: Number(l.highestBid) / 1_000_000,
-    bidCount: Number(l.bidCount),             // Counter → bigint
-    bidderCount: Number(l.bidders.size()),    // ledger Map/Set → size()
-  };
-}
-
-export const userAddressFromSession = (session: ConnectedSession) =>
-  bech32ToUserAddress(session.unshieldedAddress, session.network.networkId);
-```
-
-**Key details:**
-- Argument shapes come from the generated `.d.ts`: `Uint<…>` → `bigint`, `Bytes<32>` secrets → plain `Uint8Array`, `UserAddress` → `{ bytes }`
-- Typed providers mean wrong shapes fail at compile time instead of at proving time
-- Reserve price and bids in NIGHT are converted to Stars (×1,000,000) before reaching the contract
+| Export | Circuit / effect |
+|---|---|
+| `deployAuction(session, reservePriceNight, maxBidders, sellerSecret)` | Constructor `[stars(reserve), BigInt(maxBidders), sellerSecret]` |
+| `placeBid(session, address, bidNight, user, bidderSecret)` | `bid` |
+| `closeAuction(session, address, sellerSecret)` | `closeAuction` |
+| `revealPrice(session, address, reservePriceNight, sellerSecret)` | `revealPrice` (checked against the commitment) |
+| `claimItem(session, address, user, bidderSecret)` | `claimItem` (pays the reserve, address becomes public) |
+| `claimProceeds(session, address, seller, sellerSecret)` | `claimProceeds` |
+| `fetchAuctionState(session, address)` | `auctionState` (`OPEN`, `CLOSED`, `SETTLED`), `maxBidders`, `publicPriceNight`, `highestBidNight`, `bidCount`, `bidderCount` |
+| `userAddressFromSession(session)` | The connected wallet's `UserAddress` |
 
 ---
 
 ## 11) Frontend — `app/auction/AuctionClient.tsx`
 
-```tsx
-'use client';
-
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { detectWallet, createConnectedSession } from '@/lib/midnight';
-import {
-  deployAuction,
-  placeBid,
-  closeAuction,
-  revealPrice,
-  claimItem,
-  claimProceeds,
-  fetchAuctionState,
-  userAddressFromSession,
-  ZK_PATH,
-} from '@/lib/auction';
-import { generateSecret, loadSecret, saveSecret } from '@/lib/secret';
-import type { ConnectedSession } from '@/lib/midnight';
-
-type Role = 'seller' | 'bidder';
-
-const STATE_LABELS: Record<string, string> = {
-  OPEN: 'Open for Bids',
-  CLOSED: 'Bidding Closed',
-  SETTLED: 'Settled',
-};
-
-export default function AuctionClient() {
-  const [session, setSession] = useState<ConnectedSession | null>(null);
-  const [role, setRole] = useState<Role>('bidder');
-  const [contractAddress, setContractAddress] = useState('');
-  const [auctionState, setAuctionState] = useState<Awaited<ReturnType<typeof fetchAuctionState>> | null>(null);
-  const [error, setError] = useState('');
-  const [connecting, setConnecting] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [walletInstalled, setWalletInstalled] = useState<boolean | null>(null);
-  const mountedRef = useRef(true);
-
-  const [reservePriceNight, setReservePriceNight] = useState('0.01');
-  const [maxBidders, setMaxBidders] = useState('5');
-  const [bidAmountNight, setBidAmountNight] = useState('0.02');
-
-  useEffect(() => {
-    detectWallet()
-      .then((w) => setWalletInstalled(w !== null))
-      .catch(() => setWalletInstalled(false));
-    return () => { mountedRef.current = false; };
-  }, []);
-
-  const withLoading = useCallback(async <T,>(
-    message: string,
-    fn: (setStatus: (msg: string) => void) => Promise<T>,
-  ): Promise<T> => {
-    setBusy(true);
-    setError('');
-    setStatusMessage(message);
-    try {
-      const result = await fn((msg: string) => {
-        if (mountedRef.current) setStatusMessage(msg);
-      });
-      return result;
-    } catch (e) {
-      if (mountedRef.current) {
-        setError(e instanceof Error ? e.message : String(e));
-      }
-      throw e;
-    } finally {
-      if (mountedRef.current) {
-        setBusy(false);
-        setStatusMessage('');
-      }
-    }
-  }, []);
-
-  const refresh = useCallback(async () => {
-    if (!session || !contractAddress) return;
-    try {
-      const state = await fetchAuctionState(session, contractAddress);
-      if (mountedRef.current) setAuctionState(state);
-    } catch (e) {
-      if (mountedRef.current) setError(e instanceof Error ? e.message : 'Refresh failed');
-    }
-  }, [session, contractAddress]);
-
-  useEffect(() => { void refresh(); }, [refresh]);
-
-  const connectWallet = useCallback(async () => {
-    setConnecting(true);
-    setError('');
-    try {
-      const wallet = await detectWallet();
-      if (!wallet) {
-        setError('1AM wallet not detected. Please install the 1AM browser extension.');
-        return;
-      }
-      const api = await wallet.connect('preview');
-      const s = await createConnectedSession(api, ZK_PATH);
-      setSession(s);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to connect wallet');
-    } finally {
-      setConnecting(false);
-    }
-  }, []);
-
-  const handleDeploy = useCallback(async () => {
-    if (!session) return;
-    await withLoading('Deploying auction contract…', async (setStatus) => {
-      const secret = generateSecret();
-      const addr = await deployAuction(
-        session,
-        Number(reservePriceNight),
-        Number(maxBidders),
-        secret,
-      );
-      setContractAddress(addr);
-      saveSecret('seller', addr, secret);
-
-      setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session, addr);
-      setAuctionState(state);
-    });
-  }, [session, withLoading, reservePriceNight, maxBidders]);
-
-  const handlePlaceBid = useCallback(async () => {
-    if (!session || !contractAddress) return;
-    await withLoading('Placing bid (proving + submitting)…', async (setStatus) => {
-      let secret = loadSecret('bidder', contractAddress);
-      if (!secret) {
-        secret = generateSecret();
-        saveSecret('bidder', contractAddress, secret);
-      }
-      await placeBid(session, contractAddress, Number(bidAmountNight), userAddressFromSession(session), secret);
-
-      setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session, contractAddress);
-      setAuctionState(state);
-    });
-  }, [session, contractAddress, withLoading, bidAmountNight]);
-
-  const handleCloseAuction = useCallback(async () => {
-    if (!session || !contractAddress) return;
-    const secret = loadSecret('seller', contractAddress);
-    if (!secret) { setError('Seller secret not found.'); return; }
-    await withLoading('Closing auction…', async (setStatus) => {
-      await closeAuction(session, contractAddress, secret);
-      setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session, contractAddress);
-      setAuctionState(state);
-    });
-  }, [session, contractAddress, withLoading]);
-
-  const handleRevealPrice = useCallback(async () => {
-    if (!session || !contractAddress) return;
-    const secret = loadSecret('seller', contractAddress);
-    if (!secret) { setError('Seller secret not found.'); return; }
-    await withLoading('Revealing reserve price…', async (setStatus) => {
-      await revealPrice(session, contractAddress, Number(reservePriceNight), secret);
-      setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session, contractAddress);
-      setAuctionState(state);
-    });
-  }, [session, contractAddress, withLoading, reservePriceNight]);
-
-  const handleClaimItem = useCallback(async () => {
-    if (!session || !contractAddress) return;
-    const secret = loadSecret('bidder', contractAddress);
-    if (!secret) { setError('Bidder secret not found. Place a bid first.'); return; }
-    await withLoading('Claiming item (proving + submitting)…', async (setStatus) => {
-      await claimItem(session, contractAddress, userAddressFromSession(session), secret);
-      setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session, contractAddress);
-      setAuctionState(state);
-    });
-  }, [session, contractAddress, withLoading]);
-
-  const handleClaimProceeds = useCallback(async () => {
-    if (!session || !contractAddress) return;
-    const secret = loadSecret('seller', contractAddress);
-    if (!secret) { setError('Seller secret not found.'); return; }
-    await withLoading('Claiming proceeds…', async (setStatus) => {
-      await claimProceeds(session, contractAddress, userAddressFromSession(session), secret);
-      setStatus('Waiting for indexer…');
-      const state = await fetchAuctionState(session, contractAddress);
-      setAuctionState(state);
-    });
-  }, [session, contractAddress, withLoading]);
-
-  const reset = useCallback(() => {
-    setContractAddress('');
-    setAuctionState(null);
-    setError('');
-  }, []);
-
-  if (walletInstalled === false) {
-    return (
-      <div className="text-center py-20">
-        <h2 className="text-xl font-semibold mb-4">1AM Wallet Required</h2>
-        <p className="text-zinc-600 dark:text-zinc-400 mb-6">
-          Please install the <strong>1AM</strong> browser extension for Midnight Network.
-        </p>
-        <a
-          href="https://1am.xyz"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex h-11 items-center justify-center rounded-full bg-zinc-900 px-6 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
-          Install 1AM Wallet
-        </a>
-      </div>
-    );
-  }
-
-  const state = auctionState;
-
-  return (
-    <div className="mx-auto max-w-lg w-full">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Private Reserve Auction</h1>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-          Hidden reserve price, public bids, private bidder identities
-        </p>
-      </div>
-
-      {!session && (
-        <div className="text-center">
-          <button
-            onClick={connectWallet}
-            disabled={connecting}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-zinc-900 px-8 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            {connecting ? 'Connecting…' : 'Connect 1AM Wallet'}
-          </button>
-        </div>
-      )}
-
-      {session && (
-        <div className="mb-6 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-xs dark:border-zinc-800 dark:bg-zinc-900/50">
-          <p className="font-medium text-zinc-500 uppercase tracking-wider mb-2">Wallet</p>
-          <p className="text-zinc-700 dark:text-zinc-300 truncate">
-            <span className="text-zinc-400">Unshielded: </span>
-            {session.unshieldedAddress}
-          </p>
-          <p className="text-zinc-500 mt-1">
-            Network: <span className="font-medium text-zinc-700 dark:text-zinc-300">{session.network.networkId}</span>
-          </p>
-        </div>
-      )}
-
-      {session && !contractAddress && (
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <button
-            onClick={() => setRole('seller')}
-            className={`rounded-lg border p-5 text-left transition ${
-              role === 'seller'
-                ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-zinc-800'
-                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
-            }`}
-          >
-            <p className="text-sm font-semibold">I&apos;m a Seller</p>
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              Deploy an auction with a hidden reserve price
-            </p>
-          </button>
-          <button
-            onClick={() => setRole('bidder')}
-            className={`rounded-lg border p-5 text-left transition ${
-              role === 'bidder'
-                ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-zinc-800'
-                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
-            }`}
-          >
-            <p className="text-sm font-semibold">I&apos;m a Bidder</p>
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              Place private bids on an existing auction
-            </p>
-          </button>
-        </div>
-      )}
-
-      {/* Deploy form — seller only, no contract yet */}
-      {session && !contractAddress && role === 'seller' && !busy && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-              Reserve price (NIGHT)
-              <input
-                type="number"
-                min={0.000001}
-                step={0.01}
-                value={reservePriceNight}
-                onChange={(e) => setReservePriceNight(e.target.value)}
-                className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-              Max bidders
-              <input
-                type="number"
-                min={1}
-                value={maxBidders}
-                onChange={(e) => setMaxBidders(e.target.value)}
-                className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
-              />
-            </label>
-          </div>
-          <button
-            onClick={handleDeploy}
-            className="w-full h-11 rounded-full bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            Deploy Auction
-          </button>
-        </div>
-      )}
-
-      {/* Bidder hint — no contract yet */}
-      {session && !contractAddress && role === 'bidder' && !busy && (
-        <div className="text-center text-sm text-zinc-500 dark:text-zinc-400 py-8">
-          <p>Paste a deployed auction contract address to participate.</p>
-          <p className="mt-2">Ask the seller for the contract address.</p>
-        </div>
-      )}
-
-      {/* Auction state + actions */}
-      {session && contractAddress && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-center gap-2 text-xs">
-            <span className="rounded-full border border-zinc-200 dark:border-zinc-800 px-3 py-1 text-zinc-500 dark:text-zinc-400">
-              Viewing as <strong className="text-zinc-700 dark:text-zinc-300 capitalize">{role}</strong>
-            </span>
-            <button
-              onClick={reset}
-              className="text-zinc-400 underline underline-offset-2 hover:text-zinc-600 dark:hover:text-zinc-300"
-            >
-              switch role
-            </button>
-          </div>
-
-          {state && (
-            <div className="rounded-lg border border-zinc-200 p-6 text-center dark:border-zinc-800">
-              <p className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Auction State</p>
-              <p className="text-2xl font-bold tracking-tight">
-                {STATE_LABELS[state.auctionState] ?? state.auctionState}
-              </p>
-              <div className="mt-4 flex justify-center gap-6 text-sm text-zinc-500 dark:text-zinc-400">
-                <span>Bids: <strong className="text-zinc-700 dark:text-zinc-300">{state.bidCount}</strong> / {state.maxBidders}</span>
-                {state.highestBidNight > 0 && (
-                  <span>Highest: <strong className="text-zinc-700 dark:text-zinc-300">{state.highestBidNight}</strong> NIGHT</span>
-                )}
-              </div>
-              {state.publicPriceNight > 0 && (
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                  Reserve: <strong className="text-zinc-700 dark:text-zinc-300">{state.publicPriceNight}</strong> NIGHT
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Seller actions */}
-          {role === 'seller' && (
-            <div className="space-y-3">
-              {state?.auctionState === 'OPEN' && (
-                <button
-                  onClick={handleCloseAuction}
-                  disabled={busy}
-                  className="w-full h-12 rounded-full bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  {busy ? statusMessage || 'Processing…' : 'Close Auction'}
-                </button>
-              )}
-              {state?.auctionState === 'CLOSED' && (
-                <>
-                  <label className="flex flex-col gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    Reveal reserve price (NIGHT) — must match deploy value
-                    <input
-                      type="number"
-                      min={0.000001}
-                      step={0.01}
-                      value={reservePriceNight}
-                      onChange={(e) => setReservePriceNight(e.target.value)}
-                      className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
-                    />
-                  </label>
-                  <button
-                    onClick={handleRevealPrice}
-                    disabled={busy}
-                    className="w-full h-12 rounded-full bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-                  >
-                    {busy ? statusMessage || 'Processing…' : 'Reveal Reserve Price'}
-                  </button>
-                </>
-              )}
-              {state?.auctionState === 'SETTLED' && (
-                <button
-                  onClick={handleClaimProceeds}
-                  disabled={busy}
-                  className="w-full h-12 rounded-full bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  {busy ? statusMessage || 'Processing…' : 'Claim Proceeds'}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Bidder actions */}
-          {role === 'bidder' && (
-            <div className="space-y-3">
-              {state?.auctionState === 'OPEN' && (
-                <>
-                  <label className="flex flex-col gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    Your bid (NIGHT)
-                    <input
-                      type="number"
-                      min={0.000001}
-                      step={0.01}
-                      value={bidAmountNight}
-                      onChange={(e) => setBidAmountNight(e.target.value)}
-                      className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
-                    />
-                  </label>
-                  <button
-                    onClick={handlePlaceBid}
-                    disabled={busy}
-                    className="w-full h-12 rounded-full bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-                  >
-                    {busy ? statusMessage || 'Processing…' : 'Place Bid'}
-                  </button>
-                </>
-              )}
-              {state?.auctionState === 'SETTLED' && state.highestBidNight >= state.publicPriceNight && (
-                <button
-                  onClick={handleClaimItem}
-                  disabled={busy}
-                  className="w-full h-12 rounded-full bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  {busy ? statusMessage || 'Processing…' : 'Claim Item (pays reserve → public)'}
-                </button>
-              )}
-            </div>
-          )}
-
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-900/50">
-            <p className="text-zinc-500">
-              <span className="text-zinc-400">Contract: </span>
-              <span className="font-mono text-zinc-700 dark:text-zinc-300 break-all">{contractAddress}</span>
-            </p>
-          </div>
-
-          <div className="flex justify-center gap-3">
-            <button
-              onClick={() => void refresh()}
-              disabled={busy}
-              className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-600 disabled:opacity-40 dark:hover:text-zinc-300"
-            >
-              refresh
-            </button>
-            <button
-              onClick={reset}
-              disabled={busy}
-              className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-600 disabled:opacity-40 dark:hover:text-zinc-300"
-            >
-              new contract
-            </button>
-          </div>
-        </div>
-      )}
-
-      {busy && !contractAddress && (
-        <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-zinc-100 px-4 py-2 text-xs text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-400 animate-pulse" />
-            {statusMessage}
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
-          {error}
-        </div>
-      )}
-    </div>
-  );
-}
-```
+Role cards for seller and bidder, an auction status panel, and indexer polling. It connects with `wallet.connect('preview')`. Two patterns worth reusing:
 
 ### `withLoading` pattern
 
@@ -1098,21 +398,7 @@ In `handlePlaceBid`, the bidder secret is loaded from `localStorage`. If none ex
 
 ## 12) ZK Asset Sync — `scripts/sync-zk-assets.mjs`
 
-```javascript
-import { cpSync, mkdirSync, rmSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const src = join(root, 'contract/src/managed/private-reserve-auction');
-const dest = join(root, 'public/zk/private-reserve-auction');
-
-rmSync(dest, { recursive: true, force: true });
-mkdirSync(dest, { recursive: true });
-for (const dir of ['keys', 'zkir']) {
-  cpSync(join(src, dir), join(dest, dir), { recursive: true });
-}
-```
+Copies `contract/src/managed/private-reserve-auction/{compiler,keys,zkir}` into `public/zk/private-reserve-auction/`. `compiler/` is required; without it proving fails with `EraMismatchError: artifact-era-undeclared`.
 
 Verify: `http://localhost:3000/zk/private-reserve-auction/keys/bid.prover` returns 200.
 
@@ -1163,27 +449,38 @@ Verify: `http://localhost:3000/zk/private-reserve-auction/keys/bid.prover` retur
 
 ---
 
-## 15) Agent Checklist
+## 15) Adapting This Template
+
+1. **Copy, run, then change.** Copy `templates/private-reserve-auction-dapp/` and get it working unchanged first.
+2. **Contract.** Edit `contract/src/private-reserve-auction.compact`. If you rename it, update the `compact` script, the `managed/<name>` imports and ZK path in `contract/src/index.ts`, `ZK_PATH` in `lib/auction.ts`, and the folder in `scripts/sync-zk-assets.mjs`.
+3. **Witnesses.** None today (`withVacantWitnesses`). Adding some means `CompiledContract.withWitnesses(...)`, a real `AuctionPrivateState`, and a real `initialPrivateState` in `lib/auction.ts`.
+4. **Circuits and state.** Add wrappers in `lib/auction.ts`; keep `AUCTION_STATE_NAMES` in the contract's enum order; extend `fetchAuctionState` for new fields. Convert NIGHT to Stars with `stars()` before calling circuits.
+5. **UI.** Add handlers in `AuctionClient.tsx` with `withLoading`; change `wallet.connect('preview')` to target another network.
+6. **Secrets.** Seller/bidder secrets and the private-state password (`demoStoragePassword`) live in `localStorage`. Demo-grade; for production, back them up or derive them from wallet-held material.
+7. **Recompile and resync** after every contract change.
+8. **Versions.** Add dependencies only at the versions in `references/versions.json`.
+
+---
+
+## 16) Agent Checklist
 
 When generating this dApp for a user:
 
-- [ ] Write `private-reserve-auction.compact` with all five exported circuits + helper circuits
-- [ ] Compile; sync ZK assets to `public/zk/private-reserve-auction/`
+- [ ] Start from `templates/private-reserve-auction-dapp/`; do not retype it
+- [ ] Keep the five exported circuits unless the user's rules differ
+- [ ] `npm run compact`, then `npm run sync:assets` (with `compiler/`)
 - [ ] Use `CompiledContract.withVacantWitnesses` from `@midnight-ntwrk/compact-js` (not `compact-runtime`)
-- [ ] Single copy of each WASM package (`npm ls`); page loads the client with `ssr: false`
-- [ ] Wire `createConnectedSession` with patched indexer
+- [ ] Single copy of each WASM package (`npm ls`); the auction page loads the client with `ssr: false`
+- [ ] Keep `createConnectedSession` with the plain indexer provider (no patch on Ledger 9)
 - [ ] Constructor args: `[BigInt(reservePriceStars), BigInt(maxBidders), rawUint8Array]`
-- [ ] Decode unshielded Bech32 via `wallet-sdk-address-format`
+- [ ] Decode unshielded Bech32m via `wallet-sdk-address-format`
 - [ ] Store seller/bidder secrets in `localStorage` per contract address
 - [ ] UI explains privacy boundary before claim button
-- [ ] Next.js: `asyncWebAssembly: true` + `topLevelAwait: true` in webpack config; `resolve.fallback` for `fs`, `net`, `tls`, `child_process`; alias `isomorphic-ws`
-- [ ] Delete `contract/node_modules` if present — root-level `node_modules` must be the sole `compact-runtime` copy
-- [ ] Tailwind: counter dapp pattern — Geist fonts, `rounded-full` buttons, `prefers-color-scheme` dark mode
 - [ ] Document: reserve price in NIGHT (UI) / Stars (contract); 1 NIGHT = 1,000,000 Stars
 
 ---
 
-## 16) Related Skills
+## 17) Related Skills
 
 | Next step | Skill |
 |---|---|

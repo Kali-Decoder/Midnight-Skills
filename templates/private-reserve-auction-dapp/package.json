@@ -1,0 +1,39 @@
+{
+  "name": "private-reserve-auction-dapp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run sync:assets && next build",
+    "compact": "npm run compact --prefix contract",
+    "sync:assets": "node scripts/sync-zk-assets.mjs",
+    "postinstall": "echo 'All deps at root level'"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-js": "3.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0",
+    "@midnightntwrk/ledger-v9": "1.0.2",
+    "@midnightntwrk/midnight-js-contracts": "5.0.2",
+    "@midnightntwrk/midnight-js-fetch-zk-config-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-indexer-public-data-provider": "5.0.2",
+    "@midnightntwrk/dapp-connector-api": "4.1.0",
+    "@midnightntwrk/midnight-js-dapp-connector-proof-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-level-private-state-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-types": "5.0.2",
+    "@midnightntwrk/midnight-js-utils": "5.0.2",
+    "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
+    "@tailwindcss/postcss": "^4.3.2",
+    "next": "^15.0.0",
+    "postcss": "^8.5.16",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,5 @@
+node_modules/
+.next/
+contract/src/managed/
+public/zk/private-reserve-auction/
+*.tsbuildinfo

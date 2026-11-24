@@ -782,6 +782,7 @@
       "name": "Example Private Reserve Auction",
       "author": "tusharpamnani",
       "path": ".agents/skills/example-private-reserve-auction/SKILL.md",
+      "templatePath": "templates/private-reserve-auction-dapp",
       "description": "Private reserve auction dApp: hidden reserve price, public bids, private bidder identities, persistentCommit, Map, Counter, receiveUnshielded/sendUnshielded privacy boundary, Next.js + 1AM wallet.",
       "enabled": true,
       "featured": true,
