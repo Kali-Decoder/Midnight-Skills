@@ -536,6 +536,28 @@
       ]
     },
     {
+      "id": "dust-gas-sponsorship",
+      "name": "DUST Gas Sponsorship",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/dust-gas-sponsorship/SKILL.md",
+      "description": "Sponsor Midnight transaction fees so zero-DUST users can transact: user proves and binds, sponsor adds DUST and submits; sponsor service policy, economics, monitoring, NIGHTGATE and Capacity Exchange.",
+      "enabled": true,
+      "featured": false,
+      "category": "sdk",
+      "taskHint": "Sponsor DUST fees so users with zero DUST can transact (gasless UX)",
+      "routerBullets": [
+        "Two-sided flow: user balances ['shielded','unshielded'] and finalizes, sponsor balances ['dust'] and submits.",
+        "Sponsor service policy (auth, rate limit, cap, contract check), DUST sizing and monitoring, NIGHTGATE and Capacity Exchange."
+      ],
+      "tags": [
+        "DUST",
+        "Sponsorship",
+        "Gasless",
+        "Fees",
+        "Wallet SDK"
+      ]
+    },
+    {
       "id": "midnight-indexer",
       "name": "Indexer",
       "path": ".agents/skills/indexer/SKILL.md",

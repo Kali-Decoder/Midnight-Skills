@@ -174,11 +174,12 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 </details>
 
 <details>
-<summary><strong>SDK & Data</strong> — 4 skills · midnight-js, indexer, and security patterns</summary>
+<summary><strong>SDK & Data</strong> — 5 skills · midnight-js, indexer, and security patterns</summary>
 
 | Skill | Description |
 |-------|-------------|
 | [Ankr Midnight RPC](.agents/skills/ankr-midnight/SKILL.md) | Use Ankr as Midnight testnet/mainnet RPC — API key endpoints, JSON-RPC client, and midnight_* operations (not Ankr.js Advanced API). |
+| [DUST Gas Sponsorship](.agents/skills/dust-gas-sponsorship/SKILL.md) | Sponsor Midnight transaction fees so zero-DUST users can transact: user proves and binds, sponsor adds DUST and submits; sponsor service policy, economics, monitoring, NIGHTGATE and Capacity Exchange. |
 | [Indexer](.agents/skills/indexer/SKILL.md) | Query and subscribe to Midnight blockchain data via Indexer GraphQL API v4. |
 | [Midnight.js](.agents/skills/midnight-js/SKILL.md) | TypeScript SDK — provider wiring, wallet SDK, contract deployment, DUST flow, testkit. |
 | [Multinetwork](.agents/skills/multinetwork/SKILL.md) | Build a single dApp that deploys across all networks (localnet, preview, preprod, mainnet) from one codebase. |

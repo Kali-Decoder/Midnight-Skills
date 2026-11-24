@@ -44,6 +44,7 @@
     "./.agents/skills/testing",
     "./.agents/skills/multinetwork",
     "./.agents/skills/midnight-js",
+    "./.agents/skills/dust-gas-sponsorship",
     "./.agents/skills/indexer",
     "./.agents/skills/ankr-midnight",
     "./.agents/skills/security",
