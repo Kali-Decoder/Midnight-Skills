@@ -498,6 +498,29 @@
       ]
     },
     {
+      "id": "compact-language-engineering",
+      "name": "Compact Language Engineering",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/compact-language-engineering/SKILL.md",
+      "description": "Build Compact language tooling (tree-sitter, Grammar-Kit/JFlex, TextMate, formatters, LSPs) that accepts exactly what the compiler accepts: lexer and grammar from compiler source, precedence and ambiguity hazards, and compiler-oracle differential tests.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Build or fix Compact parsers, grammars, highlighters, or language servers",
+      "routerBullets": [
+        "Grammar source of truth (parser.ss/lexer.ss at the toolchain tag), full token spec, precedence table, verified ambiguity hazards.",
+        "tree-sitter-compact gaps, Grammar-Kit/JFlex port, Nite LSP design, differential test harness with the compiler as oracle."
+      ],
+      "tags": [
+        "Compact",
+        "Grammar",
+        "Parser",
+        "Tree-sitter",
+        "Grammar-Kit",
+        "LSP"
+      ]
+    },
+    {
       "id": "multinetwork",
       "name": "Multinetwork",
       "path": ".agents/skills/multinetwork/SKILL.md",

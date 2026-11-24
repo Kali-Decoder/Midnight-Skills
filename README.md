@@ -140,11 +140,12 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 
 <!-- SKILLS_REGISTRY:README_TABLE -->
 <details>
-<summary><strong>Foundation</strong> — 13 skills · Environment setup, privacy model, Compact language, and testing</summary>
+<summary><strong>Foundation</strong> — 14 skills · Environment setup, privacy model, Compact language, and testing</summary>
 
 | Skill | Description |
 |-------|-------------|
 | [Compact](.agents/skills/compact/SKILL.md) | The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits. |
+| [Compact Language Engineering](.agents/skills/compact-language-engineering/SKILL.md) | Build Compact language tooling (tree-sitter, Grammar-Kit/JFlex, TextMate, formatters, LSPs) that accepts exactly what the compiler accepts: lexer and grammar from compiler source, precedence and ambiguity hazards, and compiler-oracle differential tests. |
 | [Midnight Consensus](.agents/skills/midnight-consensus/SKILL.md) | AURA block production, GRANDPA finality, and Cardano Partnerchain validator selection with SPO stake delegation. |
 | [Midnight Cryptography](.agents/skills/midnight-cryptography/SKILL.md) | Node cryptographic primitives — Blake2-256, sr25519, ECDSA, Ed25519, and twoxhash storage keys. |
 | [Midnight Environment Setup](.agents/skills/midnight-environment-setup/SKILL.md) | Automatically prepare a Midnight dev environment — Compact, PATH, Docker, proof server, and VS Code extension. Run before building or deploying. |
