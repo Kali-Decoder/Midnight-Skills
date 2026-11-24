@@ -1,0 +1,9 @@
+pragma language_version >= 0.28.0;
+
+import CompactStandardLibrary;
+
+export ledger round: Counter;
+
+export circuit increment(): [] {
+  round.increment(1);
+}

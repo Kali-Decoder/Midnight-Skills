@@ -1,0 +1,60 @@
+{
+  "name": "example-counter",
+  "version": "2.1.1-ledger9",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "workspaces": [
+    "counter-cli",
+    "contract"
+  ],
+  "scripts": {
+    "test": "NODE_OPTIONS='--experimental-vm-modules' vitest run",
+    "test:local": "MIDNIGHT_NETWORK=local yarn test",
+    "env:up": "docker compose up -d --wait",
+    "env:down": "docker compose down",
+    "validate": "yarn env:up && yarn test:local; yarn env:down"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-js": "3.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0",
+    "@midnightntwrk/ledger-v9": "1.0.2",
+    "@midnightntwrk/midnight-js-contracts": "5.0.2",
+    "@midnightntwrk/midnight-js-http-client-proof-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-indexer-public-data-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-level-private-state-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-node-zk-config-provider": "5.0.2",
+    "@midnightntwrk/midnight-js-types": "5.0.2",
+    "@midnightntwrk/midnight-js-utils": "5.0.2",
+    "@midnightntwrk/testkit-js": "5.0.2",
+    "@midnightntwrk/wallet-sdk-abstractions": "3.0.0",
+    "@midnightntwrk/wallet-sdk-address-format": "4.0.1",
+    "@midnightntwrk/wallet-sdk-dust-wallet": "5.1.0",
+    "@midnightntwrk/wallet-sdk-facade": "5.0.1",
+    "@midnightntwrk/wallet-sdk-hd": "4.0.0",
+    "@midnightntwrk/wallet-sdk-shielded": "4.0.1",
+    "@midnightntwrk/wallet-sdk-unshielded-wallet": "4.0.1",
+    "axios": "^1.15.0",
+    "pino": "^9.0.0",
+    "pino-pretty": "^13.0.0",
+    "rxjs": "^7.8.2",
+    "testcontainers": "^11.13.0",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "@midnightntwrk/midnight-js-compact": "5.0.2",
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.9",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "resolutions": {
+    "@midnightntwrk/ledger-v9": "1.0.2",
+    "@midnight-ntwrk/compact-runtime": "0.21.0"
+  },
+  "packageManager": "yarn@1.22.22"
+}

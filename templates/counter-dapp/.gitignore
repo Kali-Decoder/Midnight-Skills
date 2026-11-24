@@ -1,0 +1,5 @@
+node_modules/
+dist/
+contract/src/managed/
+counter-cli/standalone.env
+*.tsbuildinfo

@@ -662,6 +662,7 @@
       "id": "example-counter",
       "name": "Example Counter",
       "path": ".agents/skills/example-counter/SKILL.md",
+      "templatePath": "templates/counter-dapp",
       "description": "Complete Midnight DApp reference — headless wallet, CLI, counter contract, DUST generation, deploy, interaction.",
       "enabled": true,
       "featured": false,
