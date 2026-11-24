@@ -136,26 +136,23 @@ Curated sequences from `skills.json`. Follow a path end-to-end or jump to any st
 
 ## Skills Catalog
 
-Expand a category to browse skills. Each entry links to a standalone `SKILL.md` your agent can fetch and follow.
+Skills are split into two tracks: **Build a dApp** for shipping on Midnight, and **Protocol internals** for how the node works. Expand a group to browse. Each entry links to a standalone `SKILL.md` your agent can fetch and follow.
 
 <!-- SKILLS_REGISTRY:README_TABLE -->
+### Build a dApp
+
+Everything you need to write, test, and ship a Midnight dApp: setup, Compact, wallets, SDK, and full templates.
+
 <details>
-<summary><strong>Foundation</strong> — 14 skills · Environment setup, privacy model, Compact language, and testing</summary>
+<summary><strong>Foundation</strong> — 7 skills · Environment setup, privacy model, Compact language, and testing</summary>
 
 | Skill | Description |
 |-------|-------------|
 | [Compact](.agents/skills/compact/SKILL.md) | The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits. |
 | [Compact Language Engineering](.agents/skills/compact-language-engineering/SKILL.md) | Build Compact language tooling (tree-sitter, Grammar-Kit/JFlex, TextMate, formatters, LSPs) that accepts exactly what the compiler accepts: lexer and grammar from compiler source, precedence and ambiguity hazards, and compiler-oracle differential tests. |
-| [Midnight Consensus](.agents/skills/midnight-consensus/SKILL.md) | AURA block production, GRANDPA finality, and Cardano Partnerchain validator selection with SPO stake delegation. |
-| [Midnight Cryptography](.agents/skills/midnight-cryptography/SKILL.md) | Node cryptographic primitives — Blake2-256, sr25519, ECDSA, Ed25519, and twoxhash storage keys. |
 | [Midnight Environment Setup](.agents/skills/midnight-environment-setup/SKILL.md) | Automatically prepare a Midnight dev environment — Compact, PATH, Docker, proof server, and VS Code extension. Run before building or deploying. |
 | [MIP Planning](.agents/skills/midnight-mip-planning/SKILL.md) | Plan, write, and shepherd a Midnight Improvement Proposal (MIP) or Problem Statement (MPS), and decide whether a skill can teach a MIP as final. |
-| [Onchain Logic and State](.agents/skills/midnight-onchain-logic/SKILL.md) | WASM runtime, FRAME pallets, pallet-midnight ledger state machine, and proof-based state transitions. |
-| [P2P Networking](.agents/skills/midnight-p2p-networking/SKILL.md) | libp2p peer discovery, TCP/WebSocket transport, Noise encryption, Yamux multiplexing, and gossip protocols. |
-| [RPC Interface](.agents/skills/midnight-rpc/SKILL.md) | JSON-RPC methods for contract state, ZSwap chain state, ledger version, Polkadot SDK defaults, and Partnerchain RPCs. |
-| [Storage](.agents/skills/midnight-storage/SKILL.md) | ParityDB backend, Patricia-Merkle trie state commitments, and twoxhash storage key generation. |
 | [Testing](.agents/skills/testing/SKILL.md) | Debug Compact contracts and manage toolchain versions. Static vs dynamic errors, version sync, common traps. |
-| [Transactions](.agents/skills/midnight-transactions/SKILL.md) | Proof-based unsigned ledger transactions, pool validation, runtime verification, and state commit lifecycle. |
 | [Why Midnight](.agents/skills/why-midnight/SKILL.md) | What Midnight is, why it exists, and how it works — public/private state, selective disclosure, and ZK proofs. |
 | [ZK vs FHE vs MPC](.agents/skills/zk-vs-fhe-vs-mpc/SKILL.md) | Compare ZK, FHE, and MPC for privacy-focused DApps — tradeoffs, platforms, and why Midnight uses zk-SNARKs. |
 
@@ -213,6 +210,25 @@ Expand a category to browse skills. Each entry links to a standalone `SKILL.md` 
 | [Example Private Party Dapp](.agents/skills/example-private-party-dapp/SKILL.md) | Private party RSVP dApp: persistentCommit guest list, DApp-specific public keys, unshielded NIGHT privacy boundary, Next.js + 1AM wallet. |
 | [Example Private Reserve Auction](.agents/skills/example-private-reserve-auction/SKILL.md) | Private reserve auction dApp: hidden reserve price, public bids, private bidder identities, persistentCommit, Map, Counter, receiveUnshielded/sendUnshielded privacy boundary, Next.js + 1AM wallet. |
 | [Example ZK Loan Application](.agents/skills/example-zk-loan-application/SKILL.md) | Zero-knowledge loan dApp: privately evaluate credit data with Schnorr attestation, record only loan outcomes on-chain. |
+
+</details>
+
+### Protocol internals
+
+How the Midnight node works under the hood (consensus, storage, networking, runtime, RPC, transactions). For node operators and the protocol-curious. You do not need these to build a dApp.
+
+<details>
+<summary><strong>Node architecture</strong> — 7 skills · Consensus, cryptography, runtime, P2P, RPC, storage, and transactions</summary>
+
+| Skill | Description |
+|-------|-------------|
+| [Midnight Consensus](.agents/skills/midnight-consensus/SKILL.md) | AURA block production, GRANDPA finality, and Cardano Partnerchain validator selection with SPO stake delegation. |
+| [Midnight Cryptography](.agents/skills/midnight-cryptography/SKILL.md) | Node cryptographic primitives — Blake2-256, sr25519, ECDSA, Ed25519, and twoxhash storage keys. |
+| [Onchain Logic and State](.agents/skills/midnight-onchain-logic/SKILL.md) | WASM runtime, FRAME pallets, pallet-midnight ledger state machine, and proof-based state transitions. |
+| [P2P Networking](.agents/skills/midnight-p2p-networking/SKILL.md) | libp2p peer discovery, TCP/WebSocket transport, Noise encryption, Yamux multiplexing, and gossip protocols. |
+| [RPC Interface](.agents/skills/midnight-rpc/SKILL.md) | JSON-RPC methods for contract state, ZSwap chain state, ledger version, Polkadot SDK defaults, and Partnerchain RPCs. |
+| [Storage](.agents/skills/midnight-storage/SKILL.md) | ParityDB backend, Patricia-Merkle trie state commitments, and twoxhash storage key generation. |
+| [Transactions](.agents/skills/midnight-transactions/SKILL.md) | Proof-based unsigned ledger transactions, pool validation, runtime verification, and state commit lifecycle. |
 
 </details>
 <!-- /SKILLS_REGISTRY:README_TABLE -->

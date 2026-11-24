@@ -12,6 +12,8 @@ import {
   packageSkills,
   sortByName,
   validateRegistry,
+  TRACKS,
+  trackOf,
 } from "./registry-utils.mjs";
 
 function replaceBlock(content, startMarker, endMarker, replacement) {
@@ -23,19 +25,45 @@ function replaceBlock(content, startMarker, endMarker, replacement) {
   return content.slice(0, start + startMarker.length) + "\n" + replacement + "\n" + content.slice(end);
 }
 
+/** Router skills split by track, in TRACKS order, skipping empty tracks. */
+function byTrack(skills) {
+  const router = routerSkills(skills);
+  return TRACKS.map((track) => ({ track, items: router.filter((s) => trackOf(s) === track.id) })).filter(
+    (g) => g.items.length,
+  );
+}
+
 function buildTaskTable(skills) {
-  return routerSkills(skills)
-    .filter((s) => s.taskHint)
-    .map((s) => `| ${s.taskHint} | \`${s.id}/\` |`)
-    .join("\n");
+  return byTrack(skills)
+    .map(({ track, items }) => {
+      const rows = items
+        .filter((s) => s.taskHint)
+        .map((s) => `| ${s.taskHint} | \`${s.id}/\` |`)
+        .join("\n");
+      return [
+        `### ${track.title}`,
+        ``,
+        track.blurb,
+        ``,
+        `| I'm doing... | Fetch these skills |`,
+        `|--------------|-------------------|`,
+        rows,
+      ].join("\n");
+    })
+    .join("\n\n");
 }
 
 function buildRouterSections(skills) {
-  return routerSkills(skills)
-    .sort(sortByName)
-    .map((s) => {
-      const bullets = (s.routerBullets || [s.description]).map((b) => `- ${b}`).join("\n");
-      return `### [${s.name}](/${s.path})\n${bullets}`;
+  return byTrack(skills)
+    .map(({ track, items }) => {
+      const sections = items
+        .sort(sortByName)
+        .map((s) => {
+          const bullets = (s.routerBullets || [s.description]).map((b) => `- ${b}`).join("\n");
+          return `### [${s.name}](/${s.path})\n${bullets}`;
+        })
+        .join("\n\n");
+      return `## Skills: ${track.title}\n\n${sections}`;
     })
     .join("\n\n");
 }
@@ -65,38 +93,43 @@ const README_CATEGORY_META = {
   },
 };
 
+function readmeGroup(title, subtitle, items) {
+  items.sort(sortByName);
+  const rows = items.map((s) => `| [${s.name}](${s.path}) | ${s.description} |`).join("\n");
+  return [
+    `<details>`,
+    `<summary><strong>${title}</strong> — ${items.length} skill${items.length === 1 ? "" : "s"}${subtitle ? ` · ${subtitle}` : ""}</summary>`,
+    ``,
+    `| Skill | Description |`,
+    `|-------|-------------|`,
+    rows,
+    ``,
+    `</details>`,
+  ].join("\n");
+}
+
 function buildReadmeTable(skills) {
-  const grouped = new Map();
-  for (const skill of routerSkills(skills)) {
-    const category = skill.category || "foundation";
-    if (!grouped.has(category)) grouped.set(category, []);
-    grouped.get(category).push(skill);
-  }
-
-  const sections = [];
-  for (const category of README_CATEGORY_ORDER) {
-    const items = grouped.get(category);
-    if (!items?.length) continue;
-    items.sort(sortByName);
-    const meta = README_CATEGORY_META[category] || { title: category, subtitle: "" };
-    const rows = items
-      .map((s) => `| [${s.name}](${s.path}) | ${s.description} |`)
-      .join("\n");
-    sections.push(
-      [
-        `<details>`,
-        `<summary><strong>${meta.title}</strong> — ${items.length} skill${items.length === 1 ? "" : "s"}${meta.subtitle ? ` · ${meta.subtitle}` : ""}</summary>`,
-        ``,
-        `| Skill | Description |`,
-        `|-------|-------------|`,
-        rows,
-        ``,
-        `</details>`,
-      ].join("\n"),
-    );
-  }
-
-  return sections.join("\n\n");
+  return byTrack(skills)
+    .map(({ track, items }) => {
+      let groups;
+      if (track.groupTitle) {
+        // A track with its own group title is listed as one group, whatever the skills' categories are.
+        groups = [readmeGroup(track.groupTitle, track.groupSubtitle, items)];
+      } else {
+        const grouped = new Map();
+        for (const skill of items) {
+          const category = skill.category || "foundation";
+          if (!grouped.has(category)) grouped.set(category, []);
+          grouped.get(category).push(skill);
+        }
+        groups = README_CATEGORY_ORDER.filter((c) => grouped.get(c)?.length).map((category) => {
+          const meta = README_CATEGORY_META[category] || { title: category, subtitle: "" };
+          return readmeGroup(meta.title, meta.subtitle, grouped.get(category));
+        });
+      }
+      return [`### ${track.title}`, ``, track.blurb, ``, groups.join("\n\n")].join("\n");
+    })
+    .join("\n\n");
 }
 
 function buildReadmeLearningPaths(registry) {

@@ -24,6 +24,30 @@ export function packageSkills(skills) {
   return skills.filter((s) => s.enabled !== false && s.listInPackage !== false && s.path.endsWith("/SKILL.md"));
 }
 
+/**
+ * Audience tracks for the router and README. A skill's `track` defaults to "build".
+ * Kept separate from `category`, which the MIDSKILLS UI uses for its fixed filter pills.
+ */
+export const TRACKS = [
+  {
+    id: "build",
+    title: "Build a dApp",
+    blurb: "Everything you need to write, test, and ship a Midnight dApp: setup, Compact, wallets, SDK, and full templates.",
+  },
+  {
+    id: "protocol",
+    title: "Protocol internals",
+    blurb:
+      "How the Midnight node works under the hood (consensus, storage, networking, runtime, RPC, transactions). For node operators and the protocol-curious. You do not need these to build a dApp.",
+    groupTitle: "Node architecture",
+    groupSubtitle: "Consensus, cryptography, runtime, P2P, RPC, storage, and transactions",
+  },
+];
+
+export function trackOf(skill) {
+  return skill.track || "build";
+}
+
 export function sortByName(a, b) {
   return a.name.localeCompare(b.name, "en");
 }
@@ -37,6 +61,9 @@ export function validateRegistry(registry) {
     if (!s.path?.trim()) errors.push(`Skill missing path (id: ${s.id ?? "unknown"})`);
     if (s.path && !existsSync(join(ROOT, s.path))) {
       errors.push(`Missing file: ${s.path} (skill id: ${s.id})`);
+    }
+    if (s.track !== undefined && !TRACKS.some((t) => t.id === s.track)) {
+      errors.push(`Unknown track "${s.track}" (skill id: ${s.id}); expected one of ${TRACKS.map((t) => t.id).join(", ")}`);
     }
     if (s.templatePath && !existsSync(join(ROOT, s.templatePath))) {
       errors.push(`Missing templatePath: ${s.templatePath} (skill id: ${s.id})`);

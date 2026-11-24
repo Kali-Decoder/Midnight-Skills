@@ -172,6 +172,7 @@ Add an object to the `skills` array:
 | `enabled` | `true` | `false` hides from site, router, and npm package list |
 | `featured` | `false` | `true` shows on homepage featured grid |
 | `category` | — | `foundation`, `wallet`, `sdk`, `domain`, `template`, `meta` |
+| `track` | `build` | Audience track in the router and README: `build` (Build a dApp) or `protocol` (Protocol internals: node architecture, not needed to build a dApp). Defined in `scripts/registry-utils.mjs` |
 | `taskHint` | — | Row in router “What to Fetch by Task” table |
 | `routerBullets` | — | 1–2 bullets under skill heading in router |
 | `listInRouter` | `true` | Set `false` for meta skills only |
