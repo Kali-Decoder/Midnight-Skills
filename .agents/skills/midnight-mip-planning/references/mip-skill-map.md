@@ -17,7 +17,7 @@ Rule: the skill teaches how to build, the MIP defines the standard. Never restat
 
 ## Headline
 
-Only **4 of 33** numbered MIPs are Accepted: MIP-0001 (the process), MIP-0002 (contract log emission, the Ledger 9 `emit`), MIP-0003 (ECDSA support, the Ledger 9 native secp256k1 verify), and MIP-0018 (on-chain token metadata). The 33 include MIP-0028 (*custom-spend-logic*), which is assigned "in review" with no file yet. Everything else developer-facing is Proposed or Draft. On the MPS side, MPS-0001 (the MPS process) and MPS-0012 (account aliasing) are Accepted.
+The Accepted MIPs this map relies on are MIP-0001 (the process), MIP-0002 (contract log emission, the Ledger 9 `emit`), MIP-0003 (ECDSA support, the Ledger 9 native secp256k1 verify), and MIP-0018 (on-chain token metadata). Everything else developer-facing is Proposed or Draft. On the MPS side, MPS-0001 (the MPS process) and MPS-0012 (account aliasing) are Accepted. For current totals, run the status script rather than quoting a count from this file.
 
 ## Planned skills
 

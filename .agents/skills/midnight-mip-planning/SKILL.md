@@ -26,7 +26,8 @@ Plan a Midnight Improvement Proposal (or the Problem Statement that should come 
 - **Status at submission is `Draft`.** For an MIP, editors number and merge it as Draft; *you* later file an issue to move it to **Proposed**. For an MPS, editors normally set **Proposed** when they merge (or keep Draft if sections are empty).
 - **Commits must have verified signatures**, the CLA must be signed, and **the commit author must be the responsible human**: the repo forbids configuring an AI assistant as commit author *or co-author*. Do not add `Co-Authored-By` AI lines to commits for that repo.
 - **The PR describes the change, it does not implement it.** Link to code repositories; one file per proposal (plus an optional same-name resources folder).
-- **Accepted is not shipped.** The path is Proposed → (≥ 2 weeks commentary) → editor vote → Accepted → Implemented → Active. Only 4 of 33 numbered MIPs were Accepted as of 20 Nov 2026 (0001, 0002, 0003, 0018).
+- **Accepted is not shipped.** The path is Proposed → (≥ 2 weeks commentary) → editor vote → Accepted → Implemented → Active. Most numbered MIPs are still Proposed or Draft; run the §2 status script for current counts rather than quoting a number.
+- **Keep it lightweight.** MIP-0001 calls the process intentionally lightweight. A MIP should stay focused on the problem it set out to solve: meet the required items (§6), and add the optional patterns only where they earn their place.
 
 ---
 
@@ -59,7 +60,7 @@ Plan a Midnight Improvement Proposal (or the Problem Statement that should come 
 
 ## 2) Research prior art (do this before writing a word)
 
-Clone the repo and list every proposal with its status. This snippet was run against the repo on 22 Nov 2026 and lists all 82 documents, including folder-based MIPs:
+Clone the repo and list every proposal with its status. The snippet handles folder-based MIPs too. Treat its output as the source of truth for counts and statuses:
 
 ```bash
 git clone --depth 1 https://github.com/midnightntwrk/midnight-improvement-proposals.git mips && cd mips
@@ -77,7 +78,7 @@ grep -n "in review" NUMBERS_INDEX.md      # numbers assigned to PRs that have no
 ```
 
 Then answer, in your notes:
-- **Does an MPS already describe this problem?** If yes, your MIP sets `MPS: MPS-00NN`, and that MPS's *Recommended MIPs* section should list your MIP. If no MPS exists and the problem is contested, write the MPS first.
+- **Does an MPS already describe this problem?** If yes, your MIP sets `MPS: MPS-00NN`, and the MPS must list your MIP in two places: its **`MIP:` front-matter field** (MIP-0001: proposals addressing an MPS "should also be listed in the corresponding MPS header") and its *Recommended MIPs* section. MPS-0018, for example, lists its five custody MIPs in `MIP: MIP-0012, MIP-0013, MIP-0022, MIP-0030, MIP-0033`. If no MPS exists and the problem is contested, write the MPS first.
 - **Which MIPs overlap?** Reviewers flag boundaries early (e.g. a mandate-token MIP vs MIP-0029 agent identity). State the boundary in your Rationale and *Out of scope* list.
 - **What do you depend on?** Put not-yet-accepted dependencies in `Requires:` (e.g. MIP-0013 requires MIP-0012; MIP-0033 requires MIP-0012, MIP-0013, MIP-0030).
 - **Is there a prototype?** Accepted MIPs link working code (MIP-0002 links a ledger PR and compiler issue; MIP-0018 links an experiments repo). Have one, or plan one in the Implementation Plan.
@@ -109,14 +110,14 @@ Keep the Apache-2.0 license comment block from the template right after the fron
 |---|---|---|
 | **Abstract** | About 200 words: the problem *and* the solution | One paragraph; reads standalone |
 | **Motivation** | Why existing Midnight capabilities are inadequate. MIP-0001: "It's **very** important that proposed changes are well-motivated" | MIP-0018 splits it: *The problem* / *Why an off-chain registry is not enough* / *Why events* |
-| **Specification** | Precise enough to implement, unambiguous. **Must state how it is versioned** (MIP-0001) | MIP-0018 opens with RFC 2119 keywords and a **Terminology** list, and has explicit **Limitations** and **Out of scope** lists; MIP-0002 defines two versioning axes and says which changes are amendments and which need a superseding MIP |
+| **Specification** | Precise enough to implement, unambiguous. **Must state how it is versioned** (MIP-0001) | MIP-0002 defines two versioning axes and says which changes are amendments and which need a superseding MIP. *Optional patterns:* MIP-0018 opens with RFC 2119 keywords and a **Terminology** list, and has **Limitations** and **Out of scope** lists; use these only when the spec needs them |
 | **Rationale** | Why this design; alternatives considered and why rejected | Name the rejected alternatives, and cite neighbouring MIPs to draw boundaries |
 | **Path to Active → Acceptance Criteria** | *Objective* milestones from Accepted to Active | MIP-0018: "At least two independent consumers… pass every vector", "at least one issuer other than the authors adopts…" |
 | **Path to Active → Implementation Plan** | How it gets built, by whom, in what order | MIP-0002 lists workstreams (ledger, compiler, indexer, SDK) and **what happens if each ships first** ("no breakage") |
 | **Backwards Compatibility Assessment** | Hard fork? Who breaks? Migration? | MIP-0018 covers existing contracts and offers an upgrade template |
 | **Security Considerations** | New attack vectors and mitigations | Cover what becomes public, replay and malleability, and trust in third parties |
 | **Implementation** | Which components change; dependencies | Links to real PRs and issues |
-| **Testing** | How you will show it works without regressions | MIP-0018's vectors are **normative**: *Must accept* A1–A6, *Must reject* R1–R6, *Must ignore*. (MIP-0031, still Proposed, ships machine-readable `vectors.json` in its resources folder, a good pattern) |
+| **Testing** | How you will show it works without regressions | Where a MIP defines a format or encoding, vectors help: MIP-0018's are **normative** (*Must accept* A1–A6, *Must reject* R1–R6, *Must ignore*), and MIP-0031 ships machine-readable `vectors.json` in its resources folder. Not required otherwise |
 | **References / Acknowledgements / Copyright Waiver** | Sources, non-author contributors, and the Apache-2.0 + CLA waiver | Keep the waiver text from the template |
 
 **Resources** (images, vectors, specs) go in a sibling folder with the same basename: `mips/mip-xxxx/` before numbering.
@@ -136,7 +137,7 @@ Copy `mps/mps-template.md`. Sections: **Abstract** (~200 words, no solution), **
 
 ## 5) What editors and reviewers push back on
 
-Taken from review comments on recent MIP/MPS PRs (sampled 22 Nov 2026). Fix these before submitting:
+Taken from review comments on recent MIP/MPS PRs (sampled 22 Nov 2026). Check whether any of these apply to your proposal; don't pad a focused MIP to cover patterns that don't fit it:
 
 | Pattern | Example from real reviews | Fix |
 |---|---|---|
@@ -154,22 +155,25 @@ Taken from review comments on recent MIP/MPS PRs (sampled 22 Nov 2026). Fix thes
 
 ## 6) Pre-submission checklist
 
-- [ ] Searched all MIPs/MPS (§2); `MPS:` and `Requires:` filled in, and overlaps named in Rationale
-- [ ] File is `mips/mip-xxxx.md`, with `MIP: X` and `Status: Draft`; resources are in `mips/mip-xxxx/`
+**Required** (from the template and MIP-0001; every MIP needs these):
+
+- [ ] File is `mips/mip-xxxx.md`, with `MIP: X` and `Status: Draft`; resources (if any) are in `mips/mip-xxxx/`
 - [ ] Every template heading is present, all instruction text is removed, and the license block and copyright waiver are kept
-- [ ] Abstract is about 200 words and states both the problem and the solution
-- [ ] Specification defines its terms (and uses RFC 2119 MUST/SHOULD/MAY where it sets requirements, as MIP-0018 does)
 - [ ] Specification states its **versioning** rule: what counts as an amendment vs a superseding MIP
-- [ ] Limitations and *Out of scope* are explicit
-- [ ] Every number that matters is quantified (sizes, limits, rates, costs, fees)
-- [ ] Failure modes and fallbacks are specified, and defaults are safe
-- [ ] Acceptance Criteria are objective and independently checkable (e.g. "two independent implementations pass the vectors")
-- [ ] Implementation Plan names workstreams and their ship order, and links a prototype if one exists
-- [ ] Backwards compatibility: says whether a hard fork is needed, and gives a migration path for existing contracts and wallets
-- [ ] Security Considerations cover what becomes public, replay, malleability, and trust assumptions
-- [ ] Testing includes vectors (must-accept / must-reject) where a format or encoding is defined
+- [ ] Path to Active has Acceptance Criteria and an Implementation Plan
+- [ ] `MPS:` and `Requires:` filled in (or `none`); if the MIP answers an MPS, that MPS lists it in its `MIP:` front-matter field as well as in *Recommended MIPs*
 - [ ] No implementation code in the PR, only links
 - [ ] Commits are signed and verified, the CLA is signed, and the commit author is the human author (no AI author or co-author)
+
+**When relevant** (good patterns from the Accepted MIPs, MIP-0018 especially; none is required, so add one only where the proposal needs it):
+
+- [ ] A Terminology list, if the spec introduces terms readers won't already know
+- [ ] RFC 2119 MUST/SHOULD/MAY, if the spec sets requirements that independent implementers must follow
+- [ ] Limitations and *Out of scope* lists, if the scope is easy to misread or overlaps a neighbouring MIP
+- [ ] Test vectors (must-accept / must-reject), if the MIP defines a format or encoding
+- [ ] Quantified figures (sizes, limits, rates, fees), where a number decides whether the design works
+- [ ] Failure modes, fallbacks and safe defaults, where the design has a degraded path
+- [ ] A prototype link and workstream ship order, where several components must change
 
 ---
 
@@ -177,7 +181,7 @@ Taken from review comments on recent MIP/MPS PRs (sampled 22 Nov 2026). Fix thes
 
 ```text
 fork → add mips/mip-xxxx.md (Status: Draft) → open PR
-     → when ready for numbering: assign a MIP Editor as reviewer AND mention them in a PR comment
+     → when ready for numbering: assign a reviewer (see below) AND mention them in a PR comment
      → editors review at a scheduled meeting: number + merge (still Draft) | send back with feedback | close
      → refine in a GitHub Discussion (Discussion → Issue → follow-up PR for real changes)
      → when complete: file an ISSUE naming the MIP number, asking editors to consider it   → Proposed
@@ -188,7 +192,8 @@ fork → add mips/mip-xxxx.md (Status: Draft) → open PR
 ```
 
 - **Be explicit when you're ready.** Editors only consider numbering after you assign and mention them, and only consider acceptance after you file the issue. Opening a PR is not a submission.
-- **Numbers come at numbering time, not at acceptance.** Gaps in the sequence are normal; MIP-0028 is assigned "in review" with no file yet.
+- **Choosing a reviewer.** Per the repo README: assign a MIP Editor, or assign the right topic reviewer if you know who that is, or leave assignees blank and the MIP editor group is added automatically.
+- **Numbers come at numbering time, not at acceptance.** Gaps in the sequence are normal: `NUMBERS_INDEX.md` can mark a number "in review" before any file exists.
 - **An MPS differs:** merging normally makes it **Proposed** with no separate issue. Editors open a Discussion titled `MPS-NNNN: <Title>`, and the vote is a Discussions poll (label `MPS Vote`) closed at an editors meeting. Accepted MPSs become *Resolved* when their Recommended MIPs land.
 
 ---
@@ -224,9 +229,8 @@ The current mapping, verdicts, custody cluster, and watchlist are in [`reference
 | Symptom | Cause | Fix |
 |---|---|---|
 | PR labelled `BLOCKED \| Unverified` | Unsigned commits | Set up commit signing (GitHub docs: *signing commits*), re-sign, and force-push |
-| CLA bot comment pending | CLA not signed | Sign via the CLA assistant link on the PR |
 | Editor: "revert changes to NUMBERS_INDEX" | You edited editor-managed files | Revert them; submit only your proposal file (plus its resources folder) |
-| PR open for weeks with no numbering | Editors weren't asked | Assign a MIP Editor as reviewer **and** mention them in a comment |
+| PR open for weeks with no numbering | Editors weren't asked | Assign a MIP Editor or topic reviewer (or leave assignees blank for the editor group) **and** mention them in a comment |
 | Numbered, but never voted on | No submission issue | File an issue naming the MIP number and asking for consideration |
 | "This is solution-shaped" on an MPS | Problem section prescribes a fix | Move solutions into *Recommended MIPs*; keep *Problem* evidence-based |
 | Reviewers ask for numbers | Qualitative claims | Add sizes, bounds, probabilities and adversarial cases |
