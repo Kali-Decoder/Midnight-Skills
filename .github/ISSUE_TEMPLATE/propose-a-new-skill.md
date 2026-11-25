@@ -1,13 +1,11 @@
 ---
 name: Propose a New Skill
-about: DescSuggest a new skill, tool, or category to be added to the Midnight skills
-  platform.ribe this issue template's purpose here.
+about: Suggest a new skill, tool, or category for the Midnight skills platform.
 title: ''
 labels: ''
 assignees: ''
 
 ---
-
 ### 💡 Skill Proposal Details
 
 **Name of the Skill:**

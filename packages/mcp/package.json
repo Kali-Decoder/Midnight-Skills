@@ -1,0 +1,37 @@
+{
+  "name": "midskills-mcp",
+  "version": "1.0.14",
+  "description": "MCP server for MIDSKILLS: Midnight Network skills, references, version pins, and error lookup for AI agents.",
+  "type": "module",
+  "bin": {
+    "midskills-mcp": "bin/midskills-mcp.mjs"
+  },
+  "main": "src/server.mjs",
+  "files": [
+    "bin",
+    "src",
+    "content",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node bin/midskills-mcp.mjs",
+    "bundle": "node scripts/bundle-content.mjs",
+    "prepack": "node scripts/bundle-content.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
+  },
+  "homepage": "https://midskills.sevryn.xyz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kali-Decoder/Midnight-skills.git",
+    "directory": "packages/mcp"
+  },
+  "license": "MIT",
+  "keywords": ["mcp", "midnight", "compact", "zero-knowledge", "ai-agents", "skills"]
+}

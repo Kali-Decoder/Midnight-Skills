@@ -6,6 +6,8 @@ description: Debug Compact contracts and manage toolchain versions. Covers stati
 **Scope**
 This skill covers the two error layers in Compact (static vs dynamic), how to read compiler messages (especially undeclared disclosure traces), the fast development loop with `--skip-zk`, version management across 6 components, and the most common debugging patterns. Official testing docs are "coming soon" — this is battle-tested from real development.
 
+**Related:** decode an error with `midnight-common-errors/`, check versions with `midnight-doctor/`, and see what to test before a release in `midnight-testing-checklist/`.
+
 ## 1) Two Error Layers
 
 Compact has two error types, not one:

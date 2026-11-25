@@ -10,3 +10,13 @@ testtt/
 /graft/
 opencode.json
 .ignore
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Third-party dev-only skills (GSAP, installed via `npx skills add greensock/gsap-skills`).
+# Kept local so agents installing midnight-skills never receive them.
+/.claude/skills/gsap-*/
+/skills-lock.json
+
+# midskills-mcp bundled content (copied at prepack)
+/packages/mcp/content/

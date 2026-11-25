@@ -16,7 +16,7 @@
       "url": "https://github.com/Kali-Decoder"
     }
   ],
-  "homepage": "https://midnight-skills.netlify.app",
+  "homepage": "https://midskills.sevryn.xyz",
   "repository": "https://github.com/Kali-Decoder/Midnight-skills",
   "license": "MIT",
   "keywords": [
@@ -42,6 +42,11 @@
     "./.agents/skills/midnight-passport",
     "./.agents/skills/compact",
     "./.agents/skills/testing",
+    "./.agents/skills/midnight-common-errors",
+    "./.agents/skills/midnight-version-matrix",
+    "./.agents/skills/midnight-doctor",
+    "./.agents/skills/midnight-security-checklist",
+    "./.agents/skills/midnight-testing-checklist",
     "./.agents/skills/compact-language-engineering",
     "./.agents/skills/multinetwork",
     "./.agents/skills/midnight-js",
@@ -74,6 +79,11 @@
     "sync:registry": "node scripts/sync-skill-registry.mjs",
     "package:registry": "node scripts/package-registry.mjs",
     "check:versions": "node scripts/check-versions.mjs",
-    "sync:versions": "node scripts/check-versions.mjs --fix"
-  }
+    "sync:versions": "node scripts/check-versions.mjs --fix",
+    "check:community": "node scripts/check-community.mjs",
+    "test:mcp": "npm test -w midskills-mcp"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

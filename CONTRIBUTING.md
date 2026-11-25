@@ -6,6 +6,8 @@ Thank you for helping improve Midnight developer skills. This repo is a **knowle
 
 | Contribution | Where to work |
 |--------------|---------------|
+| **List a skill you maintain elsewhere** | `community.skills` in `skills.json`, see [Community skills](#community-skills) |
+| **Add or fix an error lookup** | `.agents/skills/midnight-common-errors/errors.json` |
 | **Add a new skill** | New folder + `SKILL.md` + `skills.json` entry |
 | **Improve an existing skill** | Edit that skill's `SKILL.md` (fix errors, update versions, add gotchas) |
 | **Add shared reference code** | `references/` (provider wiring, gotchas, version pins) |
@@ -52,16 +54,24 @@ Each skill should help an LLM **complete a task end-to-end**:
 **Never** hand-edit generated registry blocks in:
 
 - `SKILL.md` / `AGENTS.md` / `CLAUDE.md` / `llms.txt` (between `<!-- SKILLS_REGISTRY:... -->` markers)
-- `README.md` skills table
+- `README.md` skills table, learning paths, and community list
 - `package.json` `"skills"` array
+- `.claude-plugin/plugin.json` (fully generated: version from `package.json`, skills from `skills.json`)
+- `.agents/skills/midnight-version-matrix/` (generated from `references/versions.json`)
+- `.agents/skills/midnight-doctor/pins.json` (copy of `references/versions.json`)
+- The tables in `.agents/skills/midnight-common-errors/SKILL.md` (edit `errors.json` next to it instead)
 
-Always update `skills.json` and run `npm run sync:registry`.
+Always update `skills.json` (or the data file) and run `npm run sync:registry`. CI fails if the generated files differ from what the sync script produces.
 
-### 5. No secrets in the repo
+### 5. Keep `SKILL.md` short
+
+Keep each `SKILL.md` under ~500 lines. Put long code listings, full file contents, and API catalogues in `<skill>/references/*.md` and link them from a short stub in the section where the agent needs them. Agents load `SKILL.md` on every use and open references only when they reach that step.
+
+### 6. No secrets in the repo
 
 Do not commit `.env`, API keys, mnemonics, or private keys. Use placeholders in examples.
 
-### 6. License
+### 7. License
 
 By contributing, you agree your contributions are licensed under the project's [MIT License](LICENSE).
 
@@ -71,8 +81,8 @@ By contributing, you agree your contributions are licensed under the project's [
 
 ### Step 1 — Pick an id and folder
 
-- **Folder:** `your-skill-name/` (kebab-case, matches skill topic)
-- **File:** `your-skill-name/SKILL.md`
+- **Folder:** `.agents/skills/your-skill-name/` (kebab-case, matches skill topic)
+- **File:** `.agents/skills/your-skill-name/SKILL.md`
 - **Registry id:** same as folder name, lowercase, hyphens only (e.g. `example-locker-dapp`)
 - **id must be unique** across `skills.json`
 
@@ -152,7 +162,7 @@ Add an object to the `skills` array:
 {
   "id": "your-skill-name",
   "name": "Your Skill Display Name",
-  "path": "your-skill-name/SKILL.md",
+  "path": ".agents/skills/your-skill-name/SKILL.md",
   "description": "Short description for README and site (1–2 sentences).",
   "enabled": true,
   "featured": false,
@@ -210,7 +220,7 @@ This updates router files, README table, howto grid, and `package.json`. The scr
 
 ## PR checklist
 
-- [ ] `your-skill-name/SKILL.md` exists with valid YAML frontmatter
+- [ ] `.agents/skills/your-skill-name/SKILL.md` exists with valid YAML frontmatter
 - [ ] Entry added to `skills.json` with unique `id`
 - [ ] `npm run sync:registry` run; committed synced files (`SKILL.md` router blocks, `README.md`, `package.json`)
 - [ ] No secrets or credentials in the diff
@@ -267,6 +277,46 @@ Maintainers will check:
 5. **Overlap** — not duplicating an existing skill without clear differentiation
 
 Reviews may request changes or suggest merging into an existing skill.
+
+---
+
+## Community skills
+
+Community skills live in **your** repository and stay yours. MIDSKILLS lists them on the site and in the README, pinned to one reviewed commit. They are **not** copied into this repo, the npm package, or the Claude plugin, and they never receive the telemetry hook.
+
+### Process
+
+1. **Open an issue** with the [community skill submission](https://github.com/Kali-Decoder/Midnight-skills/issues/new?template=community-skill.yml) form. Maintainers check scope and overlap before you spend time on a PR.
+2. **Pin a commit.** Pick the exact commit you want reviewed and copy its full 40-character SHA (`git rev-parse HEAD`). Branches and tags are rejected: they can change after review.
+3. **Open a PR** that only adds your entry to `community.skills` in `skills.json` and the output of `npm run sync:registry`:
+
+   ```json
+   {
+     "id": "your-skill-name",
+     "name": "Your Skill Name",
+     "author": "your-github-handle",
+     "repository": "https://github.com/you/your-repo",
+     "commit": "0123456789abcdef0123456789abcdef01234567",
+     "path": "skills/your-skill-name/SKILL.md",
+     "description": "One or two sentences: what it does and when an agent should use it.",
+     "category": "domain",
+     "tags": ["..."],
+     "license": "MIT"
+   }
+   ```
+
+4. **Review.** A maintainer reads the `SKILL.md` and every file it references **at that commit**, and runs anything it tells an agent to run.
+5. **Updates** are a new PR that changes `commit` (and anything else). Each new commit is reviewed like the first one.
+
+### PR rules for community entries
+
+- One skill per PR; the PR touches only `skills.json` and the files `sync:registry` regenerates.
+- `id` is unique across core and community skills (CI checks it).
+- `repository` is a public GitHub repo; `commit` is a full SHA that exists there; `path` points to a `SKILL.md` at that commit.
+- The license is OSI-approved and stated in the entry and in your repo.
+- The skill follows the same rules as core skills: Midnight-only scope, versions from `references/versions.json` (or the live `/api/versions`), no secrets.
+- No telemetry, network calls, or install scripts the `SKILL.md` does not disclose up front.
+- Maintainers may remove an entry that goes stale (breaks against the current version set) or whose repo disappears.
 
 ---
 

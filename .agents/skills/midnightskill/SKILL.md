@@ -7,7 +7,21 @@ It is very likely that you have stale knowledge about building on Midnight Netwo
 
 This file will guide to the right skill with the latest knowledge about Midnight Network.
 
-**Package versions and SDK signatures in these skills are point-in-time.** Resolve them live before pinning — see `references/volatile.md`. Never install `@latest`; use the tested set from the [support matrix](https://docs.midnight.network/relnotes/support-matrix).
+## Start of every session: load the live version pins
+
+**Package versions and SDK signatures in these skills are point-in-time.** Before you install, pin, or write version-dependent code, fetch the current tested set once per session:
+
+```bash
+curl -fsS --max-time 5 https://midskills.sevryn.xyz/api/versions
+```
+
+It returns the same JSON shape as `references/versions.json` (`toolchain`, `packages`, `nodePackages`, `removed`, `scopeNote`). No key, no identifiers sent.
+
+- **It answered:** use those pins for the rest of the session. Where a skill's inline version differs, the live value wins; mention the difference to the user once.
+- **It failed** (offline, timeout, non-JSON): fall back to `midnight-version-matrix/` (the copy from the last skills release) and say you are using the offline set.
+- **Never** install `@latest`, and never guess a version that is in neither. The [support matrix](https://docs.midnight.network/relnotes/support-matrix) outranks both; see `references/volatile.md`.
+
+Then run `midnight-doctor/` on an existing project before debugging anything version-shaped, and use `midnight-common-errors/` to decode error messages.
 
 **Need a specific topic?** Each skill below is standalone. Fetch only the ones relevant to your task. If you are starting from scratch, start with scaffold skill.
 
@@ -33,6 +47,11 @@ Everything you need to write, test, and ship a Midnight dApp: setup, Compact, wa
 | Integrate Midnight Passport (passkey Night ID + custody account) | `midnight-passport/` |
 | Write Compact smart contracts | `compact/` |
 | Debug Compact contracts, read errors, manage versions | `testing/` |
+| Look up an error message or code and fix it | `midnight-common-errors/` |
+| Pick package versions that work together, or upgrade safely | `midnight-version-matrix/` |
+| Check my setup and project against the tested versions | `midnight-doctor/` |
+| Run a pre-ship security and privacy gate | `midnight-security-checklist/` |
+| Decide what to test and find gaps before a release | `midnight-testing-checklist/` |
 | Build or fix Compact parsers, grammars, highlighters, or language servers | `compact-language-engineering/` |
 | Build a single dApp targeting all networks from one codebase | `multinetwork/` |
 | Wire up SDK providers, wallets, deploy/call contracts | `midnight-js/` |
@@ -82,6 +101,10 @@ How the Midnight node works under the hood (consensus, storage, networking, runt
 - Create Ankr project, copy HTTPS/WSS Midnight endpoints with API key.
 - JSON-RPC client for midnight_*, system_*, chain_*; wire into midnight-js node URL.
 
+### [Common Errors](/.agents/skills/midnight-common-errors/SKILL.md)
+- Error string or numeric code in; cause, fix, and the skill that explains it out.
+- Covers compiler, runtime, Midnight.js, wallets, indexer, node rejections, Docker, and Next.js.
+
 ### [Compact](/.agents/skills/compact/SKILL.md)
 - The four mandatory pieces of every contract, type system, circuits as constraints.
 - Witnesses, `disclose()`, ledger ADTs, standard library, and security patterns.
@@ -89,6 +112,10 @@ How the Midnight node works under the hood (consensus, storage, networking, runt
 ### [Compact Language Engineering](/.agents/skills/compact-language-engineering/SKILL.md)
 - Grammar source of truth (parser.ss/lexer.ss at the toolchain tag), full token spec, precedence table, verified ambiguity hazards.
 - tree-sitter-compact gaps, Grammar-Kit/JFlex port, Nite LSP design, differential test harness with the compiler as oracle.
+
+### [Doctor](/.agents/skills/midnight-doctor/SKILL.md)
+- Read-only script: Node, Compact devtools/toolchain, Docker images, proof server, package.json pins, pragmas.
+- FAIL/WARN report with one exact fix per finding; run it before debugging version errors.
 
 ### [DUST Gas Sponsorship](/.agents/skills/dust-gas-sponsorship/SKILL.md)
 - Two-sided flow: user balances ['shielded','unshielded'] and finalizes, sponsor balances ['dust'] and submits.
@@ -173,13 +200,25 @@ How the Midnight node works under the hood (consensus, storage, networking, runt
 - Privacy audit checklist, data leak patterns, commitment/nullifier design.
 - Witness trust, front-running resistance, transaction semantics.
 
+### [Security Checklist](/.agents/skills/midnight-security-checklist/SKILL.md)
+- Pass/fail checklist over disclosure, crypto, witnesses, auth, transaction phases, keys, and deploy.
+- Each item links to the midnight-security section that explains it.
+
 ### [Testing](/.agents/skills/testing/SKILL.md)
 - Static vs dynamic errors, reading compiler messages, `--skip-zk` dev loop.
 - Version management across 6 components, common debugging patterns.
 
+### [Testing Checklist](/.agents/skills/midnight-testing-checklist/SKILL.md)
+- Checklist across --skip-zk logic tests, negative/privacy tests, devnet E2E with testkit-js, frontend, and CI.
+- Names the missing tests and links to the skills that show how to write them.
+
 ### [Token Transfers](/.agents/skills/token-transfers/SKILL.md)
 - Shielded and unshielded token transfers.
 - Balance queries, multi-party flows, transaction semantics.
+
+### [Version Compatibility Matrix](/.agents/skills/midnight-version-matrix/SKILL.md)
+- Pinned toolchain, language version, packages, and Docker images as one tested set.
+- Exact install commands, package scopes, and removed packages. Live copy at /api/versions.
 
 ### [Why Midnight](/.agents/skills/why-midnight/SKILL.md)
 - Data protection blockchain with public/private state, selective disclosure, and zk-SNARKs.

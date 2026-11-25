@@ -17,7 +17,8 @@
 </p>
 
 <p align="center">
-  <a href="https://midnight-skills.netlify.app"><img src="https://img.shields.io/badge/MIDSKILLS-Browse%20Skills-070b10?style=for-the-badge" alt="MIDSKILLS" /></a>
+  <a href="https://midskills.sevryn.xyz"><img src="https://img.shields.io/badge/MIDSKILLS-Browse%20Skills-070b10?style=for-the-badge" alt="MIDSKILLS" /></a>
+  <a href="https://skills.sh/kali-decoder/midnight-skills"><img src="https://img.shields.io/badge/skills.sh-midnight--skills-000000?style=for-the-badge" alt="skills.sh" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT License" /></a>
   <a href="https://docs.midnight.network"><img src="https://img.shields.io/badge/Docs-Midnight%20Network-7ec8e3?style=for-the-badge" alt="Midnight Docs" /></a>
 </p>
@@ -30,7 +31,10 @@
   <a href="#quick-start">Quick Start</a> ·
   <a href="#learning-paths">Learning Paths</a> ·
   <a href="#skills-catalog">Skills Catalog</a> ·
+  <a href="#community-skills">Community</a> ·
+  <a href="#mcp-server">MCP Server</a> ·
   <a href="#architecture">Architecture</a> ·
+  <a href="#telemetry--privacy">Telemetry</a> ·
   <a href="#contributing">Contributing</a>
 </p>
 
@@ -69,7 +73,12 @@ Skills install to `.agents/skills/` in your project (or `~/.cursor/skills/` glob
 npx skills add Kali-Decoder/Midnight-skills -a claude-code -y
 ```
 
-Or install the Claude plugin from `.claude-plugin/`.
+Or install it as a Claude Code plugin (skills plus an anonymous usage hook, see [Telemetry & privacy](#telemetry--privacy)):
+
+```bash
+/plugin marketplace add Kali-Decoder/Midnight-skills
+/plugin install midnight-skills@midnight-skills
+```
 
 </details>
 
@@ -144,15 +153,19 @@ Skills are split into two tracks: **Build a dApp** for shipping on Midnight, and
 Everything you need to write, test, and ship a Midnight dApp: setup, Compact, wallets, SDK, and full templates.
 
 <details>
-<summary><strong>Foundation</strong> — 7 skills · Environment setup, privacy model, Compact language, and testing</summary>
+<summary><strong>Foundation</strong> — 11 skills · Environment setup, privacy model, Compact language, and testing</summary>
 
 | Skill | Description |
 |-------|-------------|
+| [Common Errors](.agents/skills/midnight-common-errors/SKILL.md) | Look up a Midnight error message or code (compiler, runtime, Midnight.js, wallet, indexer, node `Custom error: N`) and get the cause, the fix, and the skill that explains it. |
 | [Compact](.agents/skills/compact/SKILL.md) | The Compact smart contract language for Midnight Network. TypeScript-like DSL that compiles to ZK circuits. |
 | [Compact Language Engineering](.agents/skills/compact-language-engineering/SKILL.md) | Build Compact language tooling (tree-sitter, Grammar-Kit/JFlex, TextMate, formatters, LSPs) that accepts exactly what the compiler accepts: lexer and grammar from compiler source, precedence and ambiguity hazards, and compiler-oracle differential tests. |
+| [Doctor](.agents/skills/midnight-doctor/SKILL.md) | Health-check a Midnight project and machine against the pinned version set: Compact toolchain, Docker images, proof server, package pins, duplicate runtimes, and pragmas. |
 | [Midnight Environment Setup](.agents/skills/midnight-environment-setup/SKILL.md) | Automatically prepare a Midnight dev environment — Compact, PATH, Docker, proof server, and VS Code extension. Run before building or deploying. |
 | [MIP Planning](.agents/skills/midnight-mip-planning/SKILL.md) | Plan, write, and shepherd a Midnight Improvement Proposal (MIP) or Problem Statement (MPS), and decide whether a skill can teach a MIP as final. |
 | [Testing](.agents/skills/testing/SKILL.md) | Debug Compact contracts and manage toolchain versions. Static vs dynamic errors, version sync, common traps. |
+| [Testing Checklist](.agents/skills/midnight-testing-checklist/SKILL.md) | What tested means for a Midnight dApp: contract logic, negative and privacy tests, local-devnet end-to-end tests, frontend and ZK-artifact checks, and CI. |
+| [Version Compatibility Matrix](.agents/skills/midnight-version-matrix/SKILL.md) | The pinned, tested Midnight version set (toolchain, language, runtime, ledger, Midnight.js, Wallet SDK, images) with exact install commands. Generated from references/versions.json. |
 | [Why Midnight](.agents/skills/why-midnight/SKILL.md) | What Midnight is, why it exists, and how it works — public/private state, selective disclosure, and ZK proofs. |
 | [ZK vs FHE vs MPC](.agents/skills/zk-vs-fhe-vs-mpc/SKILL.md) | Compare ZK, FHE, and MPC for privacy-focused DApps — tradeoffs, platforms, and why Midnight uses zk-SNARKs. |
 
@@ -185,12 +198,13 @@ Everything you need to write, test, and ship a Midnight dApp: setup, Compact, wa
 </details>
 
 <details>
-<summary><strong>Domain & Tokens</strong> — 3 skills · NFTs, token transfers, and platform-specific guides</summary>
+<summary><strong>Domain & Tokens</strong> — 4 skills · NFTs, token transfers, and platform-specific guides</summary>
 
 | Skill | Description |
 |-------|-------------|
 | [NFT](.agents/skills/nft/SKILL.md) | Build shielded and unshielded NFTs on Midnight using OpenZeppelin Compact contracts. |
 | [Security](.agents/skills/security/SKILL.md) | Privacy audit checklist, data leak patterns, defensive Compact patterns. |
+| [Security Checklist](.agents/skills/midnight-security-checklist/SKILL.md) | Pre-ship pass/fail security and privacy gate for a Midnight dApp: disclosure, cryptography, authorization, transaction semantics, keys, and deploy. |
 | [Token Transfers](.agents/skills/token-transfers/SKILL.md) | Shielded and unshielded token transfers, balance queries, multi-party flows on Midnight. |
 
 </details>
@@ -234,8 +248,32 @@ How the Midnight node works under the hood (consensus, storage, networking, runt
 <!-- /SKILLS_REGISTRY:README_TABLE -->
 
 <p align="center">
-  <a href="https://midnight-skills.netlify.app"><strong>Explore all skills on MIDSKILLS →</strong></a>
+  <a href="https://midskills.sevryn.xyz"><strong>Explore all skills on MIDSKILLS →</strong></a>
 </p>
+
+---
+
+## Community Skills
+
+<!-- SKILLS_REGISTRY:COMMUNITY -->
+Skills written and maintained by the community in their own repositories. Each entry is pinned to one reviewed commit; MIDSKILLS lists them but does not bundle them in the npm package or Claude plugin.
+
+_No community skills yet. Be the first: see [Community skills](CONTRIBUTING.md#community-skills)._
+<!-- /SKILLS_REGISTRY:COMMUNITY -->
+
+Want yours listed? Open a [community skill submission](https://github.com/Kali-Decoder/Midnight-skills/issues/new?template=community-skill.yml) and follow [Community skills](CONTRIBUTING.md#community-skills).
+
+---
+
+## MCP Server
+
+[`packages/mcp`](packages/mcp) is **midskills-mcp**, a stdio MCP server that serves this repo's skills, references, version pins and error table to any MCP client. It reads the same `skills.json`, so it is versioned with the skills.
+
+```bash
+claude mcp add midskills -- npx -y midskills-mcp
+```
+
+Tools: `list_skills`, `search_skills`, `get_skill`, `get_reference`, `get_versions`, `lookup_error`. See [packages/mcp/README.md](packages/mcp/README.md) for other clients.
 
 ---
 
@@ -266,7 +304,7 @@ flowchart LR
 - **Registry:** `skills.json` — single source of truth for skills, learning paths, and site metadata
 - **Content:** Skill folders, `references/`, and `templates/` in this repository
 - **CI:** GitHub Actions validate on PR; publish a versioned registry bundle on release tags
-- **UI:** [MIDSKILLS](https://midnight-skills.netlify.app) Next.js app (separate repo) consumes the published registry at build time
+- **UI:** [MIDSKILLS](https://midskills.sevryn.xyz) Next.js app (separate repo) consumes the published registry at build time
 - **Agents:** Install skill folders via npm package or fetch from GitHub
 <!-- /SKILLS_REGISTRY:ARCHITECTURE -->
 
@@ -279,7 +317,9 @@ skills.json              # Registry manifest
 references/              # Shared docs (provider wiring, gotchas)
 templates/               # Runnable dApp templates
 scripts/                 # validate, sync, package registry
-.claude-plugin/          # Claude Code marketplace plugin
+.claude-plugin/          # Claude Code plugin manifest (generated from skills.json)
+hooks/                   # Claude plugin hooks: anonymous skill-usage tracking
+packages/mcp/            # midskills-mcp server
 ```
 
 </details>
@@ -308,6 +348,33 @@ npm run package:registry  # Build dist/registry/ + tarball (for UI consumers)
 <!-- /SKILLS_REGISTRY:REGISTRY -->
 
 </details>
+
+---
+
+## Telemetry & privacy
+
+The **Claude Code plugin** ships one hook ([`hooks/track.mjs`](hooks/track.mjs)) that reports which Midnight skill was loaded, so we can see which skills are used and which need work. Installing the skills any other way (`npx skills add`, copying folders, the MCP server) sends nothing.
+
+**What is sent**, one small request to `https://midskills.sevryn.xyz/api/track` each time a skill from this plugin is invoked:
+
+| Field | Example |
+|-------|---------|
+| `event` | `skill_invoked` |
+| `skill` | `compact` (only skills from this plugin; any other skill name is dropped before sending) |
+| `plugin_version` | `1.0.14` |
+| `client` | `claude-code` |
+| `os` | `darwin` |
+
+**What is never sent:** prompts, code, file names or paths, project or repo names, user, machine or session identifiers, IP-derived location (the endpoint does not store IPs), or environment variables. There is no install ID, so events cannot be linked to each other. The hook times out after 2 seconds, never blocks Claude, and fails silently.
+
+**Opt out** with either variable, in your shell profile or in Claude Code's `settings.json` `env` block:
+
+```bash
+export MIDSKILLS_TELEMETRY=0   # this plugin only
+export DO_NOT_TRACK=1          # also respected
+```
+
+Uninstalling the plugin (or installing the skills with `npx skills add` instead) removes the hook entirely. `hooks/track.mjs` is short: read it to check all of the above.
 
 ---
 

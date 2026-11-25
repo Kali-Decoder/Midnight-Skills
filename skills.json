@@ -4,7 +4,7 @@
     "name": "MIDSKILLS",
     "tagline": "Knowledge Skills for AI Agents Building on Midnight Network",
     "description": "Open knowledge skills for AI agents building privacy-preserving apps on Midnight Network — Compact contracts, wallet integration, SDK guides, and runnable templates.",
-    "url": "https://midnight-skills.netlify.app",
+    "url": "https://midskills.sevryn.xyz",
     "repository": "https://github.com/Kali-Decoder/Midnight-skills",
     "license": "MIT",
     "themeColor": "#070b10",
@@ -143,6 +143,10 @@
           "summary": "Install Compact, Docker, proof server, and VS Code extension"
         },
         {
+          "skillId": "midnight-doctor",
+          "summary": "Check your toolchain and project against tested versions"
+        },
+        {
           "skillId": "why-midnight",
           "summary": "What Midnight is and how ZK privacy works"
         },
@@ -161,6 +165,10 @@
         {
           "skillId": "react-wallet-connector",
           "summary": "Connect a wallet in React + Vite"
+        },
+        {
+          "skillId": "midnight-common-errors",
+          "summary": "Look up any error message or code"
         }
       ]
     },
@@ -201,6 +209,10 @@
         {
           "skillId": "midnight-transactions",
           "summary": "Proof-based transaction pool and execution"
+        },
+        {
+          "skillId": "midnight-testing-checklist",
+          "summary": "What to test before you ship"
         }
       ]
     },
@@ -249,6 +261,10 @@
         {
           "skillId": "midnight-security",
           "summary": "Privacy audit checklist and leak patterns"
+        },
+        {
+          "skillId": "midnight-security-checklist",
+          "summary": "Pre-ship security and privacy gate"
         },
         {
           "skillId": "midnight-consensus",
@@ -495,6 +511,108 @@
         "Testing",
         "Compiler",
         "Versions"
+      ]
+    },
+    {
+      "id": "midnight-common-errors",
+      "name": "Common Errors",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/midnight-common-errors/SKILL.md",
+      "description": "Look up a Midnight error message or code (compiler, runtime, Midnight.js, wallet, indexer, node `Custom error: N`) and get the cause, the fix, and the skill that explains it.",
+      "enabled": true,
+      "featured": true,
+      "category": "foundation",
+      "taskHint": "Look up an error message or code and fix it",
+      "routerBullets": [
+        "Error string or numeric code in; cause, fix, and the skill that explains it out.",
+        "Covers compiler, runtime, Midnight.js, wallets, indexer, node rejections, Docker, and Next.js."
+      ],
+      "tags": [
+        "Errors",
+        "Debugging",
+        "Troubleshooting"
+      ]
+    },
+    {
+      "id": "midnight-version-matrix",
+      "name": "Version Compatibility Matrix",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/midnight-version-matrix/SKILL.md",
+      "description": "The pinned, tested Midnight version set (toolchain, language, runtime, ledger, Midnight.js, Wallet SDK, images) with exact install commands. Generated from references/versions.json.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Pick package versions that work together, or upgrade safely",
+      "routerBullets": [
+        "Pinned toolchain, language version, packages, and Docker images as one tested set.",
+        "Exact install commands, package scopes, and removed packages. Live copy at /api/versions."
+      ],
+      "tags": [
+        "Versions",
+        "Compatibility",
+        "Setup"
+      ]
+    },
+    {
+      "id": "midnight-doctor",
+      "name": "Doctor",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/midnight-doctor/SKILL.md",
+      "description": "Health-check a Midnight project and machine against the pinned version set: Compact toolchain, Docker images, proof server, package pins, duplicate runtimes, and pragmas.",
+      "enabled": true,
+      "featured": true,
+      "category": "foundation",
+      "taskHint": "Check my setup and project against the tested versions",
+      "routerBullets": [
+        "Read-only script: Node, Compact devtools/toolchain, Docker images, proof server, package.json pins, pragmas.",
+        "FAIL/WARN report with one exact fix per finding; run it before debugging version errors."
+      ],
+      "tags": [
+        "Doctor",
+        "Setup",
+        "Versions",
+        "Debugging"
+      ]
+    },
+    {
+      "id": "midnight-security-checklist",
+      "name": "Security Checklist",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/midnight-security-checklist/SKILL.md",
+      "description": "Pre-ship pass/fail security and privacy gate for a Midnight dApp: disclosure, cryptography, authorization, transaction semantics, keys, and deploy.",
+      "enabled": true,
+      "featured": false,
+      "category": "domain",
+      "taskHint": "Run a pre-ship security and privacy gate",
+      "routerBullets": [
+        "Pass/fail checklist over disclosure, crypto, witnesses, auth, transaction phases, keys, and deploy.",
+        "Each item links to the midnight-security section that explains it."
+      ],
+      "tags": [
+        "Security",
+        "Privacy",
+        "Audit",
+        "Checklist"
+      ]
+    },
+    {
+      "id": "midnight-testing-checklist",
+      "name": "Testing Checklist",
+      "author": "Kali-Decoder",
+      "path": ".agents/skills/midnight-testing-checklist/SKILL.md",
+      "description": "What tested means for a Midnight dApp: contract logic, negative and privacy tests, local-devnet end-to-end tests, frontend and ZK-artifact checks, and CI.",
+      "enabled": true,
+      "featured": false,
+      "category": "foundation",
+      "taskHint": "Decide what to test and find gaps before a release",
+      "routerBullets": [
+        "Checklist across --skip-zk logic tests, negative/privacy tests, devnet E2E with testkit-js, frontend, and CI.",
+        "Names the missing tests and links to the skills that show how to write them."
+      ],
+      "tags": [
+        "Testing",
+        "Checklist",
+        "CI"
       ]
     },
     {
@@ -1027,5 +1145,10 @@
         "Proposals"
       ]
     }
-  ]
+  ],
+  "community": {
+    "description": "Skills written and maintained by the community in their own repositories. Each entry is pinned to one reviewed commit; MIDSKILLS lists them but does not bundle them in the npm package or Claude plugin.",
+    "submission": "CONTRIBUTING.md#community-skills",
+    "skills": []
+  }
 }
