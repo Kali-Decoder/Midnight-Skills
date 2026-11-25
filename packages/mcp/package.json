@@ -1,6 +1,6 @@
 {
   "name": "midskills-mcp",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "MCP server for MIDSKILLS: Midnight Network skills, references, version pins, and error lookup for AI agents.",
   "type": "module",
   "bin": {
@@ -33,5 +33,12 @@
     "directory": "packages/mcp"
   },
   "license": "MIT",
-  "keywords": ["mcp", "midnight", "compact", "zero-knowledge", "ai-agents", "skills"]
+  "keywords": [
+    "mcp",
+    "midnight",
+    "compact",
+    "zero-knowledge",
+    "ai-agents",
+    "skills"
+  ]
 }
