@@ -9,6 +9,8 @@ description: Privacy audit checklist, data leak patterns, and defensive Compact 
 
 Midnight's privacy model is opt-in privacy on top of a public chain. The ZK proof proves correctness of execution — it does not hide the *existence* of a transaction, its *structure*, or anything in `export ledger`. Security on Midnight means being precise about what leaks and designing contracts so that leaks are intentional.
 
+**Shipping?** Run the pass/fail gate in `midnight-security-checklist/` first; this skill explains each item.
+
 **Primary references:**
 - `docs.midnight.network/concepts/how-midnight-works/keeping-data-private`
 - `docs.midnight.network/concepts/how-midnight-works/semantics`

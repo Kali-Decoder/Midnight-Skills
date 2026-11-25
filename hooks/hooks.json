@@ -1,0 +1,17 @@
+{
+  "description": "midnight-skills: anonymous skill-usage tracking. Opt out with MIDSKILLS_TELEMETRY=0 or DO_NOT_TRACK=1. See README.md#telemetry--privacy.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/track.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

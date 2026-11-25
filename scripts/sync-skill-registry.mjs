@@ -14,7 +14,9 @@ import {
   validateRegistry,
   TRACKS,
   trackOf,
+  communityUrls,
 } from "./registry-utils.mjs";
+import { buildVersionMatrix, loadErrors, validateErrors, buildErrorTables, ERRORS_PATH } from "./generated-skills.mjs";
 
 function replaceBlock(content, startMarker, endMarker, replacement) {
   const start = content.indexOf(startMarker);
@@ -166,35 +168,69 @@ function authorLabel(authors) {
   return (authors || []).map((a) => a.name).join(", ");
 }
 
-function syncPluginMetadata(site) {
+/** Skill folders shipped in the Claude plugin: the router plus every packaged skill. */
+function pluginSkillDirs(skills) {
+  const router = skills.find((s) => s.id === "midnightskill" && s.enabled !== false);
+  const dirs = [router, ...packageSkills(skills)].filter(Boolean).map((s) => "./" + s.path.replace(/\/SKILL\.md$/, ""));
+  return [...new Set(dirs)];
+}
+
+/**
+ * Regenerate .claude-plugin/plugin.json from skills.json + package.json (version).
+ * Hooks are not listed: Claude Code loads hooks/hooks.json from the plugin root by default,
+ * and declaring the default path again is reported as a duplicate.
+ */
+function syncPluginMetadata(registry) {
+  const site = registry.site;
+  const version = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf-8")).version;
   const pluginPath = join(ROOT, ".claude-plugin", "plugin.json");
-  if (existsSync(pluginPath)) {
-    const plugin = JSON.parse(readFileSync(pluginPath, "utf-8"));
-    plugin.description = site.description;
-    plugin.homepage = site.url;
-    plugin.repository = site.repository;
-    plugin.license = site.license;
-    plugin.keywords = site.keywords || plugin.keywords;
-    plugin.author = {
+  const plugin = {
+    name: "midnight-skills",
+    version,
+    description: site.description,
+    author: {
       name: authorLabel(site.authors),
-      url: (site.authors || []).map((a) => a.url).join(", "),
-    };
-    writeFileSync(pluginPath, JSON.stringify(plugin, null, 2) + "\n");
-    console.log("Updated .claude-plugin/plugin.json");
-  }
+      url: (site.authors || [])[0]?.url,
+    },
+    homepage: site.url,
+    repository: site.repository,
+    license: site.license,
+    keywords: site.keywords || [],
+    skills: pluginSkillDirs(registry.skills),
+  };
+  writeFileSync(pluginPath, JSON.stringify(plugin, null, 2) + "\n");
+  console.log(`Updated .claude-plugin/plugin.json (${plugin.skills.length} skills, v${version})`);
 
   const marketplacePath = join(ROOT, ".claude-plugin", "marketplace.json");
   if (existsSync(marketplacePath)) {
     const marketplace = JSON.parse(readFileSync(marketplacePath, "utf-8"));
     marketplace.metadata = marketplace.metadata || {};
     marketplace.metadata.description = site.description;
+    marketplace.metadata.version = version;
     if (marketplace.plugins?.[0]) {
       marketplace.plugins[0].description = site.description;
+      marketplace.plugins[0].version = version;
       marketplace.plugins[0].author = { name: authorLabel(site.authors) };
     }
     writeFileSync(marketplacePath, JSON.stringify(marketplace, null, 2) + "\n");
     console.log("Updated .claude-plugin/marketplace.json");
   }
+}
+
+function buildCommunityBlock(registry) {
+  const community = registry.community || {};
+  const items = [...(community.skills || [])].sort(sortByName);
+  const intro = community.description ? community.description + "\n\n" : "";
+  if (!items.length) {
+    return intro + "_No community skills yet. Be the first: see [Community skills](CONTRIBUTING.md#community-skills)._";
+  }
+  const rows = items
+    .map((c) => {
+      const { blob } = communityUrls(c);
+      return `| [${c.name}](${blob}) | ${c.description} | ${c.author} | \`${c.commit.slice(0, 7)}\` |`;
+    })
+    .join("\n");
+  return intro + ["| Skill | Description | Author | Pinned commit |", "|-------|-------------|--------|---------------|", rows].join("\n");
 }
 
 function buildArchitectureBlock(site) {
@@ -218,8 +254,14 @@ function buildRegistryBlock() {
 }
 
 function main() {
+  // Generated skills first, so the registry validation below sees their SKILL.md files.
+  buildVersionMatrix();
+  console.log("Updated midnight-version-matrix (SKILL.md, versions.json) and midnight-doctor/pins.json");
+
   const registry = loadRegistry();
   const errors = validateRegistry(registry);
+  const errorData = loadErrors();
+  errors.push(...validateErrors(errorData, new Set(registry.skills.map((s) => s.id))));
   if (errors.length) {
     console.error("Validation failed:\n" + errors.map((e) => `  - ${e}`).join("\n"));
     process.exit(1);
@@ -245,6 +287,13 @@ function main() {
     }
   }
 
+  const errorsSkill = join(ERRORS_PATH, "..", "SKILL.md");
+  writeFileSync(
+    errorsSkill,
+    replaceBlock(readFileSync(errorsSkill, "utf-8"), "<!-- SKILLS_REGISTRY:ERRORS -->", "<!-- /SKILLS_REGISTRY:ERRORS -->", buildErrorTables(errorData, registry.skills)),
+  );
+  console.log(`Updated midnight-common-errors tables (${errorData.errors.length} errors)`);
+
   const readmePath = join(ROOT, "README.md");
   let readme = readFileSync(readmePath, "utf-8");
   readme = replaceBlock(readme, "<!-- SKILLS_REGISTRY:README_TABLE -->", "<!-- /SKILLS_REGISTRY:README_TABLE -->", buildReadmeTable(registry.skills));
@@ -268,14 +317,27 @@ function main() {
       buildRegistryBlock(),
     );
   }
+  readme = replaceBlock(readme, "<!-- SKILLS_REGISTRY:COMMUNITY -->", "<!-- /SKILLS_REGISTRY:COMMUNITY -->", buildCommunityBlock(registry));
   writeFileSync(readmePath, readme);
   console.log("Updated README.md");
 
   syncPackageJson(packageSkills(registry.skills), registry.site);
   console.log("Updated package.json skills list");
 
+  // midskills-mcp is versioned with the skills it serves.
+  const mcpPkgPath = join(ROOT, "packages", "mcp", "package.json");
+  if (existsSync(mcpPkgPath)) {
+    const rootVersion = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf-8")).version;
+    const mcpPkg = JSON.parse(readFileSync(mcpPkgPath, "utf-8"));
+    if (mcpPkg.version !== rootVersion) {
+      mcpPkg.version = rootVersion;
+      writeFileSync(mcpPkgPath, JSON.stringify(mcpPkg, null, 2) + "\n");
+    }
+    console.log(`midskills-mcp version ${rootVersion}`);
+  }
+
   if (registry.site) {
-    syncPluginMetadata(registry.site);
+    syncPluginMetadata(registry);
   }
 
   console.log(`\nRegistry OK: ${registry.skills.length} skills`);

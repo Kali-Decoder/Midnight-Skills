@@ -5,18 +5,30 @@ on:
     paths:
       - "skills.json"
       - "**/SKILL.md"
+      - ".agents/skills/**"
       - "references/**"
       - "templates/**"
       - "scripts/**"
+      - "hooks/**"
+      - "packages/**"
+      - ".claude-plugin/**"
+      - "README.md"
+      - "package.json"
       - ".github/workflows/**"
   push:
     branches: [main]
     paths:
       - "skills.json"
       - "**/SKILL.md"
+      - ".agents/skills/**"
       - "references/**"
       - "templates/**"
       - "scripts/**"
+      - "hooks/**"
+      - "packages/**"
+      - ".claude-plugin/**"
+      - "README.md"
+      - "package.json"
       - ".github/workflows/**"
 
 jobs:
@@ -32,8 +44,36 @@ jobs:
       - name: Validate registry
         run: npm run validate:registry
 
-      - name: Sync check (dry run)
-        run: npm run sync:registry
+      - name: Generated files are in sync with skills.json and versions.json
+        run: |
+          npm run sync:registry
+          if ! git diff --exit-code; then
+            echo "::error::Generated files are out of date. Run 'npm run sync:registry' and commit the result."
+            exit 1
+          fi
 
       - name: Version literals match references/versions.json
         run: npm run check:versions
+
+      - name: Community skills resolve at their pinned commits
+        run: npm run check:community
+
+      - name: Hook script parses
+        run: node --check hooks/track.mjs
+
+  mcp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: npm ci
+
+      - name: midskills-mcp tests
+        run: npm run test:mcp
+
+      - name: Package builds with bundled content
+        run: npm pack -w midskills-mcp --dry-run

@@ -70,7 +70,10 @@ export function validateRegistry(registry) {
     }
   }
 
-  const ids = skills.map((s) => s.id).filter(Boolean);
+  const community = registry.community?.skills ?? [];
+  errors.push(...validateCommunity(community));
+
+  const ids = [...skills, ...community].map((s) => s.id).filter(Boolean);
   const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
   if (dupes.length) errors.push(`Duplicate skill ids: ${[...new Set(dupes)].join(", ")}`);
 
@@ -93,4 +96,30 @@ export function collectRegistryPaths(registry) {
   }
 
   return [...paths].sort();
+}
+
+/** Community skills live in other repos and are pinned to one commit. They are listed, never bundled. */
+export const COMMUNITY_REQUIRED = ["id", "name", "author", "repository", "commit", "path", "description", "license"];
+
+export function validateCommunity(entries) {
+  const errors = [];
+  for (const c of entries) {
+    const at = `community skill ${c.id ?? c.name ?? "(unnamed)"}`;
+    for (const k of COMMUNITY_REQUIRED) if (!String(c[k] ?? "").trim()) errors.push(`${at}: missing ${k}`);
+    if (c.id && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(c.id)) errors.push(`${at}: id must be kebab-case`);
+    if (c.repository && !/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+$/.test(c.repository))
+      errors.push(`${at}: repository must be https://github.com/<owner>/<repo>`);
+    if (c.commit && !/^[0-9a-f]{40}$/.test(c.commit)) errors.push(`${at}: commit must be a full 40-character SHA, not a branch or tag`);
+    if (c.path && (!c.path.endsWith("SKILL.md") || c.path.includes("..") || c.path.startsWith("/")))
+      errors.push(`${at}: path must be a relative path to a SKILL.md inside the repository`);
+  }
+  return errors;
+}
+
+export function communityUrls(c) {
+  const repo = c.repository.replace(/^https:\/\/github\.com\//, "");
+  return {
+    blob: `https://github.com/${repo}/blob/${c.commit}/${c.path}`,
+    raw: `https://raw.githubusercontent.com/${repo}/${c.commit}/${c.path}`,
+  };
 }

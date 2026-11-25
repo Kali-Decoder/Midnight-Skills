@@ -1,0 +1,87 @@
+name: 🌐 Submit a community skill
+description: List a Midnight skill you maintain in your own repository, pinned to a reviewed commit.
+title: "[Community skill]: "
+labels: ["community-skill"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Community skills stay in **your** repo. MIDSKILLS lists them, pinned to one commit, after review.
+        Read [Community skills](https://github.com/Kali-Decoder/Midnight-skills/blob/main/CONTRIBUTING.md#community-skills) first.
+
+  - type: input
+    id: name
+    attributes:
+      label: Skill name
+      placeholder: e.g. Midnight Oracle Feeds
+    validations:
+      required: true
+
+  - type: input
+    id: repository
+    attributes:
+      label: Repository
+      description: Public GitHub repository URL.
+      placeholder: https://github.com/you/your-repo
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit to review (full SHA)
+      description: Output of `git rev-parse HEAD` for the version you want listed. Branches and tags are not accepted.
+      placeholder: 0123456789abcdef0123456789abcdef01234567
+    validations:
+      required: true
+
+  - type: input
+    id: path
+    attributes:
+      label: Path to SKILL.md
+      placeholder: skills/your-skill-name/SKILL.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What does it do, and when should an agent use it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: overlap
+    attributes:
+      label: Overlap with existing skills
+      description: Which MIDSKILLS skills are closest, and how is yours different?
+    validations:
+      required: true
+
+  - type: input
+    id: tested
+    attributes:
+      label: Tested with
+      description: Network and version set, e.g. "preprod, Ledger 9.1 set from /api/versions".
+    validations:
+      required: true
+
+  - type: input
+    id: license
+    attributes:
+      label: License
+      placeholder: MIT
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Checklist
+      options:
+        - label: The skill is Midnight-specific and follows CONTRIBUTING.md content rules.
+          required: true
+        - label: It contains no secrets, and discloses any network calls, telemetry, or scripts it asks an agent to run.
+          required: true
+        - label: I will update the pinned commit through a new PR rather than force-pushing over it.
+          required: true
